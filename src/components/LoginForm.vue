@@ -52,10 +52,15 @@
 <script setup>
 import { ref } from 'vue';
 import axios from 'axios';
+import { useRouter } from "vue-router";
+import { useAuthStore } from '../store/auth';
 
-const email = ref('');
-const password = ref('');
-const message = ref('');
+const router = useRouter();
+const auth = useAuthStore();
+
+const email = ref("");
+const password = ref("");
+const message = ref("");
 
 const login = async () => {
   try {
@@ -64,12 +69,12 @@ const login = async () => {
       password: password.value
     });
 
-    message.value = `${res.data.user.name}님 환영합니다!`;
-    console.log(res.data.user);
+    if (res.data.success) {
+      auth.login(res.data.user);
+      message.value = `${res.data.user.name}님 환영합니다!`;
 
-    localStorage.setItem('userInfo', JSON.stringify (res.data.user));
-
-    window.location.href = '/home'; 
+      router.push("/home");
+    }
   } catch (err) {
     message.value = '이메일 또는 비밀번호가 틀렸습니다.';
     console.error(err);

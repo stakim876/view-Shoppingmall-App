@@ -8,8 +8,10 @@ import CartPage from '../components/CartPage.vue'
 import ProductList from '../components/ProductList.vue'
 import MyPage from '../components/MyPage.vue' 
 
+
 const routes = [
   { path: '/', component: LoginForm },
+  { path: '/login', component: LoginForm},
   { path: '/signup', component: SignUpForm },
   { path: '/home', component: HomePage },
   { path: '/products', component: ProductList }, 

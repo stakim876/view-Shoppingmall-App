@@ -1,6 +1,8 @@
 <script setup>
-import { useCartStore } from '../store/cart'
-import { storeToRefs } from 'pinia'
+import { useCartStore } from "../store/cart";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
+import axios from "axios";
 
 const cart = useCartStore()
 const { totalItems, totalPrice } = storeToRefs(cart)

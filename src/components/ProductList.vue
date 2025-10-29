@@ -11,11 +11,11 @@
       />
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    <div class="flex flex-wrap justify-center gap-6">
       <div
         v-for="product in filteredProducts"
         :key="product.id"
-        class="border p-4 rounded shadow hover:shadow-lg bg-white"
+        class="border p-4 rounded shadow hover:shadow-lg bg-white w-64"
       >
         <div class="w-full h-48 flex items-center justify-center bg-gray-50 rounded mb-4 overflow-hidden">
           <img
