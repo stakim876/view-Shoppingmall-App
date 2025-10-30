@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 120">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5B8DEF"></stop>
+      <stop offset="1" stop-color="#7B5BFF"></stop>
+    </linearGradient>
+  </defs>
+
+  <!-- M (수직 대비를 주는 커스텀 기둥 형태) -->
+  <path d="M24 20 h16 v80 h-16 z" fill="url(#g)"></path>
+  <path d="M60 100 h-16 v-80 h16 l14 40 14-40 h16 v80 h-16 v-43 l-14 39 h-10 l-14-39v43z" fill="url(#g)"></path>
+
+  <!-- S (굵은 스트로크 느낌의 커스텀 S) -->
+  <path d="M140 32c0-12 12-20 33-20 12 0 22 3 29 7l-8 12c-6-3-12-5-21-5-9 0-15 3-15 8 0 6 6 8 18 10 18 3 32 8 32 23 0 14-13 25-37 25-14 0-27-4-36-10l9-12c7 5 16 8 27 8 13 0 19-4 19-9 0-6-7-8-20-10-17-3-30-8-30-27z" fill="url(#g)"></path>
+</svg>
