@@ -1,6 +1,6 @@
 <template>
   <header
-    class="flex justify-between items-center px-8 py-4 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100"
+    class="flex justify-between items-center px-8 py-4 bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100 dark:border-neutral-700 transition-colors duration-300"
   >
     <router-link
       to="/home"
@@ -29,8 +29,16 @@
         </span>
       </router-link>
 
+      <button
+        @click="toggleDarkMode"
+        class="text-xl hover:scale-110 transition transform text-gray-700 dark:text-gray-200"
+        title="테마 전환"
+      >
+        {{ isDark ? '☀️' : '🌙' }}
+      </button>
+
       <div v-if="auth.isLoggedIn" class="flex items-center space-x-3">
-        <span class="text-gray-700 text-sm font-medium">
+        <span class="text-gray-700 dark:text-gray-300 text-sm font-medium">
           {{ auth.user?.name }}님
         </span>
 
@@ -51,7 +59,7 @@
 
         <button
           @click="logout"
-          class="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition"
+          class="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-600"
         >
           로그아웃
         </button>
@@ -73,10 +81,24 @@
 import { useCartStore } from "../store/cart";
 import { useAuthStore } from "../store/auth";
 import { storeToRefs } from "pinia";
+import { ref, onMounted } from "vue";
 
 const cart = useCartStore();
 const { totalItems } = storeToRefs(cart);
 const auth = useAuthStore();
+
+const isDark = ref(false);
+
+const toggleDarkMode = () => {
+  isDark.value = !isDark.value;
+  document.documentElement.classList.toggle("dark", isDark.value);
+  localStorage.setItem("theme", isDark.value ? "dark" : "light");
+};
+
+onMounted(() => {
+  isDark.value = localStorage.getItem("theme") === "dark";
+  document.documentElement.classList.toggle("dark", isDark.value);
+});
 
 const logout = () => {
   auth.logout();

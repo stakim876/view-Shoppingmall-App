@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-[#f9fafb] text-neutral-800 font-['Inter']">
+  <div class="min-h-screen bg-[#f9fafb] dark:bg-[#0f172a] text-neutral-800 dark:text-neutral-200 font-['Inter'] transition-colors duration-500">
 
     <section
-      class="relative text-center py-32 overflow-hidden border-b border-neutral-200"
+      class="relative text-center py-32 overflow-hidden border-b border-neutral-200 dark:border-neutral-700"
     >
       <div
-        class="absolute inset-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-transparent blur-3xl opacity-70"
+        class="absolute inset-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-transparent dark:from-indigo-900/40 dark:via-purple-900/30 dark:to-transparent blur-3xl opacity-70"
       ></div>
 
       <div class="relative z-10 px-4 flex flex-col items-center justify-center">
@@ -23,7 +23,7 @@
         </div>
 
         <p
-          class="text-neutral-700 text-[1.1rem] font-light max-w-2xl mx-auto leading-relaxed font-['Noto_Serif_KR'] italic tracking-wide animate-fadeInDelayed"
+          class="text-neutral-700 dark:text-neutral-300 text-[1.1rem] font-light max-w-2xl mx-auto leading-relaxed font-['Noto_Serif_KR'] italic tracking-wide animate-fadeInDelayed"
         >
           당신의 감성을 채우는 프리미엄 셀렉트샵 — 오늘의 선택이 내일의 기준이 됩니다.
         </p>
@@ -41,12 +41,12 @@
             'relative overflow-hidden group duration-300',
             selectedCategory === cat
               ? 'bg-gradient-to-r from-blue-600 to-indigo-500 text-white border-transparent shadow-lg scale-105'
-              : 'bg-white/70 text-neutral-700 border-neutral-200 hover:border-blue-300 hover:shadow-md hover:-translate-y-[2px]'
+              : 'bg-white/70 dark:bg-neutral-800/60 text-neutral-700 dark:text-neutral-200 border-neutral-200 dark:border-neutral-700 hover:border-blue-300 dark:hover:border-indigo-400 hover:shadow-md hover:-translate-y-[2px]'
           ]"
         >
           <span class="relative z-10">{{ cat }}</span>
           <span
-            class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-700 ease-out"
+            class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-700 ease-out"
           ></span>
         </button>
       </div>
@@ -54,7 +54,7 @@
 
     <div class="max-w-7xl mx-auto px-6 py-10">
       <h2
-        class="text-2xl font-semibold text-neutral-800 mb-10 text-center border-b border-neutral-200 pb-3"
+        class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100 mb-10 text-center border-b border-neutral-200 dark:border-neutral-700 pb-3"
       >
         {{ selectedCategory === '전체' ? 'Featured Products' : selectedCategory }}
       </h2>
@@ -74,9 +74,11 @@
         <div
           v-for="p in filteredProducts"
           :key="p.id"
-          class="group relative overflow-hidden rounded-3xl bg-white border border-neutral-200 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-lg"
+          class="group relative overflow-hidden rounded-3xl 
+                 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 
+                 hover:border-blue-400 dark:hover:border-indigo-500 transition-all duration-300 shadow-sm hover:shadow-lg"
         >
-          <div class="overflow-hidden h-80 flex items-center justify-center bg-neutral-100">
+          <div class="overflow-hidden h-80 flex items-center justify-center bg-neutral-100 dark:bg-neutral-700">
             <img
               :src="p.image_url"
               :alt="p.name"
@@ -85,14 +87,15 @@
           </div>
 
           <div class="p-6">
-            <h3 class="font-semibold text-lg text-neutral-900 mb-1">{{ p.name }}</h3>
-            <p class="text-neutral-500 text-sm mb-3 line-clamp-2">{{ p.description }}</p>
-            <p class="text-blue-600 font-semibold text-lg mb-6">
+            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-1">{{ p.name }}</h3>
+            <p class="text-neutral-500 dark:text-neutral-400 text-sm mb-3 line-clamp-2">{{ p.description }}</p>
+            <p class="text-blue-600 dark:text-indigo-400 font-semibold text-lg mb-6">
               {{ p.price.toLocaleString() }}원
             </p>
             <button
               @click="addToCart(p)"
-              class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-500 text-white rounded-full font-medium hover:from-indigo-600 hover:to-purple-500 transition-all"
+              class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-indigo-500 dark:to-purple-600 
+                     text-white rounded-full font-medium hover:from-indigo-600 hover:to-purple-500 transition-all"
             >
               장바구니 담기
             </button>
@@ -101,7 +104,7 @@
       </div>
     </div>
 
-    <footer class="text-center text-neutral-500 text-sm py-10 border-t border-neutral-200">
+    <footer class="text-center text-neutral-500 dark:text-neutral-400 text-sm py-10 border-t border-neutral-200 dark:border-neutral-700">
       ⓒ 2025 MyShop — Designed with 💙 in Seoul.
     </footer>
   </div>
