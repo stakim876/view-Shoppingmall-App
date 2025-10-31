@@ -5,7 +5,7 @@
       class="relative text-center py-32 overflow-hidden border-b border-neutral-200 dark:border-neutral-700"
     >
       <div
-        class="absolute inset-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-transparent dark:from-indigo-900/40 dark:via-purple-900/30 dark:to-transparent blur-3xl opacity-70"
+        class="absolute inset-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-transparent dark:from-indigo-900/40 dark:via-purple-900/30 dark:to-transparent blur-3xl opacity-70 animate-gradientMotion"
       ></div>
 
       <div class="relative z-10 px-4 flex flex-col items-center justify-center">
@@ -190,5 +190,28 @@ html {
 .animate-fadeInDelayed {
   animation: fadeInDelayed 1s ease-out both;
   animation-delay: 0.4s;
+}
+@keyframes gradientMotion {
+  0% {
+    background-position: 0% 50%;
+    filter: blur(2px);
+    opacity: 0.6;
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: blur(4px);
+    opacity: 0.8;
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: blur(2px);
+    opacity: 0.6;
+  }
+}
+
+.animate-gradientMotion {
+  background-size: 400% 400%;
+  animation: gradientMotion 6s ease-in-out infinite;
+  transition: all 4s ease;
 }
 </style>
