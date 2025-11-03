@@ -1,4 +1,7 @@
 import { defineStore } from "pinia";
+import axios from "axios";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 export const useProductStore = defineStore("productStore", {
   state: () => ({
@@ -8,7 +11,14 @@ export const useProductStore = defineStore("productStore", {
       { id: 3, name: "에어팟 프로", desc: "노이즈 캔슬링 무선 이어폰", price: 350000, image: "/airpods.png", category: "액세서리" },
     ],
     filtered: [],
+    loading: false,
   }),
+
+  getters: {
+    allProducts: (state) => state.products,
+    hasResults: (state) => state.filtered.length > 0,
+  },
+
   actions: {
     searchProducts(keyword) {
       const q = keyword.trim().toLowerCase();
@@ -21,6 +31,18 @@ export const useProductStore = defineStore("productStore", {
           p.name.toLowerCase().includes(q) ||
           p.desc.toLowerCase().includes(q)
       );
+    },
+
+    async fetchProductsFromDB() {
+      this.loading = true;
+      try {
+        const res = await axios.get(`${API}/products`);
+        this.products = res.data;
+      } catch (err) {
+        console.error("❌ 상품 목록 불러오기 실패:", err);
+      } finally {
+        this.loading = false;
+      }
     },
   },
 });

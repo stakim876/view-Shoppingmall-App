@@ -52,6 +52,7 @@
       >
         <input
           v-model="searchQuery"
+          @keyup.enter="$forceUpdate()"
           type="text"
           placeholder="상품명을 입력하세요"
           class="flex-1 bg-transparent text-neutral-800 dark:text-neutral-100 
@@ -196,7 +197,7 @@ const cart = useCartStore();
 const products = ref([]);
 const loading = ref(true);
 const searchQuery = ref("");
-const categories = ["전체", "스마트기기", "노트북", "액세서리"];
+const categories = ["전체", "스마트폰", "노트북", "액세서리", "웨어러블", "태블릿"];
 const selectedCategory = ref("전체");
 
 const filteredProducts = computed(() => {
