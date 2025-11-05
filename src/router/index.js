@@ -11,6 +11,7 @@ import ProductList from "@/components/ProductList.vue";
 import ProductDetail from "@/components/ProductDetail.vue";
 import MyPage from "@/components/MyPage.vue";
 import AdminPage from "@/components/AdminPage.vue";
+
 const routes = [
   { path: "/", redirect: "/home" },
   { path: "/login", component: LoginForm },

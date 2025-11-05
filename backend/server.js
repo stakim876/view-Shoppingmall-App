@@ -1,108 +1,154 @@
 import express from "express";
-import mysql from "mysql2";
+import mysql from "mysql2/promise";
 import cors from "cors";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-const db = mysql.createConnection({
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const db = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "3752",
   database: process.env.DB_NAME || "myshop",
   port: process.env.DB_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-db.connect((err) => {
-  if (err) {
-    console.error("❌ DB 연결 실패:", err);
-  } else {
-    console.log("✅ MySQL 연결 성공");
+console.log("✅ MySQL Connection Pool 생성 완료");
+
+app.get("/api/products", async (req, res) => {
+  try {
+    const [results] = await db.query("SELECT * FROM products ORDER BY id ASC");
+    res.json(results);
+  } catch (err) {
+    console.error("상품 조회 오류:", err);
+    res.status(500).json({ error: "상품 조회 실패" });
   }
 });
 
-app.get("/api/products", (req, res) => {
-  const query = "SELECT * FROM products";
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error("상품 조회 오류:", err);
-      return res.status(500).json({ error: "상품 조회 실패" });
-    }
-    res.json(results);
-  });
-});
-
-app.get("/api/products/:id", (req, res) => {
+app.get("/api/products/:id", async (req, res) => {
   const { id } = req.params;
-  const query = "SELECT * FROM products WHERE id = ?";
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      console.error("상품 상세 조회 오류:", err);
-      return res.status(500).json({ error: "상품 조회 실패" });
-    }
-    if (results.length === 0) {
+  try {
+    const [results] = await db.query("SELECT * FROM products WHERE id = ?", [id]);
+    if (results.length === 0)
       return res.status(404).json({ error: "상품을 찾을 수 없습니다." });
-    }
     res.json(results[0]);
-  });
+  } catch (err) {
+    console.error("상품 상세 조회 오류:", err);
+    res.status(500).json({ error: "상품 조회 실패" });
+  }
 });
 
-app.post("/api/orders", (req, res) => {
+app.post("/api/orders", async (req, res) => {
+  console.log("주문 요청 데이터:", JSON.stringify(req.body, null, 2));
+
   const { userId, items, totalPrice, recipient_name, address, phone } = req.body;
+  const recipient = recipient_name || "이름없음";
+  const addr = address || "주소없음";
+  const tel = phone || "연락처없음";
 
-  db.beginTransaction((err) => {
-    if (err) return res.status(500).json({ error: "트랜잭션 시작 실패" });
+  if (!userId || !items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: "잘못된 주문 데이터입니다." });
+  }
 
-    const orderQuery = `
-      INSERT INTO orders (user_id, recipient_name, address, phone, total_price)
-      VALUES (?, ?, ?, ?, ?)
-    `;
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
 
-    db.query(orderQuery, [userId, recipient_name, address, phone, totalPrice], (err, result) => {
-      if (err) {
-        return db.rollback(() => {
-          console.error("주문 생성 오류:", err);
-          res.status(500).json({ error: "주문 생성 실패" });
-        });
-      }
+    const [orderResult] = await conn.query(
+      `INSERT INTO orders (user_id, recipient_name, address, phone, total_price, created_at)
+       VALUES (?, ?, ?, ?, ?, NOW())`,
+      [userId, recipient, addr, tel, totalPrice]
+    );
+    const orderId = orderResult.insertId;
+    console.log(`🆕 신규 주문 생성 완료 (order_id=${orderId})`);
 
-      const orderId = result.insertId;
-      const itemQuery = `
-        INSERT INTO order_items (order_id, product_id, product_name, quantity, price)
-        VALUES ?
-      `;
+    const values = items.map((item) => [
+      orderId,
+      item.id,
+      item.quantity || 1,
+      Number(item.price),
+    ]);
+    await conn.query(
+      `INSERT INTO order_items (order_id, product_id, quantity, price)
+       VALUES ?`,
+      [values]
+    );
 
-      const values = items.map((item) => [
-        orderId,
-        item.id,
-        item.name,
-        item.quantity,
-        item.price,
-      ]);
+    await conn.commit();
+    console.log("✅ 주문 전체 처리 완료:", orderId);
 
-      db.query(itemQuery, [values], (err2) => {
-        if (err2) {
-          return db.rollback(() => {
-            console.error("주문 상세 저장 오류:", err2);
-            res.status(500).json({ error: "주문 상세 저장 실패" });
-          });
-        }
+    res.setHeader("Content-Type", "application/json");
 
-        db.commit((err3) => {
-          if (err3) {
-            return db.rollback(() => {
-              console.error("커밋 오류:", err3);
-              res.status(500).json({ error: "주문 커밋 실패" });
-            });
-          }
+    res.json({ success: true, orderId });
+  } catch (err) {
+    await conn.rollback();
+    console.error("❌ 주문 처리 중 오류 발생:", err);
+    res.status(500).json({ error: "주문 생성 실패" });
+  } finally {
+    conn.release();
+  }
+});
 
-          res.json({ success: true, orderId });
-        });
-      });
+app.get("/api/orders/detail/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [[order]] = await db.query("SELECT * FROM orders WHERE id = ?", [id]);
+    if (!order)
+      return res
+        .status(404)
+        .json({ success: false, message: "주문을 찾을 수 없습니다." });
+
+    const [items] = await db.query(
+      `SELECT oi.*, p.name AS product_name, p.image_url
+       FROM order_items oi
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE oi.order_id = ?`,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      order: {
+        id: order.id,
+        recipient_name: order.recipient_name,
+        address: order.address,
+        phone: order.phone,
+        total_price: order.total_price,
+        created_at: order.created_at,
+      },
+      items: items.map((i) => ({
+        id: i.id,
+        name: i.product_name,
+        image_url: i.image_url,
+        quantity: i.quantity,
+        price: i.price,
+      })),
     });
-  });
+  } catch (err) {
+    console.error("❌ 주문 상세 조회 실패:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "주문 상세 조회 실패" });
+  }
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다.`);
 });
