@@ -18,6 +18,6 @@ export const useAuthStore = defineStore("auth", {
     },
 
     getters: {
-        isLoggenIn: (state) => !!state.user,
+        isLoggedIn: (state) => !!state.user,
     },
 });

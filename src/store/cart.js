@@ -9,7 +9,12 @@ export const useCartStore = defineStore("cart", () => {
     if (existing) {
       existing.quantity += 1;
     } else {
-      items.value.push({ ...product, quantity: 1 });
+      const cleanPrice = Number(String(product.price).replace(/,/g, "")) || 0;
+      items.value.push({
+        ...product,
+        price: cleanPrice,
+        quantity: 1,
+      });
     }
   };
 
@@ -28,6 +33,11 @@ export const useCartStore = defineStore("cart", () => {
 
   const removeFromCart = (id) => {
     items.value = items.value.filter((i) => i.id !== id);
+  };
+
+  const clearCart = () => {
+    items.value = [];
+    localStorage.removeItem("cartItems");
   };
 
   const totalItems = computed(() =>
@@ -52,6 +62,7 @@ export const useCartStore = defineStore("cart", () => {
     removeFromCart,
     increaseQuantity,
     decreaseQuantity,
+    clearCart, 
     totalItems,
     totalPrice,
   };

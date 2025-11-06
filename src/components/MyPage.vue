@@ -1,41 +1,32 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
 import { Package } from "lucide-vue-next";
 
-const userId = 1;
+const userId = 1; 
 const orders = ref([]);
+const loading = ref(true);
+const error = ref(null);
 
 const fetchOrders = async () => {
   try {
-    const res = await axios.get(`http://localhost:3001/api/orders/${userId}`);
-    orders.value = res.data;
+  const res = await axios.get(`http://localhost:3001/api/orders`, {
+    params: { userId },
+  });
+    if (res.data.success) {
+      orders.value = res.data.orders;
+    } else {
+      error.value = res.data.message;
+    }
   } catch (err) {
     console.error("❌ 주문 내역 불러오기 실패:", err);
+    error.value = "주문 내역을 불러오는 중 오류가 발생했습니다.";
+  } finally {
+    loading.value = false;
   }
 };
 
 onMounted(fetchOrders);
-
-const groupedOrders = computed(() => {
-  const map = {};
-  orders.value.forEach((order) => {
-    if (!map[order.order_id]) {
-      map[order.order_id] = {
-        order_id: order.order_id,
-        created_at: order.created_at,
-        total_price: order.total_price,
-        items: [],
-      };
-    }
-    map[order.order_id].items.push({
-      product_name: order.product_name,
-      quantity: order.quantity,
-      price: order.price,
-    });
-  });
-  return Object.values(map);
-});
 
 const formatDate = (dateStr) => {
   const d = new Date(dateStr);
@@ -71,8 +62,11 @@ const formatDate = (dateStr) => {
         주문 내역
       </h2>
 
+      <div v-if="loading" class="text-center text-gray-500">불러오는 중...</div>
+      <div v-else-if="error" class="text-center text-red-500">{{ error }}</div>
+
       <div
-        v-if="groupedOrders.length === 0"
+        v-else-if="!orders.length"
         class="text-center text-gray-400 mt-20 italic"
       >
         아직 주문 내역이 없습니다.
@@ -80,8 +74,8 @@ const formatDate = (dateStr) => {
 
       <div v-else class="space-y-8">
         <div
-          v-for="(order, index) in groupedOrders"
-          :key="index"
+          v-for="order in orders"
+          :key="order.id"
           class="bg-white/50 dark:bg-white/10 backdrop-blur-md 
                  border border-white/40 rounded-2xl p-6 
                  shadow-[0_8px_32px_rgba(31,38,135,0.15)] 
@@ -96,7 +90,7 @@ const formatDate = (dateStr) => {
                 주문번호:
                 <span
                   class="font-medium text-indigo-600 dark:text-sky-400"
-                  >{{ order.order_id }}</span
+                  >#{{ order.id }}</span
                 >
               </p>
               <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -104,29 +98,28 @@ const formatDate = (dateStr) => {
               </p>
             </div>
             <p class="text-lg font-bold text-indigo-600 dark:text-sky-400">
-              총 {{ order.total_price.toLocaleString() }}원
+              {{ order.total_price.toLocaleString() }}원
             </p>
           </div>
 
-          <div class="divide-y divide-white/40">
-            <div
-              v-for="item in order.items"
-              :key="item.product_name"
-              class="py-3 flex justify-between items-center"
-            >
-              <div>
-                <p class="font-medium text-gray-800 dark:text-gray-100">
-                  {{ item.product_name }}
-                </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  수량: {{ item.quantity }}개
-                </p>
-              </div>
-              <p class="font-semibold text-indigo-600 dark:text-sky-400">
-                {{ (item.price * item.quantity).toLocaleString() }}원
-              </p>
-            </div>
+          <div class="space-y-2">
+            <p class="text-gray-700 dark:text-gray-300">
+              상품: <span class="font-semibold">{{ order.products }}</span>
+            </p>
+            <p class="text-gray-700 dark:text-gray-300">
+              배송지: {{ order.address }}
+            </p>
+            <p class="text-gray-700 dark:text-gray-300">
+              상태: <span class="font-medium text-sky-500">{{ order.status }}</span>
+            </p>
           </div>
+
+          <button
+            @click="$router.push(`/order/${order.id}`)"
+            class="mt-4 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-md"
+          >
+            상세보기
+          </button>
         </div>
       </div>
     </div>

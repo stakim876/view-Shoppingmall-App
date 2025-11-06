@@ -66,7 +66,10 @@
             <th class="p-2 border">주문번호</th>
             <th class="p-2 border">사용자 ID</th>
             <th class="p-2 border">총 금액</th>
+            <th class="p-2 border">상태</th>
+            <th class="p-2 border">상품 목록</th>
             <th class="p-2 border">주문일</th>
+            <th class="p-2 border">상태 변경</th>
           </tr>
         </thead>
         <tbody>
@@ -74,7 +77,17 @@
             <td class="p-2 border">{{ o.id }}</td>
             <td class="p-2 border">{{ o.user_id }}</td>
             <td class="p-2 border">{{ o.total_price.toLocaleString() }}원</td>
+            <td class="p-2 border text-blue-500 font-semibold">{{ o.status }}</td>
+            <td class="p-2 border text-gray-600">{{ o.products }}</td>
             <td class="p-2 border">{{ formatDate(o.created_at) }}</td>
+            <td class="p-2 border">
+              <select v-model="o.status" @change="updateOrderStatus(o.id, o.status)" class="border p-1 rounded">
+                <option value="paid">결제완료</option>
+                <option value="shipped">배송중</option>
+                <option value="completed">배송완료</option>
+                <option value="cancelled">취소됨</option>
+              </select>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -87,7 +100,6 @@ import { ref, onMounted } from "vue";
 import axios from "axios";
 
 const activeTab = ref("products");
-
 const products = ref([]);
 const orders = ref([]);
 
@@ -105,19 +117,30 @@ const fetchProducts = async () => {
 
 const addProduct = async () => {
   await axios.post("http://localhost:3001/api/products/add", newProduct.value);
-  alert("상품이 등록되었습니다.");
+  alert("상품이 등록되었습니다!");
   fetchProducts();
   newProduct.value = { name: "", description: "", price: "", image_url: "" };
 };
 
 const deleteProduct = async (id) => {
   await axios.delete(`http://localhost:3001/api/products/${id}`);
+  alert("상품이 삭제되었습니다!");
   fetchProducts();
 };
 
 const fetchOrders = async () => {
   const res = await axios.get("http://localhost:3001/api/admin/orders");
   orders.value = res.data;
+};
+
+const updateOrderStatus = async (id, status) => {
+  try {
+    await axios.put(`http://localhost:3001/api/admin/orders/${id}/status`, { status });
+    alert("주문 상태가 변경되었습니다!");
+  } catch (err) {
+    console.error("❌ 상태 변경 실패:", err);
+    alert("상태 변경 중 오류가 발생했습니다.");
+  }
 };
 
 const formatDate = (d) => new Date(d).toLocaleString();

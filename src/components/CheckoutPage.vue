@@ -26,7 +26,7 @@ const completeOrder = async () => {
     recipient_name: name.value,
     address: address.value,
     phone: phone.value,
-    totalPrice: Number(totalPrice.value),
+    total_price: Number(totalPrice.value),
     items: cart.items.map((item) => ({
       id: item.id,
       name: item.name,
@@ -36,28 +36,33 @@ const completeOrder = async () => {
   };
 
   try {
+    console.log("📦 주문 요청 데이터:", payload);
+
     const res = await axios.post("http://localhost:3001/api/orders", payload, {
       headers: { "Content-Type": "application/json" },
     });
 
-    const data = typeof res.data === "string" ? JSON.parse(res.data) : res.data;
-    console.log("✅ 주문 응답:", data);
+    console.log("✅ 서버 응답:", res.data);
 
-    if (data && data.success) {
+    if (res.status === 200 && res.data?.success) {
       alert("✅ 결제가 완료되었습니다!");
       cart.clearCart();
 
       router.push({
         path: "/order-complete",
-        query: { orderId: data.orderId },
+        query: { orderId: res.data.orderId },
       });
     } else {
-      console.warn("⚠️ 서버 응답이 예상과 다름:", data);
-      alert(data.message || "❌ 결제 처리 중 문제가 발생했습니다.");
+      console.warn("⚠️ 서버 응답이 예상과 다름:", res.data);
+      alert(res.data?.message || "❌ 결제 처리 중 문제가 발생했습니다.");
     }
   } catch (error) {
-    console.error("결제 오류:", error.response?.data || error.message);
-    alert("서버 오류로 결제를 완료할 수 없습니다.");
+    console.error("❌ 결제 오류:", error.response?.data || error.message);
+    alert(
+      `서버 오류로 결제를 완료할 수 없습니다.\n\n${
+        error.response?.data?.message || error.message
+      }`
+    );
   }
 };
 </script>
