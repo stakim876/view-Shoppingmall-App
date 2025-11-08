@@ -2,17 +2,25 @@
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { Package } from "lucide-vue-next";
+import { useAuthStore } from "../store/auth";
 
-const userId = 1; 
+const auth = useAuthStore();
 const orders = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
 const fetchOrders = async () => {
+  if (!auth.user) {
+    error.value = "로그인 후 이용해주세요.";
+    loading.value = false;
+    return;
+  }
+
   try {
-  const res = await axios.get(`http://localhost:3001/api/orders`, {
-    params: { userId },
-  });
+    const res = await axios.get(`http://localhost:3001/api/orders`, {
+      params: { userId: auth.user.id },
+    });
+
     if (res.data.success) {
       orders.value = res.data.orders;
     } else {
@@ -39,6 +47,7 @@ const formatDate = (dateStr) => {
   });
 };
 </script>
+
 
 <template>
   <div

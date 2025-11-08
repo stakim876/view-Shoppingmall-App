@@ -91,7 +91,7 @@
         v-for="cat in categories"
         :key="cat"
         @click="selectedCategory = cat"
-        :class="[
+        :class="[ 
           'px-6 py-2 rounded-full font-medium border transition-all duration-300 relative overflow-hidden backdrop-blur-2xl group',
           selectedCategory === cat
             ? 'bg-gradient-to-r from-blue-600 to-indigo-500 text-white border-transparent shadow-[0_4px_14px_rgba(0,0,0,0.3)] scale-105'
@@ -185,6 +185,8 @@
     >
       ⓒ 2025 MyShop — Designed with 💜 in Seoul.
     </footer>
+
+    <ChatButton />
   </div>
 </template>
 
@@ -192,6 +194,7 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useCartStore } from "../store/cart";
+import ChatButton from "../components/ChatButton.vue"; 
 
 const cart = useCartStore();
 const products = ref([]);
