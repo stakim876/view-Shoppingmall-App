@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 그라데이션 텍스트(bg-clip-text) 하단 잘림 방지 - JJpackage 제목용 */
+.hero-title,
+.header-brand {
+  padding-bottom: 0.45em !important;
+  line-height: 1.65 !important;
+  display: inline-block;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+

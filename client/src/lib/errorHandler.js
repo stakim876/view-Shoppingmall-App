@@ -1,0 +1,84 @@
+/**
+ * 에러 처리 유틸리티
+ */
+
+/**
+ * API 에러를 사용자 친화적인 메시지로 변환
+ * @param {Error} error - 에러 객체
+ * @returns {string} 사용자 친화적인 에러 메시지
+ */
+export function getErrorMessage(error) {
+  // 네트워크 에러
+  if (!error.response) {
+    if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+      return "요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.";
+    }
+    if (error.message.includes("Network Error")) {
+      return "네트워크 연결을 확인해주세요.";
+    }
+    return "서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.";
+  }
+
+  // HTTP 상태 코드별 메시지
+  const status = error.response.status;
+  const message = error.response.data?.message || error.response.data?.error;
+
+  switch (status) {
+    case 400:
+      return message || "잘못된 요청입니다. 입력 정보를 확인해주세요.";
+    case 401:
+      return "로그인이 필요합니다.";
+    case 403:
+      return "접근 권한이 없습니다.";
+    case 404:
+      return message || "요청한 정보를 찾을 수 없습니다.";
+    case 429:
+      return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
+    case 500:
+      return "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+    case 503:
+      return "서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.";
+    default:
+      return message || `오류가 발생했습니다. (${status})`;
+  }
+}
+
+/**
+ * 에러를 콘솔에 로깅
+ * @param {Error} error - 에러 객체
+ * @param {string} context - 에러가 발생한 컨텍스트
+ */
+export function logError(error, context = "") {
+  const message = getErrorMessage(error);
+  console.error(`❌ ${context ? `[${context}] ` : ""}${message}`, error);
+  return message;
+}
+
+/**
+ * 에러 타입 확인
+ */
+export const ErrorType = {
+  NETWORK: "NETWORK",
+  SERVER: "SERVER",
+  CLIENT: "CLIENT",
+  UNKNOWN: "UNKNOWN",
+};
+
+/**
+ * 에러 타입 반환
+ * @param {Error} error - 에러 객체
+ * @returns {string} 에러 타입
+ */
+export function getErrorType(error) {
+  if (!error.response) {
+    return ErrorType.NETWORK;
+  }
+  const status = error.response.status;
+  if (status >= 500) {
+    return ErrorType.SERVER;
+  }
+  if (status >= 400) {
+    return ErrorType.CLIENT;
+  }
+  return ErrorType.UNKNOWN;
+}
