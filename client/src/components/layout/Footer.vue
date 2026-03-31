@@ -1,4 +1,12 @@
 <template>
+  <LayoutFooter />
+</template>
+
+<script setup>
+import LayoutFooter from "@/app/layout/Footer.vue";
+</script>
+
+<template>
   <footer
     class="text-sm
            bg-gradient-to-b from-[#d3dae4] to-[#c0c8d4]
@@ -10,7 +18,11 @@
         
         <div class="flex-shrink-0 flex flex-col items-start gap-2">
           <router-link to="/home" class="flex items-center hover:opacity-90 transition opacity-95">
-            <img src="/images/e5dc74d2-42c2-41cf-9dba-7eb9114fcbf9.png" alt="Myshop" class="h-16 w-auto sm:h-20 sm:w-auto object-contain" />
+            <img
+              src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
+              alt="Myshop"
+              class="h-16 w-auto sm:h-20 sm:w-auto object-contain drop-shadow-[0_2px_8px_rgba(148,163,184,0.18)]"
+            />
           </router-link>
           <p class="text-neutral-600 dark:text-white/80 text-xs max-w-[200px]">
             {{ slogan }}
@@ -23,20 +35,20 @@
               고객센터
             </h3>
             <ul class="space-y-1.5 text-neutral-700 dark:text-white/90">
-              <li>전화:010-5599-8710 {{ contact.phone }}</li>
+              <li>전화: {{ contact.phone }}</li>
               <li>팩스: {{ contact.fax }}</li>
               <li>
                 <a
                   :href="contact.kakaoUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-indigo-600 dark:text-indigo-300 hover:underline"
+                  class="text-neutral-700 dark:text-neutral-300 hover:underline"
                 >
                   카카오 문의
                 </a>
               </li>
               <li>
-                <router-link to="/order-lookup" class="text-indigo-600 dark:text-indigo-300 hover:underline">
+                <router-link to="/order-lookup" class="text-neutral-700 dark:text-neutral-300 hover:underline">
                   주문/배송 조회
                 </router-link>
               </li>
@@ -82,12 +94,14 @@
 </template>
 
 <script setup>
-const slogan = "세련 된 선택 ";
+import { getKakaoChatUrl } from "../../lib/kakaoChat.js";
+
+const slogan = "세련된 선택";
 
 const contact = {
-  phone: "",
-  fax: "",
-  kakaoUrl: "https://pf.kakao.com/_xXXXXX/chat",
+  phone: "010-5599-8710",
+  fax: "-",
+  kakaoUrl: getKakaoChatUrl(import.meta.env.VITE_KAKAO_CHAT_URL),
   hours: "월~금요일 09:00 - 18:00",
   lunch: "점심시간 12:00 - 13:00",
   holidays: "토·일·공휴일 휴무",

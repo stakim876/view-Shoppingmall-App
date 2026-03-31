@@ -1,5 +1,3 @@
--- 상품 이미지 경로 일괄 수정 (이미지가 안 나올 때 실행)
--- USE myshop; 실행 후 사용하거나, 이미 myshop이 선택된 상태에서 실행하세요.
 
 USE myshop;
 
@@ -13,5 +11,4 @@ UPDATE products SET image_url = '/images/jordan-whitfield-Lprffwrv9cY-unsplash.j
 UPDATE products SET image_url = '/images/sun-lingyan-_H0fjILH5Vw-unsplash.jpg' WHERE name = '미니멀 백팩';
 UPDATE products SET image_url = '/images/istockphoto-2206793808-1024x1024.jpg' WHERE name = '기본 검정 티셔츠';
 
--- 확인용
 SELECT id, name, image_url FROM products;

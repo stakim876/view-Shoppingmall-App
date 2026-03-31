@@ -1,23 +1,195 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import crypto from "crypto";
 import mysql from "mysql2/promise";
 import cors from "cors";
 import dotenv from "dotenv";
-import { getCafe24Client, isCafe24Enabled } from "./lib/cafe24.js";
 import { hashPassword, verifyPassword, generateToken, authenticateToken } from "./lib/auth.js";
+import { validateCoupon } from "./lib/coupon.js";
+import { buildProductListQuery } from "./lib/productQuery.js";
+import { buildLoginAttemptKey, createLoginAttemptStore } from "./lib/loginSecurity.js";
+import { verifyCaptchaToken } from "./lib/captcha.js";
+import { sendPasswordResetEmail, sendRestockAlertEmail } from "./lib/mailer.js";
+import { buildTrackingUrl, getCarrierLabel, isValidCarrierCode, listCarriers } from "./lib/tracking.js";
 
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+function ok(res, payload = {}, message = "OK", status = 200) {
+  return res.status(status).json({ success: true, message, ...payload });
+}
+
+function fail(res, status, code, message, extra = {}) {
+  return res.status(status).json({ success: false, code, message, ...extra });
+}
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function parseOptionalMysqlDatetime(input) {
+  if (input == null || input === "") return null;
+  const s = String(input).trim();
+  if (!s) return null;
+  const normalized = s.includes("T") ? s.replace("T", " ") : s;
+  if (normalized.length === 16 && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(normalized)) {
+    return `${normalized}:00`;
+  }
+  return normalized.slice(0, 19);
+}
+
+async function queryPublicNoticesList(dbConn, limit) {
+  const cap = limit != null && !Number.isNaN(Number(limit)) ? Math.min(100, Math.max(1, Number(limit))) : null;
+  const limitSql = cap ? ` LIMIT ${cap}` : "";
+  const sql = `
+    SELECT id, title, created_at, priority
+    FROM notices
+    WHERE is_active = 1
+      AND (starts_at IS NULL OR starts_at <= NOW())
+      AND (ends_at IS NULL OR ends_at >= NOW())
+    ORDER BY priority DESC, id DESC
+    ${limitSql}`;
+  try {
+    const [rows] = await dbConn.query(sql);
+    return rows;
+  } catch (e) {
+    if (e.code === "ER_NO_SUCH_TABLE") return [];
+    throw e;
+  }
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+async function notifyRestockSubscribers(product) {
+  const productId = Number(product?.id);
+  if (!productId) return;
+  const clientBaseUrl = (process.env.CLIENT_BASE_URL || "http://localhost:5173").replace(/\/$/, "");
+  const productUrl = `${clientBaseUrl}/product/${productId}`;
+
+  let subscriptions = [];
+  try {
+    const [rows] = await db.query(
+      `SELECT id, email
+       FROM restock_subscriptions
+       WHERE product_id = ? AND notified_at IS NULL`,
+      [productId]
+    );
+    subscriptions = rows || [];
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return;
+    }
+    throw err;
+  }
+  if (subscriptions.length === 0) return;
+
+  const notifiedIds = [];
+  for (const sub of subscriptions) {
+    try {
+      const mailResult = await sendRestockAlertEmail({
+        toEmail: sub.email,
+        productName: product.name || "상품",
+        productUrl,
+      });
+      if (mailResult.sent) {
+        notifiedIds.push(Number(sub.id));
+      } else {
+        console.log(`🔔 재입고 알림 메일 미전송(${sub.email}):`, mailResult.reason);
+      }
+    } catch (mailErr) {
+      console.error(`❌ 재입고 알림 메일 발송 실패(${sub.email}):`, mailErr.message);
+    }
+  }
+
+  if (notifiedIds.length > 0) {
+    const placeholders = notifiedIds.map(() => "?").join(", ");
+    await db.query(
+      `UPDATE restock_subscriptions
+       SET notified_at = NOW()
+       WHERE id IN (${placeholders})`,
+      notifiedIds
+    );
+  }
+}
+
+const PRODUCT_CACHE_TTL_MS = Number(process.env.PRODUCT_CACHE_TTL_MS || 60000);
+const responseCache = new Map();
+const loginAttempts = createLoginAttemptStore();
+const resetTokens = new Map();
+const RESET_TOKEN_TTL_MS = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MS || 30 * 60 * 1000);
+
+function cacheKey(prefix, query = {}) {
+  const entries = Object.entries(query).sort(([a], [b]) => a.localeCompare(b));
+  return `${prefix}:${JSON.stringify(entries)}`;
+}
+
+function getCache(key) {
+  const cached = responseCache.get(key);
+  if (!cached) return null;
+  if (Date.now() > cached.expiresAt) {
+    responseCache.delete(key);
+    return null;
+  }
+  return cached.value;
+}
+
+function setCache(key, value) {
+  responseCache.set(key, { value, expiresAt: Date.now() + PRODUCT_CACHE_TTL_MS });
+}
+
+function clearProductCache() {
+  for (const key of responseCache.keys()) {
+    if (key.startsWith("products:") || key.startsWith("categories:")) {
+      responseCache.delete(key);
+    }
+  }
+}
+
+function makeResetToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function hashResetToken(rawToken) {
+  return crypto.createHash("sha256").update(String(rawToken)).digest("hex");
+}
+
+function saveResetToken(userId, rawToken) {
+  const tokenHash = hashResetToken(rawToken);
+  resetTokens.set(tokenHash, {
+    userId,
+    expiresAt: Date.now() + RESET_TOKEN_TTL_MS,
+  });
+}
+
+function consumeResetToken(rawToken) {
+  const tokenHash = hashResetToken(rawToken);
+  const tokenData = resetTokens.get(tokenHash);
+  if (!tokenData) return null;
+  if (Date.now() > tokenData.expiresAt) {
+    resetTokens.delete(tokenHash);
+    return null;
+  }
+  resetTokens.delete(tokenHash);
+  return tokenData;
+}
+
 const clientImages = path.join(__dirname, "../client/public/images");
 app.use("/images", express.static(clientImages));
 
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((s) => s.trim())
+  : (origin, cb) => {
+      if (!origin || /^https?:\/\/localhost(:\d+)?$/.test(origin)) cb(null, origin);
+      else cb(null, false);
+    };
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173"], 
+    origin: corsOrigin,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -30,7 +202,7 @@ app.use(express.urlencoded({ extended: true }));
 const db = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "3752",
+  password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "myshop",
   port: Number(process.env.DB_PORT || 3306),
   waitForConnections: true,
@@ -40,10 +212,49 @@ const db = mysql.createPool({
 
 console.log("✅ MySQL Connection Pool 생성 완료");
 
+async function ensureReviewAndGalleryTables() {
+  try {
+    await db.query(
+      `CREATE TABLE IF NOT EXISTS product_images (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        product_id INT NOT NULL,
+        image_url VARCHAR(500) NOT NULL,
+        sort_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_product_id (product_id),
+        CONSTRAINT fk_product_images_product
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    );
+
+    await db.query(
+      `CREATE TABLE IF NOT EXISTS reviews (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        product_id INT NOT NULL,
+        user_id INT NOT NULL,
+        rating TINYINT NOT NULL COMMENT '1~5',
+        content TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_reviews_product_id (product_id),
+        INDEX idx_reviews_user_id (user_id),
+        CONSTRAINT fk_reviews_product
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        CONSTRAINT fk_reviews_user
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    );
+
+    console.log("✅ 리뷰/갤러리 테이블 점검 완료");
+  } catch (err) {
+    console.warn("⚠️ 리뷰/갤러리 테이블 자동 생성 실패:", err.message);
+  }
+}
+
 (async () => {
   try {
     const [rows] = await db.query("SELECT 1 AS ok");
     console.log("✅ DB 연결 테스트 OK:", rows[0]);
+    await ensureReviewAndGalleryTables();
   } catch (e) {
     console.error("❌ DB 연결 테스트 실패:", e.message);
   }
@@ -57,7 +268,79 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "API 서버 정상" });
 });
 
-// ----- 찜(위시리스트) API - 상단에 등록 -----
+app.get("/api/shipping/carriers", (req, res) => {
+  res.json({ success: true, carriers: listCarriers() });
+});
+
+app.get("/api/notices", async (req, res) => {
+  const limit = req.query.limit != null ? req.query.limit : null;
+  try {
+    const notices = await queryPublicNoticesList(db, limit);
+    return ok(res, { notices });
+  } catch (err) {
+    console.error("공지 목록 오류:", err);
+    return fail(res, 500, "NOTICE_LIST_ERROR", "공지 목록을 불러오지 못했습니다.");
+  }
+});
+
+app.get("/api/notices/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return fail(res, 400, "INVALID_ID", "잘못된 공지 ID입니다.");
+  try {
+    const [rows] = await db.query(
+      `SELECT id, title, body, created_at, priority
+       FROM notices
+       WHERE id = ?
+         AND is_active = 1
+         AND (starts_at IS NULL OR starts_at <= NOW())
+         AND (ends_at IS NULL OR ends_at >= NOW())`,
+      [id]
+    );
+    const notice = rows?.[0];
+    if (!notice) return fail(res, 404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
+    return ok(res, { notice });
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(res, 404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
+    }
+    console.error("공지 상세 오류:", err);
+    return fail(res, 500, "NOTICE_DETAIL_ERROR", "공지를 불러오지 못했습니다.");
+  }
+});
+
+app.post("/api/analytics/auth-events", (req, res) => {
+  const { eventName, meta, createdAt } = req.body || {};
+  if (!eventName) {
+    return fail(res, 400, "INVALID_EVENT", "eventName은 필수입니다.");
+  }
+  console.log("📊 auth-event", {
+    eventName,
+    createdAt: createdAt || new Date().toISOString(),
+    meta: meta || {},
+    ip: req.ip,
+  });
+  return ok(res, {}, "auth event recorded");
+});
+
+app.post("/api/coupons/validate", async (req, res) => {
+  const { code, subtotal } = req.body || {};
+  const subtotalNum = Number(subtotal);
+  if (isNaN(subtotalNum) || subtotalNum < 0) {
+    return res.status(400).json({ valid: false, message: "주문 금액이 올바르지 않습니다." });
+  }
+  const result = await validateCoupon(db, code, subtotalNum); // lib/coupon.js에서 MySQL로 쿠폰 조회
+  if (!result.valid) {
+    return res.status(200).json({ valid: false, message: result.message });
+  }
+  res.json({ // Vue(체크아웃)로 검증 결과·할인액 전달
+    valid: true,
+    message: "쿠폰이 적용되었습니다.",
+    discount: result.discount,
+    finalTotal: result.finalTotal,
+    coupon: result.coupon,
+  });
+});
+
 app.get("/api/wishlist/check", (req, res) => {
   res.json({ ok: true, message: "wishlist API loaded" });
 });
@@ -145,125 +428,63 @@ app.delete("/api/wishlist/:productId", authenticateToken, async (req, res) => {
 
 app.get("/api/categories", async (req, res) => {
   try {
-    if (isCafe24Enabled()) {
-      try {
-        const cafe24 = getCafe24Client();
-        if (cafe24) {
-          const products = await cafe24.getProducts({ limit: 1000 });
-          const transformed = products.map((p) => cafe24.transformProduct(p));
-          const set = new Set();
-          transformed.forEach((p) => {
-            const c = (p.category || "").trim();
-            if (c) set.add(c);
-          });
-          const list = Array.from(set).sort((a, b) => a.localeCompare(b, "ko"));
-          return res.json(list);
-        }
-      } catch (e) {
-        console.warn("⚠️ 카테고리 카페24 조회 실패:", e.message);
-      }
+    const key = cacheKey("categories", {});
+    const cached = getCache(key);
+    if (cached) {
+      return res.json(cached);
     }
     const [rows] = await db.query(
       "SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND TRIM(category) != '' ORDER BY category ASC"
     );
-    res.json(rows.map((r) => r.category));
+    const categories = rows.map((r) => r.category);
+    setCache(key, categories);
+    res.json(categories);
   } catch (err) {
     console.error("❌ 카테고리 조회 오류:", err);
     res.status(500).json({ error: "카테고리 조회 실패", message: err.message });
   }
 });
 
-// 카페24 API 연결 테스트 엔드포인트
-app.get("/api/cafe24/test", async (req, res) => {
-  try {
-    if (!isCafe24Enabled()) {
-      return res.json({
-        enabled: false,
-        message: "카페24가 설정되지 않았습니다. 환경 변수를 확인해주세요.",
-      });
-    }
-
-    const cafe24 = getCafe24Client();
-    if (!cafe24) {
-      return res.json({
-        enabled: false,
-        message: "카페24 클라이언트를 초기화할 수 없습니다.",
-      });
-    }
-
-    const isConnected = await cafe24.testConnection();
-    res.json({
-      enabled: true,
-      connected: isConnected,
-      mallId: process.env.CAFE24_MALL_ID,
-      message: isConnected
-        ? "카페24 API 연결 성공"
-        : "카페24 API 연결 실패 - Access Token을 확인해주세요.",
-    });
-  } catch (error) {
-    res.status(500).json({
-      enabled: true,
-      connected: false,
-      error: error.message,
-    });
-  }
-});
-
 app.get("/api/products", async (req, res) => {
   try {
-    // 카페24가 활성화되어 있으면 카페24에서 가져오기
-    if (isCafe24Enabled()) {
-      try {
-        const cafe24 = getCafe24Client();
-        if (cafe24) {
-          const { limit, offset, category } = req.query;
-          const products = await cafe24.getProducts({
-            limit: limit || 100,
-            offset: offset || 0,
-            category: category,
-          });
-          
-          // 카페24 데이터를 내부 형식으로 변환
-          const transformedProducts = products.map(p => cafe24.transformProduct(p));
-          return res.json(transformedProducts);
-        }
-      } catch (cafe24Error) {
-        console.warn("⚠️ 카페24 상품 조회 실패, MySQL로 폴백:", cafe24Error.message);
-        // 카페24 에러 시 MySQL로 폴백
-      }
+    const key = cacheKey("products", req.query || {});
+    const cached = getCache(key);
+    if (cached) {
+      return res.json(cached);
     }
-    
-    // 카페24가 없거나 실패하면 MySQL에서 가져오기 (기본 동작)
-    const [results] = await db.query("SELECT * FROM products ORDER BY id ASC");
-    res.json(results);
+
+    const query = buildProductListQuery(req.query);
+    const [results] = await db.query(query.listSql, query.listParams);
+    const [countRows] = await db.query(query.countSql, query.countParams);
+    const total = Number(countRows?.[0]?.total || 0);
+    const totalPages = Math.max(1, Math.ceil(total / query.limit));
+
+    if (req.query.withMeta !== "1") {
+      setCache(key, results);
+      return res.json(results);
+    }
+
+    const payload = {
+      items: results,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages,
+      },
+    };
+    setCache(key, { success: true, message: "상품 목록 조회 성공", ...payload });
+    return ok(res, payload, "상품 목록 조회 성공");
   } catch (err) {
     console.error("❌ 상품 조회 오류:", err);
-    res.status(500).json({ error: "상품 조회 실패", message: err.message });
+    return fail(res, 500, "PRODUCT_LIST_ERROR", "상품 조회 실패");
   }
 });
 
 app.get("/api/products/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    // 카페24가 활성화되어 있으면 카페24에서 가져오기
-    if (isCafe24Enabled()) {
-      try {
-        const cafe24 = getCafe24Client();
-        if (cafe24) {
-          const product = await cafe24.getProduct(id);
-          if (!product) {
-            return res.status(404).json({ error: "상품을 찾을 수 없습니다." });
-          }
-          return res.json(cafe24.transformProduct(product));
-        }
-      } catch (cafe24Error) {
-        console.warn("⚠️ 카페24 상품 상세 조회 실패, MySQL로 폴백:", cafe24Error.message);
-        // 카페24 에러 시 MySQL로 폴백
-      }
-    }
-    
-    // MySQL: 상품 + 갤러리 이미지
-    const [results] = await db.query("SELECT * FROM products WHERE id = ?", [id]);
+    const [results] = await db.query("SELECT * FROM products WHERE id = ?", [id]); // MySQL에서 상품 1건 조회
     if (results.length === 0) {
       return res.status(404).json({ error: "상품을 찾을 수 없습니다." });
     }
@@ -277,10 +498,54 @@ app.get("/api/products/:id", async (req, res) => {
     } catch (_) {
       product.images = [product.image_url];
     }
-    res.json(product);
+    res.json(product); // 조회한 상품 데이터를 Vue로 전달
   } catch (err) {
     console.error("❌ 상품 상세 조회 오류:", err);
     res.status(500).json({ error: "상품 조회 실패", message: err.message });
+  }
+});
+
+app.post("/api/products/:id/restock-subscriptions", async (req, res) => {
+  const productId = Number(req.params.id);
+  const email = normalizeEmail(req.body?.email);
+
+  if (!productId) {
+    return fail(res, 400, "INVALID_PRODUCT_ID", "잘못된 상품 ID입니다.");
+  }
+  if (!email || !isValidEmail(email)) {
+    return fail(res, 400, "INVALID_EMAIL", "올바른 이메일 형식이 아닙니다.");
+  }
+
+  try {
+    const [products] = await db.query("SELECT id, stock FROM products WHERE id = ?", [productId]);
+    const product = products?.[0];
+    if (!product) {
+      return fail(res, 404, "PRODUCT_NOT_FOUND", "상품을 찾을 수 없습니다.");
+    }
+    if (Number(product.stock || 0) > 0) {
+      return fail(res, 400, "ALREADY_IN_STOCK", "이미 구매 가능한 상품입니다.");
+    }
+
+    await db.query(
+      `INSERT INTO restock_subscriptions (product_id, email, created_at)
+       VALUES (?, ?, NOW())
+       ON DUPLICATE KEY UPDATE
+         notified_at = NULL,
+         created_at = NOW()`,
+      [productId, email]
+    );
+    return ok(res, {}, "재입고 알림이 신청되었습니다.");
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(
+        res,
+        503,
+        "SCHEMA_MISSING",
+        "restock_subscriptions 테이블이 없습니다. backend/database/restock_subscriptions.sql 을 실행하세요."
+      );
+    }
+    console.error("❌ 재입고 알림 신청 오류:", err);
+    return fail(res, 500, "RESTOCK_SUBSCRIBE_ERROR", "재입고 알림 신청에 실패했습니다.");
   }
 });
 
@@ -303,6 +568,7 @@ app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) 
         stock != null && stock !== "" ? Number(stock) : 0,
       ]
     );
+    clearProductCache();
     res.json({ success: true, message: "상품이 등록되었습니다." });
   } catch (err) {
     console.error("❌ 상품 등록 오류:", err);
@@ -317,6 +583,13 @@ app.put("/api/products/:id", authenticateToken, requireAdmin, async (req, res) =
     return res.status(400).json({ success: false, message: "상품 ID가 필요합니다." });
   }
   try {
+    const [beforeRows] = await db.query("SELECT id, name, stock FROM products WHERE id = ?", [id]);
+    const beforeProduct = beforeRows?.[0];
+    if (!beforeProduct) {
+      return res.status(404).json({ success: false, message: "상품을 찾을 수 없습니다." });
+    }
+    const previousStock = Number(beforeProduct.stock || 0);
+
     const [result] = await db.query(
       `UPDATE products SET 
         name = COALESCE(?, name), description = COALESCE(?, description), price = COALESCE(?, price),
@@ -324,9 +597,14 @@ app.put("/api/products/:id", authenticateToken, requireAdmin, async (req, res) =
       WHERE id = ?`,
       [name, description, price != null ? Number(price) : null, image_url, category || null, stock != null ? Number(stock) : null, id]
     );
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: "상품을 찾을 수 없습니다." });
+    const nextStock = stock != null ? Number(stock) : previousStock;
+    if (previousStock <= 0 && nextStock > 0) {
+      await notifyRestockSubscribers({
+        id,
+        name: name || beforeProduct.name || "상품",
+      });
     }
+    clearProductCache();
     res.json({ success: true, message: "상품이 수정되었습니다." });
   } catch (err) {
     console.error("❌ 상품 수정 오류:", err);
@@ -390,6 +668,7 @@ app.delete("/api/products/:id", authenticateToken, requireAdmin, async (req, res
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: "상품을 찾을 수 없습니다." });
     }
+    clearProductCache();
     res.json({ success: true, message: "상품이 삭제되었습니다." });
   } catch (err) {
     console.error("❌ 상품 삭제 오류:", err);
@@ -397,10 +676,11 @@ app.delete("/api/products/:id", authenticateToken, requireAdmin, async (req, res
   }
 });
 
-app.post("/api/orders", async (req, res) => {
+app.post("/api/orders", authenticateToken, async (req, res) => {
   console.log("📦 주문 요청 데이터:", JSON.stringify(req.body, null, 2));
 
-  const { userId, items, total_price, recipient_name, address, phone, imp_uid, merchant_uid } = req.body;
+  const { items, total_price, recipient_name, address, phone, imp_uid, merchant_uid, coupon_code } = req.body;
+  const userId = req.user?.id;
 
   const recipient = recipient_name || "이름없음";
   const addr = address || "주소없음";
@@ -409,11 +689,40 @@ app.post("/api/orders", async (req, res) => {
   if (!userId || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ success: false, message: "잘못된 주문 데이터입니다." });
   }
+  if (!recipient_name || !address || !phone) {
+    return fail(res, 400, "INVALID_SHIPPING_INFO", "배송 정보(이름/주소/연락처)는 필수입니다.");
+  }
+  if (!items.every((it) => Number(it.id) > 0 && Number(it.price) >= 0 && Number(it.quantity || 1) > 0)) {
+    return fail(res, 400, "INVALID_ORDER_ITEMS", "주문 상품 데이터가 올바르지 않습니다.");
+  }
+
+  const subtotal = items.reduce((sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
+  let finalTotal = subtotal;
+  let couponId = null;
+  let discountAmount = 0;
+
+  if (coupon_code && String(coupon_code).trim()) {
+    const couponResult = await validateCoupon(db, coupon_code, subtotal);
+    if (!couponResult.valid) {
+      return res.status(400).json({ success: false, message: couponResult.message || "쿠폰 적용에 실패했습니다." });
+    }
+    finalTotal = couponResult.finalTotal;
+    discountAmount = couponResult.discount;
+    couponId = couponResult.coupon?.id ?? null;
+  }
 
   if (total_price == null || isNaN(Number(total_price))) {
     return res.status(400).json({
       success: false,
       message: "❌ Invalid or missing total_price value",
+    });
+  }
+
+  const requestedTotal = Number(total_price);
+  if (Math.abs(requestedTotal - finalTotal) > 1) {
+    return res.status(400).json({
+      success: false,
+      message: "결제 금액이 일치하지 않습니다. 쿠폰 적용 상태를 확인한 뒤 다시 시도해주세요.",
     });
   }
 
@@ -426,22 +735,28 @@ app.post("/api/orders", async (req, res) => {
       console.log(`✅ 결제 검증: imp_uid=${imp_uid}, merchant_uid=${merchant_uid}`);
     }
 
-    // orders 테이블에 imp_uid, merchant_uid 컬럼이 있는지 확인하고 동적으로 쿼리 생성
     let orderColumns = "user_id, recipient_name, address, phone, total_price, status, created_at";
     let orderValues = "?, ?, ?, ?, ?, ?, NOW()";
-    let orderParams = [userId, recipient, addr, tel, Number(total_price), "paid"];
-    
-    // imp_uid와 merchant_uid가 있으면 추가
+    let orderParams = [userId, recipient, addr, tel, finalTotal, "paid"];
+
+    if (couponId != null || discountAmount > 0) {
+      try {
+        await conn.query("SELECT coupon_id, discount_amount FROM orders LIMIT 1");
+        orderColumns += ", coupon_id, discount_amount";
+        orderValues += ", ?, ?";
+        orderParams.push(couponId, discountAmount);
+      } catch (colError) {
+        console.warn("⚠️ orders에 coupon_id/discount_amount 컬럼이 없습니다. coupons.sql 실행 후 사용하세요.");
+      }
+    }
+
     if (imp_uid || merchant_uid) {
       try {
-        // 컬럼 존재 여부 확인을 위해 먼저 테스트 쿼리 실행
         await conn.query("SELECT imp_uid, merchant_uid FROM orders LIMIT 1");
-        // 컬럼이 존재하면 추가
         orderColumns += ", imp_uid, merchant_uid";
         orderValues += ", ?, ?";
         orderParams.push(imp_uid || null, merchant_uid || null);
       } catch (colError) {
-        // 컬럼이 없으면 무시하고 기본 컬럼만 사용
         console.warn("⚠️ imp_uid, merchant_uid 컬럼이 없습니다. 기본 컬럼만 사용합니다.");
       }
     }
@@ -452,6 +767,10 @@ app.post("/api/orders", async (req, res) => {
     );
 
     const orderId = orderResult.insertId;
+    if (couponId != null) {
+      await conn.query("UPDATE coupons SET used_count = used_count + 1 WHERE id = ?", [couponId]);
+    }
+
     console.log(`🆕 신규 주문 생성 완료 (order_id=${orderId})`);
 
     const placeholders = items.map(() => "(?, ?, ?, ?)").join(", ");
@@ -489,46 +808,67 @@ app.get("/api/orders", authenticateToken, async (req, res) => {
     return res.status(400).json({ success: false, message: "userId가 필요합니다." });
   }
 
-  // 본인의 주문만 조회 가능하도록 체크
   if (req.user && req.user.id !== Number(requestUserId)) {
     return res.status(403).json({ success: false, message: "권한이 없습니다." });
   }
 
-  try {
-    const [orders] = await db.query(
-      `SELECT 
-          o.id, 
-          o.recipient_name, 
-          o.address, 
-          o.total_price, 
-          o.status, 
-          o.created_at,
+  const listSqlWithTracking = `SELECT 
+          o.id, o.recipient_name, o.address, o.total_price, o.status, o.created_at,
+          o.carrier_code, o.tracking_number,
+          GROUP_CONCAT(p.name SEPARATOR ', ') AS products
+       FROM orders o
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE o.user_id = ?
+       GROUP BY o.id, o.recipient_name, o.address, o.total_price, o.status, o.created_at, o.carrier_code, o.tracking_number
+       ORDER BY o.created_at DESC`;
+  const listSqlLegacy = `SELECT 
+          o.id, o.recipient_name, o.address, o.total_price, o.status, o.created_at,
           GROUP_CONCAT(p.name SEPARATOR ', ') AS products
        FROM orders o
        LEFT JOIN order_items oi ON o.id = oi.order_id
        LEFT JOIN products p ON oi.product_id = p.id
        WHERE o.user_id = ?
        GROUP BY o.id, o.recipient_name, o.address, o.total_price, o.status, o.created_at
-       ORDER BY o.created_at DESC`,
-      [requestUserId]
-    );
+       ORDER BY o.created_at DESC`;
 
-    res.json({ success: true, orders });
+  try {
+    let orders;
+    try {
+      [orders] = await db.query(listSqlWithTracking, [requestUserId]);
+    } catch (e) {
+      if (e.code === "ER_BAD_FIELD_ERROR") {
+        [orders] = await db.query(listSqlLegacy, [requestUserId]);
+      } else {
+        throw e;
+      }
+    }
+    const enriched = orders.map((o) => ({
+      ...o,
+      carrier_label: o.carrier_code ? getCarrierLabel(o.carrier_code) : null,
+      tracking_url: buildTrackingUrl(o.carrier_code, o.tracking_number),
+    }));
+    res.json({ success: true, orders: enriched });
   } catch (err) {
     console.error("❌ 주문 내역 조회 오류:", err);
     res.status(500).json({ success: false, message: "주문 내역 조회 실패" });
   }
 });
 
-app.get("/api/orders/detail/:id", async (req, res) => {
+app.get("/api/orders/detail/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
     const [orderRows] = await db.query("SELECT * FROM orders WHERE id = ?", [id]);
     const order = orderRows?.[0];
-
     if (!order) {
       return res.status(404).json({ success: false, message: "주문을 찾을 수 없습니다." });
+    }
+
+    const isOwner = Number(order.user_id) === Number(req.user?.id);
+    const isAdmin = req.user?.role === "admin";
+    if (!isOwner && !isAdmin) {
+      return fail(res, 403, "FORBIDDEN", "주문 상세 조회 권한이 없습니다.");
     }
 
     const [items] = await db.query(
@@ -538,6 +878,10 @@ app.get("/api/orders/detail/:id", async (req, res) => {
        WHERE oi.order_id = ?`,
       [id]
     );
+
+    const carrierCode = order.carrier_code || null;
+    const trackingNo = order.tracking_number || null;
+    const trackingUrl = buildTrackingUrl(carrierCode, trackingNo);
 
     res.json({
       success: true,
@@ -549,6 +893,10 @@ app.get("/api/orders/detail/:id", async (req, res) => {
         total_price: order.total_price,
         created_at: order.created_at,
         status: order.status,
+        carrier_code: carrierCode,
+        carrier_label: carrierCode ? getCarrierLabel(carrierCode) : null,
+        tracking_number: trackingNo,
+        tracking_url: trackingUrl,
       },
       items: items.map((i) => ({
         id: i.id,
@@ -564,7 +912,6 @@ app.get("/api/orders/detail/:id", async (req, res) => {
   }
 });
 
-// 관리자 전용 미들웨어 (role === 'admin' 체크)
 function requireAdmin(req, res, next) {
   if (req.user?.role !== "admin") {
     return res.status(403).json({ success: false, message: "관리자 권한이 필요합니다." });
@@ -573,8 +920,24 @@ function requireAdmin(req, res, next) {
 }
 
 app.get("/api/admin/orders", authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const [orders] = await db.query(`
+  const sqlWithTracking = `
+      SELECT 
+        o.id,
+        o.user_id,
+        o.recipient_name,
+        o.address,
+        o.total_price,
+        o.status,
+        o.created_at,
+        o.carrier_code,
+        o.tracking_number,
+        GROUP_CONCAT(p.name SEPARATOR ', ') AS products
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      LEFT JOIN products p ON oi.product_id = p.id
+      GROUP BY o.id, o.user_id, o.recipient_name, o.address, o.total_price, o.status, o.created_at, o.carrier_code, o.tracking_number
+      ORDER BY o.created_at DESC`;
+  const sqlLegacy = `
       SELECT 
         o.id,
         o.user_id,
@@ -588,9 +951,19 @@ app.get("/api/admin/orders", authenticateToken, requireAdmin, async (req, res) =
       LEFT JOIN order_items oi ON o.id = oi.order_id
       LEFT JOIN products p ON oi.product_id = p.id
       GROUP BY o.id, o.user_id, o.recipient_name, o.address, o.total_price, o.status, o.created_at
-      ORDER BY o.created_at DESC
-    `);
+      ORDER BY o.created_at DESC`;
 
+  try {
+    let orders;
+    try {
+      [orders] = await db.query(sqlWithTracking);
+    } catch (e) {
+      if (e.code === "ER_BAD_FIELD_ERROR") {
+        [orders] = await db.query(sqlLegacy);
+      } else {
+        throw e;
+      }
+    }
     res.json(orders);
   } catch (err) {
     console.error("❌ 관리자 주문 조회 오류:", err);
@@ -598,12 +971,36 @@ app.get("/api/admin/orders", authenticateToken, requireAdmin, async (req, res) =
   }
 });
 
+app.get("/api/admin/restock-subscriptions/counts", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT product_id, COUNT(*) AS pending_count
+       FROM restock_subscriptions
+       WHERE notified_at IS NULL
+       GROUP BY product_id`
+    );
+    return ok(res, { counts: rows });
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(
+        res,
+        503,
+        "SCHEMA_MISSING",
+        "restock_subscriptions 테이블이 없습니다. backend/database/restock_subscriptions.sql 을 실행하세요."
+      );
+    }
+    console.error("❌ 재입고 알림 신청자 수 조회 오류:", err);
+    return fail(res, 500, "RESTOCK_COUNT_ERROR", "재입고 신청자 수를 불러오지 못했습니다.");
+  }
+});
+
 app.put("/api/admin/orders/:id/status", authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+  const allowedStatus = new Set(["paid", "preparing", "shipping", "done", "cancelled"]);
 
-  if (!status) {
-    return res.status(400).json({ success: false, message: "status 값이 필요합니다." });
+  if (!status || !allowedStatus.has(String(status))) {
+    return fail(res, 400, "INVALID_STATUS", "유효하지 않은 주문 상태입니다.");
   }
 
   try {
@@ -615,45 +1012,183 @@ app.put("/api/admin/orders/:id/status", authenticateToken, requireAdmin, async (
   }
 });
 
-// ============================================
-// 인증 관련 라우트
-// ============================================
+app.put("/api/admin/orders/:id/tracking", authenticateToken, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const { carrier_code, tracking_number } = req.body || {};
+  if (!id) {
+    return fail(res, 400, "INVALID_ID", "주문 ID가 필요합니다.");
+  }
 
-// 회원가입
+  const no = String(tracking_number ?? "").trim();
+  const code = String(carrier_code ?? "").trim();
+
+  try {
+    if (!no) {
+      await db.query("UPDATE orders SET carrier_code = NULL, tracking_number = NULL WHERE id = ?", [id]);
+      return ok(res, {}, "배송 추적 정보가 삭제되었습니다.");
+    }
+    if (!isValidCarrierCode(code)) {
+      return fail(res, 400, "INVALID_CARRIER", "지원하지 않는 택배사입니다. /api/shipping/carriers 목록을 확인하세요.");
+    }
+    await db.query("UPDATE orders SET carrier_code = ?, tracking_number = ? WHERE id = ?", [code, no, id]);
+    const url = buildTrackingUrl(code, no);
+    return ok(res, { tracking_url: url }, "송장이 등록되었습니다.");
+  } catch (err) {
+    if (err.code === "ER_BAD_FIELD_ERROR") {
+      return fail(
+        res,
+        503,
+        "SCHEMA_MISSING",
+        "orders 테이블에 carrier_code, tracking_number 컬럼이 없습니다. backend/database/order_tracking.sql 을 실행하세요."
+      );
+    }
+    console.error("❌ 송장 등록 오류:", err);
+    return fail(res, 500, "TRACKING_UPDATE_ERROR", "송장 정보 저장에 실패했습니다.");
+  }
+});
+
+app.get("/api/admin/notices", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT id, title, body, is_active, priority, starts_at, ends_at, created_at, updated_at
+       FROM notices ORDER BY id DESC`
+    );
+    return ok(res, { notices: rows });
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(
+        res,
+        503,
+        "SCHEMA_MISSING",
+        "notices 테이블이 없습니다. backend/database/notices.sql 을 실행하세요."
+      );
+    }
+    console.error("관리자 공지 목록 오류:", err);
+    return fail(res, 500, "ADMIN_NOTICES_ERROR", "공지 목록을 불러오지 못했습니다.");
+  }
+});
+
+app.post("/api/admin/notices", authenticateToken, requireAdmin, async (req, res) => {
+  const title = String(req.body?.title || "").trim();
+  const bodyText = String(req.body?.body || "").trim();
+  if (!title || !bodyText) {
+    return fail(res, 400, "INVALID_INPUT", "제목과 내용은 필수입니다.");
+  }
+  const is_active = req.body?.is_active === false || req.body?.is_active === 0 ? 0 : 1;
+  const priority = Number(req.body?.priority);
+  const pr = Number.isFinite(priority) ? Math.round(priority) : 0;
+  const starts_at = parseOptionalMysqlDatetime(req.body?.starts_at);
+  const ends_at = parseOptionalMysqlDatetime(req.body?.ends_at);
+
+  try {
+    const [result] = await db.query(
+      `INSERT INTO notices (title, body, is_active, priority, starts_at, ends_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [title, bodyText, is_active, pr, starts_at, ends_at]
+    );
+    return ok(res, { id: result.insertId }, "공지가 등록되었습니다.");
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(
+        res,
+        503,
+        "SCHEMA_MISSING",
+        "notices 테이블이 없습니다. backend/database/notices.sql 을 실행하세요."
+      );
+    }
+    console.error("공지 등록 오류:", err);
+    return fail(res, 500, "NOTICE_CREATE_ERROR", "공지 등록에 실패했습니다.");
+  }
+});
+
+app.put("/api/admin/notices/:id", authenticateToken, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return fail(res, 400, "INVALID_ID", "잘못된 공지 ID입니다.");
+  const title = String(req.body?.title || "").trim();
+  const bodyText = String(req.body?.body || "").trim();
+  if (!title || !bodyText) {
+    return fail(res, 400, "INVALID_INPUT", "제목과 내용은 필수입니다.");
+  }
+  const is_active = req.body?.is_active === false || req.body?.is_active === 0 ? 0 : 1;
+  const priority = Number(req.body?.priority);
+  const pr = Number.isFinite(priority) ? Math.round(priority) : 0;
+  const starts_at = parseOptionalMysqlDatetime(req.body?.starts_at);
+  const ends_at = parseOptionalMysqlDatetime(req.body?.ends_at);
+
+  try {
+    const [r] = await db.query(
+      `UPDATE notices SET title = ?, body = ?, is_active = ?, priority = ?, starts_at = ?, ends_at = ?
+       WHERE id = ?`,
+      [title, bodyText, is_active, pr, starts_at, ends_at, id]
+    );
+    if (!r.affectedRows) return fail(res, 404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
+    return ok(res, {}, "공지가 수정되었습니다.");
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(
+        res,
+        503,
+        "SCHEMA_MISSING",
+        "notices 테이블이 없습니다. backend/database/notices.sql 을 실행하세요."
+      );
+    }
+    console.error("공지 수정 오류:", err);
+    return fail(res, 500, "NOTICE_UPDATE_ERROR", "공지 수정에 실패했습니다.");
+  }
+});
+
+app.delete("/api/admin/notices/:id", authenticateToken, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return fail(res, 400, "INVALID_ID", "잘못된 공지 ID입니다.");
+  try {
+    const [r] = await db.query("DELETE FROM notices WHERE id = ?", [id]);
+    if (!r.affectedRows) return fail(res, 404, "NOT_FOUND", "공지를 찾을 수 없습니다.");
+    return ok(res, {}, "공지가 삭제되었습니다.");
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(
+        res,
+        503,
+        "SCHEMA_MISSING",
+        "notices 테이블이 없습니다. backend/database/notices.sql 을 실행하세요."
+      );
+    }
+    console.error("공지 삭제 오류:", err);
+    return fail(res, 500, "NOTICE_DELETE_ERROR", "공지 삭제에 실패했습니다.");
+  }
+});
+
 app.post("/api/auth/signup", async (req, res) => {
-  const { email, password, name, gender } = req.body;
+  const { password, name, gender } = req.body;
+  const email = normalizeEmail(req.body?.email);
 
   if (!email || !password || !name) {
-    return res.status(400).json({
-      success: false,
-      message: "이메일, 비밀번호, 이름은 필수입니다.",
-    });
+    return fail(res, 400, "INVALID_INPUT", "이메일, 비밀번호, 이름은 필수입니다.");
+  }
+  if (!isValidEmail(email)) {
+    return fail(res, 400, "INVALID_EMAIL", "올바른 이메일 형식이 아닙니다.");
+  }
+  if (String(password).length < 8) {
+    return fail(res, 400, "WEAK_PASSWORD", "비밀번호는 8자 이상이어야 합니다.");
   }
 
   try {
-    // 이메일 중복 확인
     const [existingUsers] = await db.query(
       "SELECT id FROM users WHERE email = ?",
       [email]
     );
 
     if (existingUsers.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "이미 등록된 이메일입니다.",
-      });
+      return fail(res, 400, "EMAIL_EXISTS", "이미 등록된 이메일입니다.");
     }
 
-    // 비밀번호 해시
     const hashedPassword = await hashPassword(password);
 
-    // 사용자 생성
     const [result] = await db.query(
       "INSERT INTO users (email, password, name, gender, created_at) VALUES (?, ?, ?, ?, NOW())",
       [email, hashedPassword, name, gender || null]
     );
 
-    // JWT 토큰 생성
     const token = generateToken({
       id: result.insertId,
       email: email,
@@ -673,38 +1208,32 @@ app.post("/api/auth/signup", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ 회원가입 오류:", err);
-    res.status(500).json({
-      success: false,
-      message: "회원가입 중 오류가 발생했습니다.",
-    });
+    return fail(res, 500, "SIGNUP_ERROR", "회원가입 중 오류가 발생했습니다.");
   }
 });
 
-// 관리자 회원가입 (초대 코드 필요)
 const ADMIN_INVITE_CODE = process.env.ADMIN_INVITE_CODE || "admin2025";
 app.post("/api/auth/signup-admin", async (req, res) => {
-  const { email, password, name, inviteCode } = req.body;
+  const { password, name, inviteCode } = req.body;
+  const email = normalizeEmail(req.body?.email);
 
   if (!email || !password || !name) {
-    return res.status(400).json({
-      success: false,
-      message: "이메일, 비밀번호, 이름은 필수입니다.",
-    });
+    return fail(res, 400, "INVALID_INPUT", "이메일, 비밀번호, 이름은 필수입니다.");
+  }
+  if (!isValidEmail(email)) {
+    return fail(res, 400, "INVALID_EMAIL", "올바른 이메일 형식이 아닙니다.");
+  }
+  if (String(password).length < 8) {
+    return fail(res, 400, "WEAK_PASSWORD", "비밀번호는 8자 이상이어야 합니다.");
   }
   if (!inviteCode || inviteCode !== ADMIN_INVITE_CODE) {
-    return res.status(403).json({
-      success: false,
-      message: "관리자 초대 코드가 올바르지 않습니다.",
-    });
+    return fail(res, 403, "INVALID_INVITE_CODE", "관리자 초대 코드가 올바르지 않습니다.");
   }
 
   try {
     const [existingUsers] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
     if (existingUsers.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "이미 등록된 이메일입니다.",
-      });
+      return fail(res, 400, "EMAIL_EXISTS", "이미 등록된 이메일입니다.");
     }
 
     const hashedPassword = await hashPassword(password);
@@ -733,52 +1262,64 @@ app.post("/api/auth/signup-admin", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ 관리자 회원가입 오류:", err);
-    res.status(500).json({
-      success: false,
-      message: "회원가입 중 오류가 발생했습니다.",
-    });
+    return fail(res, 500, "ADMIN_SIGNUP_ERROR", "회원가입 중 오류가 발생했습니다.");
   }
 });
 
-// 로그인
 app.post("/api/auth/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { password, captchaToken } = req.body || {};
+  const email = normalizeEmail(req.body?.email);
+  const attemptKey = buildLoginAttemptKey(email, req.ip);
 
   if (!email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "이메일과 비밀번호를 입력해주세요.",
+    return fail(res, 400, "INVALID_INPUT", "이메일과 비밀번호를 입력해주세요.");
+  }
+  if (loginAttempts.isLocked(attemptKey)) {
+    const retryAfterMs = loginAttempts.remainingLockMs(attemptKey);
+    return fail(res, 429, "TOO_MANY_ATTEMPTS", "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.", {
+      retryAfterMs,
+      requiresCaptcha: true,
     });
+  }
+  if (loginAttempts.shouldRequireCaptcha(attemptKey)) {
+    const captchaResult = await verifyCaptchaToken(captchaToken, req.ip);
+    if (!captchaResult.success) {
+      return fail(res, 400, "CAPTCHA_REQUIRED", "보안 인증 확인 후 다시 시도해주세요.", {
+        requiresCaptcha: true,
+        captchaProvider: captchaResult.provider,
+      });
+    }
   }
 
   try {
-    // 사용자 조회
-    const [users] = await db.query("SELECT * FROM users WHERE email = ?", [
+    const [users] = await db.query("SELECT * FROM users WHERE email = ?", [ // MySQL에서 유저 조회
       email,
     ]);
 
     if (users.length === 0) {
+      const state = loginAttempts.registerFailure(attemptKey);
       return res.status(401).json({
         success: false,
         message: "이메일 또는 비밀번호가 올바르지 않습니다.",
+        requiresCaptcha: loginAttempts.shouldRequireCaptcha(attemptKey) || state.count >= 3,
       });
     }
 
     const user = users[0];
 
-    // 비밀번호 검증
     const isValidPassword = await verifyPassword(password, user.password);
     if (!isValidPassword) {
+      const state = loginAttempts.registerFailure(attemptKey);
       return res.status(401).json({
         success: false,
         message: "이메일 또는 비밀번호가 올바르지 않습니다.",
+        requiresCaptcha: loginAttempts.shouldRequireCaptcha(attemptKey) || state.count >= 3,
       });
     }
+    loginAttempts.clear(attemptKey);
 
-    // role 없으면 'user' (기존 DB 호환)
     const role = user.role || "user";
 
-    // JWT 토큰 생성 (role 포함)
     const token = generateToken({
       id: user.id,
       email: user.email,
@@ -786,7 +1327,7 @@ app.post("/api/auth/login", async (req, res) => {
       role,
     });
 
-    res.json({
+    res.json({ // Vue에 토큰·유저 정보 전달
       success: true,
       message: "로그인 성공",
       token: token,
@@ -800,14 +1341,70 @@ app.post("/api/auth/login", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ 로그인 오류:", err);
-    res.status(500).json({
-      success: false,
-      message: "로그인 중 오류가 발생했습니다.",
-    });
+    return fail(res, 500, "LOGIN_ERROR", "로그인 중 오류가 발생했습니다.");
   }
 });
 
-// 현재 사용자 정보 조회 (보호된 라우트)
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  if (!email || !isValidEmail(email)) {
+    return fail(res, 400, "INVALID_EMAIL", "올바른 이메일 형식이 아닙니다.");
+  }
+
+  try {
+    const [users] = await db.query("SELECT id, email FROM users WHERE email = ?", [email]);
+    if (users.length > 0) {
+      const user = users[0];
+      const rawToken = makeResetToken();
+      saveResetToken(user.id, rawToken);
+      const clientBaseUrl = (process.env.CLIENT_BASE_URL || "http://localhost:5173").replace(/\/$/, "");
+      const resetUrl = `${clientBaseUrl}/reset-password?token=${rawToken}`;
+      const mailResult = await sendPasswordResetEmail({
+        toEmail: user.email,
+        resetUrl,
+      });
+      if (!mailResult.sent) {
+        console.log(`🔐 비밀번호 재설정 링크 (${user.email}): ${resetUrl}`);
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: "입력한 이메일로 비밀번호 재설정 안내를 전송했습니다.",
+    });
+  } catch (err) {
+    console.error("❌ 비밀번호 재설정 요청 오류:", err);
+    return fail(res, 500, "FORGOT_PASSWORD_ERROR", "비밀번호 재설정 요청 처리 중 오류가 발생했습니다.");
+  }
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body || {};
+  if (!token || !newPassword) {
+    return fail(res, 400, "INVALID_INPUT", "토큰과 새 비밀번호를 입력해주세요.");
+  }
+  if (String(newPassword).length < 8) {
+    return fail(res, 400, "WEAK_PASSWORD", "비밀번호는 8자 이상이어야 합니다.");
+  }
+
+  const tokenData = consumeResetToken(token);
+  if (!tokenData) {
+    return fail(res, 400, "INVALID_TOKEN", "비밀번호 재설정 토큰이 유효하지 않거나 만료되었습니다.");
+  }
+
+  try {
+    const hashedPassword = await hashPassword(newPassword);
+    await db.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, tokenData.userId]);
+    return res.json({
+      success: true,
+      message: "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.",
+    });
+  } catch (err) {
+    console.error("❌ 비밀번호 재설정 오류:", err);
+    return fail(res, 500, "RESET_PASSWORD_ERROR", "비밀번호 재설정 중 오류가 발생했습니다.");
+  }
+});
+
 app.get("/api/auth/me", authenticateToken, async (req, res) => {
   try {
     const [users] = await db.query("SELECT id, email, name, gender, created_at FROM users WHERE id = ?", [
@@ -822,7 +1419,6 @@ app.get("/api/auth/me", authenticateToken, async (req, res) => {
     }
 
     const u = users[0];
-    // role은 JWT에서 가져옴 (DB에 role 컬럼 없어도 동작)
     if (req.user.role) u.role = req.user.role;
     else u.role = "user";
 
@@ -839,7 +1435,6 @@ app.get("/api/auth/me", authenticateToken, async (req, res) => {
   }
 });
 
-// 사용자 정보 수정
 app.put("/api/auth/me", authenticateToken, async (req, res) => {
   const { name, gender } = req.body;
 
@@ -867,6 +1462,12 @@ app.put("/api/auth/me", authenticateToken, async (req, res) => {
       message: "정보 수정 중 오류가 발생했습니다.",
     });
   }
+});
+
+app.use((err, req, res, next) => {
+  console.error("❌ 처리되지 않은 서버 오류:", err);
+  if (res.headersSent) return next(err);
+  return fail(res, 500, "INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");
 });
 
 const PORT = Number(process.env.PORT || 3001);

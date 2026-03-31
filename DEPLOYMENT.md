@@ -59,12 +59,6 @@ DB_PORT=3306
 
 CORS_ORIGIN=https://yourdomain.com
 CLIENT_URL=https://yourdomain.com
-
-# 카페24 설정: 상품은 카페24에서 등록 후 이 홈페이지에 표시 (상세: CAFE24_SETUP.md)
-CAFE24_MALL_ID=your_mall_id
-CAFE24_CLIENT_ID=your_client_id
-CAFE24_CLIENT_SECRET=your_client_secret
-CAFE24_ACCESS_TOKEN=your_access_token
 ```
 
 ### Frontend 환경 변수
@@ -118,10 +112,14 @@ SOURCE /path/to/backend/database/users.sql;
 
 # orders, order_items 테이블 생성 (주문·결제용)
 SOURCE /path/to/backend/database/orders_schema.sql;
+
+# 쿠폰 테이블 및 orders에 coupon_id, discount_amount 추가 (쿠폰 기능 사용 시)
+SOURCE /path/to/backend/database/coupons.sql;
 ```
 
 - `backend/database/users.sql` — 회원(users) 테이블
 - `backend/database/orders_schema.sql` — 주문(orders), 주문상품(order_items) 테이블 (imp_uid, merchant_uid 포함)
+- `backend/database/coupons.sql` — 쿠폰(coupons) 테이블 및 orders 확장 (선택)
 
 이미 `orders` 테이블만 있고 결제 컬럼이 없다면 `backend/database/orders_update.sql`을 실행해 imp_uid, merchant_uid 컬럼을 추가할 수 있습니다.
 

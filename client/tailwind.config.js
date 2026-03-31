@@ -7,6 +7,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
       keyframes: {
         slideUpBlur: {
           '0%': { opacity: '0', transform: 'translateY(24px)', filter: 'blur(8px)' },

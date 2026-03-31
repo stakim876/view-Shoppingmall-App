@@ -1,8 +1,8 @@
 <template>
   <div
-    class="fixed bottom-24 right-6 w-80 bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200"
+    class="fixed bottom-24 right-6 w-80 bg-white dark:bg-[#0f172a] rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200 dark:border-white/10"
   >
-    <div class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 flex justify-between items-center">
+    <div class="bg-gradient-to-br from-sky-600 via-sky-700 to-sky-900 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 text-white px-4 py-2 flex justify-between items-center border-b border-white/15 dark:border-slate-600/40">
       <span class="font-semibold">Myshop AI 도우미</span>
       <button @click="$emit('close')" class="text-white hover:text-gray-200">✖</button>
     </div>
@@ -17,8 +17,8 @@
           :class="[
             'inline-block px-3 py-2 rounded-xl max-w-[80%]',
             msg.role === 'user'
-              ? 'bg-indigo-100 text-gray-800'
-              : 'bg-gray-100 text-gray-700',
+              ? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700/50 dark:text-neutral-100'
+              : 'bg-neutral-100 text-neutral-700 dark:bg-white/10 dark:text-neutral-200',
           ]"
         >
           {{ msg.text }}
@@ -36,7 +36,7 @@
       />
       <button
         @click="send"
-        class="bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600"
+        class="shop-btn-primary px-3 py-2 rounded-lg text-sm shrink-0"
       >
         전송
       </button>

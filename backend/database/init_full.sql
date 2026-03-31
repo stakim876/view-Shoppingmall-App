@@ -1,8 +1,3 @@
--- ============================================================
--- MY Shop DB 통합 초기화 스크립트
--- MySQL Workbench 또는 mysql 클라이언트에서 한 번에 실행하세요.
--- 실행 시 해당 DB의 기존 테이블(users, products, orders, order_items)은 삭제됩니다.
--- ============================================================
 
 CREATE DATABASE IF NOT EXISTS myshop
   CHARACTER SET utf8mb4
@@ -10,17 +5,14 @@ CREATE DATABASE IF NOT EXISTS myshop
 
 USE myshop;
 
--- 기존 테이블 제거 (FK 때문에 order_items -> orders 순서)
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS notices;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS users;
 SET FOREIGN_KEY_CHECKS = 1;
 
--- ----------------------------------------
--- 1. 회원
--- ----------------------------------------
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(255) NOT NULL UNIQUE,
@@ -33,9 +25,6 @@ CREATE TABLE users (
   INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ----------------------------------------
--- 2. 상품 (카페24 미사용 시 직접 등록용)
--- ----------------------------------------
 CREATE TABLE products (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -53,9 +42,6 @@ VALUES
 ('미니멀 백팩', '심플한 디자인의 다크 톤 백팩.', 49000, '/images/sun-lingyan-_H0fjILH5Vw-unsplash.jpg'),
 ('기본 검정 티셔츠', '무지 크루넥 반팔 티셔츠.', 19900, '/images/istockphoto-2206793808-1024x1024.jpg');
 
--- ----------------------------------------
--- 3. 주문
--- ----------------------------------------
 CREATE TABLE orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -64,6 +50,8 @@ CREATE TABLE orders (
   phone VARCHAR(50) NOT NULL,
   total_price DECIMAL(12,2) NOT NULL,
   status VARCHAR(20) DEFAULT 'paid',
+  carrier_code VARCHAR(32) DEFAULT NULL,
+  tracking_number VARCHAR(100) DEFAULT NULL,
   imp_uid VARCHAR(100) DEFAULT NULL,
   merchant_uid VARCHAR(100) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -72,9 +60,6 @@ CREATE TABLE orders (
   INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ----------------------------------------
--- 4. 주문 상품
--- ----------------------------------------
 CREATE TABLE order_items (
   id INT AUTO_INCREMENT PRIMARY KEY,
   order_id INT NOT NULL,
@@ -87,7 +72,44 @@ CREATE TABLE order_items (
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ----------------------------------------
--- 완료
--- ----------------------------------------
-SELECT 'myshop DB 초기화 완료 (users, products, orders, order_items)' AS result;
+CREATE TABLE notices (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  body TEXT NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  priority INT NOT NULL DEFAULT 0,
+  starts_at DATETIME NULL,
+  ends_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_public (is_active, starts_at, ends_at),
+  INDEX idx_priority (priority)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO notices (title, body, is_active, priority, starts_at, ends_at) VALUES
+(
+  '[포트폴리오] 본 쇼핑몰은 데모 사이트입니다',
+  '이 사이트는 개인 포트폴리오용 이커머스 데모입니다. 실제 상품 판매·배송·결제 대행은 이루어지지 않으며, 테스트 결제 환경으로 동작할 수 있습니다. 문의는 데모 목적의 UI만 제공됩니다.',
+  1,
+  10,
+  NULL,
+  NULL
+),
+(
+  '배송 및 교환 안내',
+  '데모 환경 기준 안내입니다. 일반적으로 주문 후 2~3영업일 내 출고를 목표로 하며, 단순 변심에 따른 교환·반품은 수령 후 7일 이내 가능합니다. 실제 정책은 운영 사이트 기준으로 별도 고지됩니다.',
+  1,
+  5,
+  NULL,
+  NULL
+),
+(
+  '고객센터 운영 안내',
+  '평일 10:00 ~ 17:00 (주말·공휴일 휴무) — 데모용 문구입니다. 헤더·푸터의 카카오 문의 등은 환경 변수 설정 시에만 실제 채널로 연결됩니다.',
+  1,
+  0,
+  NULL,
+  NULL
+);
+
+SELECT 'myshop DB 초기화 완료 (users, products, orders, order_items, notices)' AS result;

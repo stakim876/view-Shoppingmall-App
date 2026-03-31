@@ -1,14 +1,6 @@
-/**
- * 에러 처리 유틸리티
- */
 
-/**
- * API 에러를 사용자 친화적인 메시지로 변환
- * @param {Error} error - 에러 객체
- * @returns {string} 사용자 친화적인 에러 메시지
- */
+
 export function getErrorMessage(error) {
-  // 네트워크 에러
   if (!error.response) {
     if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
       return "요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.";
@@ -19,7 +11,6 @@ export function getErrorMessage(error) {
     return "서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.";
   }
 
-  // HTTP 상태 코드별 메시지
   const status = error.response.status;
   const message = error.response.data?.message || error.response.data?.error;
 
@@ -43,20 +34,12 @@ export function getErrorMessage(error) {
   }
 }
 
-/**
- * 에러를 콘솔에 로깅
- * @param {Error} error - 에러 객체
- * @param {string} context - 에러가 발생한 컨텍스트
- */
 export function logError(error, context = "") {
   const message = getErrorMessage(error);
   console.error(`❌ ${context ? `[${context}] ` : ""}${message}`, error);
   return message;
 }
 
-/**
- * 에러 타입 확인
- */
 export const ErrorType = {
   NETWORK: "NETWORK",
   SERVER: "SERVER",
@@ -64,11 +47,6 @@ export const ErrorType = {
   UNKNOWN: "UNKNOWN",
 };
 
-/**
- * 에러 타입 반환
- * @param {Error} error - 에러 객체
- * @returns {string} 에러 타입
- */
 export function getErrorType(error) {
   if (!error.response) {
     return ErrorType.NETWORK;

@@ -1,8 +1,173 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 그라데이션 텍스트(bg-clip-text) 하단 잘림 방지 - JJpackage 제목용 */
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply text-slate-900 dark:text-slate-100 bg-white dark:bg-[#0f172a];
+  }
+
+  ::placeholder {
+    @apply text-slate-400 dark:text-slate-400;
+  }
+}
+
+@layer components {
+  .shop-section-head {
+    @apply flex items-end justify-between gap-4 mb-10;
+  }
+
+  .shop-section-title {
+    @apply text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50;
+  }
+
+  .shop-link-muted {
+    @apply text-sm font-medium text-slate-600 dark:text-slate-400 hover:underline shrink-0
+           hover:text-sky-800 dark:hover:text-sky-300
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 rounded;
+  }
+
+  .shop-page-title {
+    @apply text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100;
+  }
+
+  
+  .shop-btn-primary {
+    @apply font-medium text-white transition-all relative overflow-hidden
+           bg-gradient-to-b from-sky-600 to-sky-700
+           hover:from-sky-500 hover:to-sky-600
+           border border-sky-800/30
+           shadow-[0_10px_24px_-14px_rgba(2,132,199,0.38)]
+           hover:shadow-[0_12px_28px_-14px_rgba(2,132,199,0.42)]
+           dark:bg-gradient-to-br dark:from-slate-100 dark:via-slate-200 dark:to-slate-300 dark:text-slate-900
+           dark:hover:from-white dark:hover:via-slate-100 dark:hover:to-slate-200
+           dark:border-white/30
+           dark:shadow-[0_10px_24px_-16px_rgba(0,0,0,0.35)]
+           dark:hover:shadow-[0_12px_28px_-16px_rgba(0,0,0,0.4)]
+           active:translate-y-[1px]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/80
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f172a];
+  }
+
+  .shop-btn-cart {
+    @apply shop-btn-primary w-full py-2.5 rounded-full;
+  }
+
+  .shop-btn-secondary {
+    @apply font-medium transition-all
+           bg-white text-slate-700
+           border border-slate-300/80
+           hover:bg-slate-50 hover:text-slate-900
+           shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]
+           dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600/55
+           dark:hover:bg-slate-700 dark:hover:text-slate-100
+           active:translate-y-[1px]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/65
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f172a];
+  }
+
+  .shop-btn-danger {
+    @apply font-medium transition-all
+           bg-rose-50 text-rose-700 border border-rose-300/80
+           hover:bg-rose-100 hover:text-rose-800
+           dark:bg-rose-900/25 dark:text-rose-300 dark:border-rose-600/40
+           dark:hover:bg-rose-900/35
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f172a];
+  }
+
+  .shop-btn-disabled {
+    @apply bg-neutral-200 text-neutral-600 border border-neutral-300/80 cursor-not-allowed shadow-none
+           dark:bg-slate-700/60 dark:text-slate-200/85 dark:border-slate-600/55;
+  }
+
+  .shop-input-select {
+    @apply px-4 py-2 rounded-lg bg-white dark:bg-[#1a2235]
+           border border-slate-200/80 dark:border-slate-600/45
+           text-neutral-800 dark:text-neutral-200 text-sm
+           shadow-[0_8px_20px_-16px_rgba(15,23,42,0.25)]
+           focus:outline-none focus:ring-2 focus:ring-sky-600/80;
+  }
+
+  .shop-card-product {
+    @apply relative overflow-hidden rounded-[1.75rem] cursor-pointer
+           bg-white/90 dark:bg-[#121827]/60
+           border border-neutral-900/10 dark:border-white/10
+           shadow-[0_14px_34px_-26px_rgba(15,23,42,0.45)]
+           hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.55)]
+           transition-[transform,box-shadow,border-color,background-color] duration-300;
+  }
+
+  .shop-card-product::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 80% at 30% 0%, rgba(255, 255, 255, 0.85), transparent 60%);
+    opacity: 0.35;
+  }
+
+  .dark .shop-card-product::before {
+    background: radial-gradient(120% 80% at 30% 0%, rgba(255, 255, 255, 0.10), transparent 62%);
+    opacity: 0.55;
+  }
+
+  .shop-card-product-media {
+    @apply overflow-hidden flex items-center justify-center bg-neutral-50/90 dark:bg-[#0b1020]/55;
+  }
+
+  .header-utility-link {
+    @apply font-medium text-neutral-800 dark:text-slate-100
+           hover:text-neutral-950 dark:hover:text-white
+           transition rounded px-0.5
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/70
+           focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-100/30
+           dark:focus-visible:ring-offset-slate-900;
+  }
+
+  .header-icon-btn {
+    @apply relative inline-flex items-center justify-center w-9 h-9 rounded-full
+           border border-slate-200/85 bg-white text-neutral-700
+           shadow-[0_8px_20px_-16px_rgba(15,23,42,0.3)]
+           hover:scale-105 hover:text-neutral-900 hover:border-slate-300 transition
+           dark:bg-slate-800 dark:border-slate-600/45 dark:text-slate-100
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900;
+  }
+
+  .header-theme-btn {
+    @apply cursor-pointer hover:scale-110 transition-transform rounded-full p-1
+           text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/65
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900;
+  }
+
+  .header-user-text {
+    @apply text-sm font-semibold text-slate-700 dark:text-slate-100;
+  }
+
+  .header-user-link {
+    @apply text-sm px-3 py-1.5 rounded-lg
+           bg-white/70 dark:bg-white/20 text-slate-700 dark:text-slate-100
+           hover:bg-white/90 dark:hover:bg-white/30 transition
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900;
+  }
+
+  .header-user-text-link {
+    @apply text-sm rounded px-1 hover:underline
+           text-slate-700 dark:text-slate-100 hover:text-slate-900 dark:hover:text-white
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900;
+  }
+}
+
 .hero-title,
 .header-brand {
   padding-bottom: 0.45em !important;
@@ -12,3 +177,68 @@
   background-clip: text;
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.55) rgba(148, 163, 184, 0.16);
+}
+
+*::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+*::-webkit-scrollbar-track {
+  background: linear-gradient(
+    180deg,
+    rgba(241, 245, 249, 0.7),
+    rgba(226, 232, 240, 0.55)
+  );
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(99, 102, 241, 0.75),
+    rgba(56, 189, 248, 0.7)
+  );
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(79, 70, 229, 0.9),
+    rgba(14, 165, 233, 0.88)
+  );
+}
+
+.dark * {
+  scrollbar-color: rgba(129, 140, 248, 0.6) rgba(30, 41, 59, 0.42);
+}
+
+.dark *::-webkit-scrollbar-track {
+  background: linear-gradient(
+    180deg,
+    rgba(30, 41, 59, 0.65),
+    rgba(15, 23, 42, 0.62)
+  );
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(129, 140, 248, 0.72),
+    rgba(56, 189, 248, 0.66)
+  );
+  border: 2px solid rgba(15, 23, 42, 0.75);
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(165, 180, 252, 0.9),
+    rgba(125, 211, 252, 0.86)
+  );
+}

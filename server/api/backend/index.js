@@ -1,4 +1,3 @@
-import axios from 'axios';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -24,36 +23,6 @@ let db;
 
 app.get('/', (req, res) => {
   res.send('서버 작동 중!');
-});
-
-app.get('/api/cafe24/products', async (req, res) => {
-  try {
-    const mallId = process.env.CAFE24_MALL_ID;
-    const token = process.env.CAFE24_ACCESS_TOKEN;
-
-    if (!mallId || !token) {
-      return res.status(500).json({ message: 'CAFE24 env missing' });
-    }
-
-    const { data } = await axios.get(
-      `https://${mallId}.cafe24api.com/api/v2/admin/products`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        params: {
-          limit: 20,
-          offset: 0,
-        },
-      }
-    );
-
-    res.json(data);
-  } catch (err) {
-    console.error('❌ Cafe24 API 오류:', err.response?.data || err.message);
-    res.status(500).json({ message: 'Cafe24 products fetch failed' });
-  }
 });
 
 async function startServer() {

@@ -10,9 +10,9 @@ export async function askChatBot(message) {
 
     if (cache.has(message)) return cache.get(message);
 
-    const res = await axios.post(`${API_BASE}/api/ai/chat`, { message });
+    const res = await axios.post(`${API_BASE}/api/ai/chat`, { message }); // AI API 요청
 
-    const answer = res.data?.text?.trim() || "죄송합니다, 답변을 가져오지 못했어요 😢";
+    const answer = res.data?.text?.trim() || "죄송합니다, 답변을 가져오지 못했어요 😢"; // AI 응답을 Vue로 반환
     cache.set(message, answer);
 
     return answer;

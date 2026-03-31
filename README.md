@@ -82,6 +82,9 @@ my-shop/
 ```env
 PORT=3001
 NODE_ENV=development
+JWT_SECRET=replace_with_strong_random_secret
+JWT_EXPIRES_IN=7d
+ADMIN_INVITE_CODE=replace_with_admin_invite_code
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=your_password
@@ -95,6 +98,7 @@ CLIENT_URL=http://localhost:5173
 
 ```env
 VITE_API_URL=http://localhost:3001/api
+VITE_PORTONE_STORE_ID=impXXXXXXXX
 VITE_OPENAI_API_KEY=your_openai_api_key
 ```
 
@@ -105,6 +109,7 @@ VITE_OPENAI_API_KEY=your_openai_api_key
 - ✅ 상품 조회 및 검색
 - ✅ 장바구니 기능
 - ✅ 주문 및 결제
+- ✅ 쿠폰 할인 (정액/정률)
 - ✅ 관리자 페이지
 - ✅ AI 챗봇
 - ✅ 카테고리 필터링
@@ -113,6 +118,16 @@ VITE_OPENAI_API_KEY=your_openai_api_key
 - ✅ 페이지네이션
 - ✅ Toast 알림 시스템
 - ✅ 스켈레톤 로딩
+- ✅ 재입고 알림 신청 (품절 상품 이메일 알림)
+
+## 🔎 상품 API 고도화
+
+- `GET /api/products`는 `search`, `category`, `minPrice`, `maxPrice`, `sortBy`, `sortOrder`, `page`, `limit`를 지원합니다.
+- 기본 응답은 기존 호환을 위해 배열입니다.
+- `withMeta=1`을 추가하면 페이지네이션 메타가 포함된 객체 응답을 받습니다.
+- 조회 성능을 위해 응답 캐시(TTL 기본 60초)를 사용하며, 상품 추가/수정/삭제 시 캐시를 무효화합니다.
+- DB 인덱스는 `backend/database/performance_indexes.sql`을 실행해 적용할 수 있습니다.
+- 재입고 알림 기능은 `backend/database/restock_subscriptions.sql` 실행 후 사용할 수 있습니다.
 
 ## 🛠️ 기술 스택
 
@@ -127,11 +142,11 @@ VITE_OPENAI_API_KEY=your_openai_api_key
 - Node.js
 - Express.js
 - MySQL
-- Cafe24 API (선택사항)
 
 ## 📚 배포
 
 프로덕션 배포 방법은 [DEPLOYMENT.md](./DEPLOYMENT.md) 파일을 참고하세요.
+결제 리허설은 [PAYMENT_REHEARSAL_CHECKLIST.md](./PAYMENT_REHEARSAL_CHECKLIST.md) 파일을 참고하세요.
 
 ## 📝 라이선스
 

@@ -1,7 +1,3 @@
--- ============================================================
--- MY Shop DB 통합 초기화 (시드 데이터 포함)
--- 로그인: shgy0673@naver.com / dpdpfmv770@! (비밀번호는 bcrypt 해시로 저장됨)
--- ============================================================
 
 CREATE DATABASE IF NOT EXISTS myshop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE myshop;

@@ -17,7 +17,6 @@ export const useToastStore = defineStore("toast", {
 
       this.toasts.push(toast);
 
-      // 자동 제거
       setTimeout(() => {
         this.remove(id);
       }, duration);

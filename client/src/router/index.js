@@ -1,21 +1,21 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import LoginForm from "@/components/auth/LoginForm.vue";
-import SignUpForm from "@/components/auth/SignUpForm.vue";
-import HomePage from "@/components/layout/HomePage.vue";
-import CartPage from "@/components/order/CartPage.vue";
-import CheckoutPage from "@/components/order/CheckoutPage.vue";
-import OrderComplete from "@/components/order/OrderComplete.vue";
-import OrderDetail from "@/components/product/OrderDetail.vue";
-import ProductList from "@/components/product/ProductList.vue";
-import ProductDetail from "@/components/product/ProductDetail.vue";
-import MyPage from "@/components/auth/MyPage.vue";
-import AdminPage from "@/components/admin/AdminPage.vue";
-import AdminSignup from "@/components/admin/AdminSignup.vue";
-import NoticePage from "@/components/notice/NoticePage.vue";
-import OrderLookup from "@/components/order/OrderLookup.vue";
-import WishlistPage from "@/components/product/WishlistPage.vue";
-import NotFound from "@/components/common/NotFound.vue";
+import LoginForm from "@/views/auth/LoginForm.vue";
+import SignUpForm from "@/views/auth/SignUpForm.vue";
+import HomePage from "@/views/home/HomePage.vue";
+import CartPage from "@/views/order/CartPage.vue";
+import CheckoutPage from "@/views/order/CheckoutPage.vue";
+import OrderComplete from "@/views/order/OrderComplete.vue";
+import OrderDetail from "@/views/order/OrderDetail.vue";
+import ProductList from "@/views/shop/ProductList.vue";
+import ProductDetail from "@/views/shop/ProductDetail.vue";
+import MyPage from "@/views/auth/MyPage.vue";
+import AdminPage from "@/views/admin/AdminPage.vue";
+import AdminSignup from "@/views/admin/AdminSignup.vue";
+import NoticePage from "@/views/notice/NoticePage.vue";
+import OrderLookup from "@/views/order/OrderLookup.vue";
+import WishlistPage from "@/views/shop/WishlistPage.vue";
+import NotFound from "@/components/ui/NotFound.vue";
 
 const routes = [
   { path: "/", redirect: "/home" },
@@ -58,21 +58,17 @@ const router = createRouter({
   routes,
 });
 
-// 라우터 가드 - 인증 및 권한 체크
 router.beforeEach((to, from, next) => {
-  // localStorage에서 인증 정보 확인
   const token = localStorage.getItem("token");
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
   const isLoggedIn = !!(token && user);
   
-  // 인증이 필요한 페이지 체크
   if (to.meta.requiresAuth && !isLoggedIn) {
     next({ path: "/login", query: { redirect: to.fullPath } });
     return;
   }
 
-  // 관리자 권한이 필요한 페이지 체크
   if (to.meta.requiresAdmin && user?.role !== "admin") {
     next({ path: "/home" });
     return;

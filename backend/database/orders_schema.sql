@@ -1,5 +1,3 @@
--- 주문(orders) 및 주문상품(order_items) 테이블 생성
--- 배포 전 MySQL에서 이 스크립트를 실행하세요.
 
 CREATE TABLE IF NOT EXISTS orders (
   id INT AUTO_INCREMENT PRIMARY KEY,

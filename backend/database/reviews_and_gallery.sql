@@ -1,9 +1,6 @@
--- 리뷰 테이블 + 상품 이미지(갤러리) 테이블
--- MySQL에서 myshop DB 선택 후 실행하세요.
 
 USE myshop;
 
--- 상품 추가 이미지 (갤러리용). 없으면 products.image_url 사용
 CREATE TABLE IF NOT EXISTS product_images (
   id INT AUTO_INCREMENT PRIMARY KEY,
   product_id INT NOT NULL,
@@ -14,7 +11,6 @@ CREATE TABLE IF NOT EXISTS product_images (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 구매 후기 (별점 + 한 줄 리뷰)
 CREATE TABLE IF NOT EXISTS reviews (
   id INT AUTO_INCREMENT PRIMARY KEY,
   product_id INT NOT NULL,

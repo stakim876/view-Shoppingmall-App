@@ -1,5 +1,3 @@
--- 사용자 테이블 생성
--- 이 스크립트를 MySQL에서 실행하여 users 테이블을 생성하세요.
 
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -12,5 +10,3 @@ CREATE TABLE IF NOT EXISTS users (
   INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 테이블이 이미 존재하는 경우 컬럼 추가 (마이그레이션용)
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(10) DEFAULT NULL;

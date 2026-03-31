@@ -11,7 +11,6 @@ const api = axios.create({
   timeout: 10000, // 10초 타임아웃
 });
 
-// 요청 인터셉터 - JWT 토큰 추가
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -25,23 +24,25 @@ api.interceptors.request.use(
   }
 );
 
-// 응답 인터셉터 - 공통 에러 처리
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // 401 에러 시 토큰 제거 및 로그인 페이지로 리다이렉트
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const serverMessage = error.response?.data?.message || "";
+    const shouldResetAuth =
+      status === 401 ||
+      (status === 403 && /유효하지 않은 토큰|인증 토큰/i.test(serverMessage));
+
+    if (shouldResetAuth) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      // 로그인 페이지로 리다이렉트 (라우터가 있는 경우)
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
     }
     
-    // 에러를 사용자 친화적인 메시지로 변환
     const message = getErrorMessage(error);
     error.userMessage = message;
     return Promise.reject(error);
