@@ -2,7 +2,15 @@
 
 포폴 겸 연습으로 만든 쇼핑몰 데모. 사이트 카피는 셀렉트샵 느낌으로 잡아 놨고, 관리자가 상품·주문·공지 건드리고 사용자는 담기→결제→배송 조회까지 도는 구조로 맞춰 둠.
 
-프론트는 Vue 3, Vite, Pinia, Vue Router, Tailwind. API는 `client/src/lib/api.js` axios 하나로만 때리고, 인터셉터에서 Bearer 붙이다가 401/403이면 스토리지 비우고 로그인으로 돌림. 라우터는 `requiresAuth` / `requiresAdmin` 정도만 걸어놨음. 다크모드는 `useTheme`으로 `html.dark`랑 로컬스토리지. 체크아웃은 다음 우편번호로 기본 주소만 받아오게 해놨고, 홈은 히어로·캐러셀·추천 상품 위주.
+프론트는 Vue 3, Vite, Pinia, Vue Router, Tailwind. API는 `client/src/lib/api.js` axios 한 군데로만 쓰고, 인터셉터에서 Bearer 달고 401/403(토큰 깨짐)이면 로컬 스토리지 비운 뒤 로그인으로 보냄. 다크모드는 `useTheme`, 체크아웃은 다음 우편번호로 주소만 받아오게 해둠. 홈은 히어로·캐러셀·추천 상품 위주.
+
+## 에러 처리
+
+프론트는 `errorHandler.js`에서 타임아웃·끊김·HTTP 코드별로 사용자 문구 한번 정리해 두고, axios 인터셉터가 `error.userMessage`에 붙임. 페이지마다 `catch`에서 토스트나 본문에 뿌림. `main.js`에 Vue 전역 `errorHandler`, `unhandledrejection`, `router.onError`까지 걸어서 컴포넌트 밖에서 터진 것도 그냥 하얀 화면만 나오진 않게 함.
+
+백은 검증·권한·비즈니스 규칙 깨지면 status랑 `message`/`code`로 내려주고, DB는 라우트에서 `try/catch`. 주문은 트랜잭션, 금액이랑 쿠폰은 서버에서 다시 까서 안 맞으면 거절. 테이블 없으면 그 기능만 빈 값·안내로 넘기는 코드도 있음(SQL 깔면 본격 동작).
+
+보려면: `client/src/lib/errorHandler.js`, `api.js`, `main.js` / 백은 `backend/server.js`의 `fail()`이랑 각 라우트 `catch`.
 
 ## 백엔드
 
@@ -44,3 +52,4 @@ cd ../client && npm i && cp .env.example .env
 `/home` 메인, `/products` `/product/:id` 상품, `/cart` `/wishlist`, `/checkout`은 로그인 후 쿠폰+포트원, `/order-complete`, `/order/:id`, `/mypage` 주문·타임라인, `/notice`, `/admin` 운영판, `/admin-signup`. `/order-lookup`은 번호 치는 화면만 있는데 상세 API가 JWT+본인/관리자라 비회원만으로는 안 열릴 수 있음 — 그냥 그렇게 묶여 있음.
 
 배포는 [DEPLOYMENT.md](./DEPLOYMENT.md), 결제 연습은 [PAYMENT_REHEARSAL_CHECKLIST.md](./PAYMENT_REHEARSAL_CHECKLIST.md).
+
