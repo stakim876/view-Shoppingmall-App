@@ -1,182 +1,46 @@
-📦 MyShop – Vue 쇼핑몰 웹 서비스
+# My Shop
 
-Vue 3 + Node.js + MySQL 기반의 풀스택 쇼핑몰 프로젝트입니다.
-사용자 인증, 상품/장바구니/주문 기능은 물론 **OpenAI API 기반 AI 챗봇(MyShop AI 도우미)**까지 포함된 실전형 웹 서비스입니다.
+포폴 겸 연습으로 만든 쇼핑몰 데모. 사이트 카피는 셀렉트샵 느낌으로 잡아 놨고, 관리자가 상품·주문·공지 건드리고 사용자는 담기→결제→배송 조회까지 도는 구조로 맞춰 둠.
 
-🚀 주요 기능
-🔐 회원 인증
+프론트는 Vue 3, Vite, Pinia, Vue Router, Tailwind. API는 `client/src/lib/api.js` axios 하나로만 때리고, 인터셉터에서 Bearer 붙이다가 401/403이면 스토리지 비우고 로그인으로 돌림. 라우터는 `requiresAuth` / `requiresAdmin` 정도만 걸어놨음. 다크모드는 `useTheme`으로 `html.dark`랑 로컬스토리지. 체크아웃은 다음 우편번호로 기본 주소만 받아오게 해놨고, 홈은 히어로·캐러셀·추천 상품 위주.
 
-JWT 기반 로그인/회원가입
+## 백엔드
 
-Axios Interceptor로 모든 요청에 토큰 자동 주입
+진짜 쓰는 API는 `backend/server.js` 한 파일이 진입점. (루트에 다른 `server/` 폴더 있어도 프론트는 `VITE_API_URL`이 가리키는 쪽만 보면 됨.) JSON은 대부분 `success` / `message` 패턴.
 
-로그인 상태 유지(LocalStorage 활용)
+로직은 `backend/lib/`에 흩어 놨음. 인증·비번 해시·JWT는 `auth.js`, 상품 목록 쿼리 조립은 `productQuery.js` — 여기서 `sortBy`는 화이트리스트만 통과. 쿠폰은 `coupon.js`에서 기간·최소금액·정액정률·사용횟수 체크. 로그인 실패/캡차는 `loginSecurity`, Turnstile은 `captcha`, 메일은 `mailer`, 택배 조회 링크 조립은 `tracking.js`.
 
-🛍 상품 기능
+`GET /api/products`는 옛날 호환 때문에 기본이 배열이고, 메타까지 필요하면 `withMeta=1`. 목록은 메모리에 잠깐 캐시했다가 상품 바뀌면 비움. 인덱스는 `database/performance_indexes.sql` 참고.
 
-상품 목록 조회
+주문 `POST /api/orders`는 트랜잭션. 서버가 다시 깐 금액이랑 클라이언트 `total_price`가 어긋나면 거절하고, 쿠폰도 서버에서 한 번 더 검증함. `imp_uid` / `merchant_uid`는 컬럼 있을 때만 넣게 해서 스키마 덜 맞춘 DB에서도 안 터지게 해둠.
 
-단일 상품 상세 조회
+배송 상태는 paid → preparing → shipping → done 기준으로 마이페이지에 타임라인 그렸고, 예전에 쓰던 shipped 같은 값도 라벨에서 흡수. 관리자가 택배사·송장 넣으면 조회 URL까지 내려줌.
 
-장바구니 담기 (수량 관리 포함)
+JWT 로그인. 관리자는 `ADMIN_INVITE_CODE` 있는 `/signup-admin` 쪽. 비번 찾기·재입고 메일은 SMTP 없으면 그냥 안 감. 챗봇은 `POST /api/ai/chat`, OpenAI 키는 백엔드 env에만 (프론트에 넣지 말 것). 나머지는 찜, 리뷰, 공지, 관리자 KPI, 짧은 analytics 정도.
 
-🛒 장바구니 기능 (Pinia)
+## DB
 
-전역 상태 관리(Pinia)
+처음 한 번에 박을 거면 `init_full.sql`. 이후 기능별로 `coupons.sql`, `wishlist.sql`, `reviews_and_gallery.sql`, `notices.sql`, `restock_subscriptions.sql`, `order_tracking.sql`, `orders_update.sql` 같은 거 골라서. 테이블 없으면 어떤 API는 빈 결과로 넘어가서, 기능이 안 붙으면 SQL 안 깐 경우부터 의심하면 됨.
 
-로그인 후에도 장바구니 유지
+## env
 
-주문 시 자동으로 데이터 변환
+전체 목록은 `backend/.env.example`, `client/.env.example`. 포트는 백 `PORT`랑 `VITE_API_URL`이랑 꼭 짝 맞추고, CORS랑 `CLIENT_BASE_URL`은 보통 로컬이면 `http://localhost:5173`.
 
-📦 주문 기능(Checkout)
+## 로컬
 
-배송 정보 입력
+MySQL 깔고, Node 18쯤 있으면 됨.
 
-장바구니 기반 주문 생성 API
+```bash
+cd backend && npm i && cp .env.example .env
+cd ../client && npm i && cp .env.example .env
+```
 
-MySQL에 주문/주문상품 테이블 저장
+윈도우면 `cp` 대신 `copy`.
 
-🤖 MyShop AI 도우미 (ChatGPT 기반)
+루트에서 `npm i` 하고 `npm run dev` 하면 concurrently로 백이랑 Vite 같이 올라감.
 
-프로젝트의 핵심 차별화 기능입니다.
+## 페이지 대충
 
-✔ 기능 설명
+`/home` 메인, `/products` `/product/:id` 상품, `/cart` `/wishlist`, `/checkout`은 로그인 후 쿠폰+포트원, `/order-complete`, `/order/:id`, `/mypage` 주문·타임라인, `/notice`, `/admin` 운영판, `/admin-signup`. `/order-lookup`은 번호 치는 화면만 있는데 상세 API가 JWT+본인/관리자라 비회원만으로는 안 열릴 수 있음 — 그냥 그렇게 묶여 있음.
 
-Vue 컴포넌트로 구현된 플로팅 챗봇 UI
-
-Node.js 서버에서 OpenAI API 호출
-
-API 키는 백엔드에서만 관리해 보안 강화
-
-사용자의 질문 → Node 서버 → OpenAI → Vue로 답변 반환
-
-✔ 사용 기술
-
-Vue 3 (Composition API)
-
-Node.js + Express
-
-OpenAI API
-
-Axios 기반 메시지 송수신
-
-대화 내역을 실시간 렌더링하는 UI
-
-✔ 구현 구조
-Vue(프론트)
-  → Node.js(백엔드)
-      → OpenAI API
-          → Node.js
-  → Vue UI로 응답 표시
-
-✔ 챗봇 활용 예시
-
-쇼핑 관련 Q&A
-
-상품 정보 설명
-
-사이트 기능 안내
-
-사용자 편의 기능 자동화
-
-🧩 기술 스택
-Frontend
-
-Vue 3 (Composition API)
-
-Pinia
-
-Vue Router
-
-Axios
-
-Tailwind CSS
-
-Backend
-
-Node.js + Express
-
-MySQL + MySQL2
-
-JWT 인증
-
-dotenv
-
-OpenAI API
-
-🗂 프로젝트 구조
-src/
- ├─ components/
- ├─ pages/
- ├─ store/                # Pinia 스토어
- ├─ router/
- ├─ lib/
- │   └─ axios.js          # baseURL + Interceptor
- ├─ chatbot/              # 챗봇 컴포넌트 + UI
- ├─ backend/
- │   ├─ routes/
- │   ├─ controllers/
- │   ├─ models/
- │   ├─ openai/
- │   │   └─ openaiService.js
- │   └─ db.js             # MySQL 연결
-
-🔑 핵심 구현 포인트
-✔ 1. 프론트–백 완전 분리 구조
-
-SPA(Vue) + REST API(Express)
-
-✔ 2. JWT 토큰 자동 관리
-
-Interceptor로 인증이 필요한 요청은 자동 처리.
-
-✔ 3. Pinia로 전역 상태 정리
-
-복잡한 장바구니 상태를 안정적으로 관리.
-
-✔ 4. 챗봇을 위한 서버 사이드 OpenAI 호출
-
-API 키 노출 없이 안전하고 확장성 있는 구조.
-
-✔ 5. MySQL ERD 직접 설계
-
-users
-
-products
-
-carts
-
-orders
-
-order_items
-
-🧪 실행 방법
-📌 Frontend
-npm install
-npm run dev
-
-📌 Backend
-npm install
-node server.js
-
-🎯 프로젝트 목표
-
-쇼핑몰의 전체 데이터 흐름을 직접 설계
-
-풀스택 아키텍처 이해
-
-실전형 JWT 인증 구조 구현
-
-OpenAI를 활용한 고객 지원형 챗봇 개발
-
-유지보수 가능한 구조 설계
-
-✨ 향후 개선 사항
-
-상품 추천 모델 추가
-
-관리자(Admin) 페이지 구축
-
-AI 챗봇 답변 학습 데이터 정교화
-
-이미지 업로드 기능(S3 or Cloudflare)
+배포는 [DEPLOYMENT.md](./DEPLOYMENT.md), 결제 연습은 [PAYMENT_REHEARSAL_CHECKLIST.md](./PAYMENT_REHEARSAL_CHECKLIST.md).
