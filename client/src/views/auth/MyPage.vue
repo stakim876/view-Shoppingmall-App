@@ -64,6 +64,49 @@ const orderStatusLabel = (status) => {
   return map[status] || status;
 };
 
+const timelineSteps = [
+  { key: "paid", label: "결제완료" },
+  { key: "preparing", label: "상품준비중" },
+  { key: "shipping", label: "배송중" },
+  { key: "done", label: "배송완료" },
+];
+
+function stepVariant(orderStatus, stepKey) {
+  // 취소 주문은 첫 단계만 완료로 두고 나머지는 대기 처리
+  if (orderStatus === "cancelled") return stepKey === "paid" ? "done" : "pending";
+
+  const rank = {
+    paid: 1,
+    preparing: 2,
+    shipping: 3,
+    done: 4,
+  };
+
+  const oRank = rank[orderStatus] || 0;
+  const sRank = rank[stepKey] || 0;
+
+  if (oRank === sRank) return "active";
+  if (sRank < oRank) return "done";
+  return "pending";
+}
+
+function stepDotClass(variant) {
+  if (variant === "done") {
+    return "bg-indigo-500 dark:bg-sky-400";
+  }
+  if (variant === "active") {
+    return "bg-indigo-500 dark:bg-sky-400 ring-4 ring-indigo-500/15 dark:ring-sky-400/15";
+  }
+  return "bg-white/40 dark:bg-white/10";
+}
+
+function stepTextClass(variant) {
+  if (variant === "pending") {
+    return "text-gray-500 dark:text-gray-400";
+  }
+  return "text-gray-800 dark:text-gray-100 font-semibold";
+}
+
 const updateUserInfo = async () => {
   if (!userName.value.trim()) {
     toast.warning("이름을 입력해주세요.");
@@ -91,7 +134,7 @@ const updateUserInfo = async () => {
   <div
     class="min-h-screen py-16 px-6 
            bg-gradient-to-b from-slate-100 to-slate-200 
-           dark:from-[#0f172a] dark:to-[#1e293b]
+           dark:from-zinc-950 dark:to-neutral-950
            text-neutral-800 dark:text-gray-100 font-['Inter']
            transition-colors duration-300"
   >
@@ -194,11 +237,44 @@ const updateUserInfo = async () => {
             <p class="text-gray-700 dark:text-gray-300">
               배송지: {{ order.address }}
             </p>
-            <p class="text-gray-700 dark:text-gray-300">
-              상태:
-              <span class="font-medium text-sky-500">{{ orderStatusLabel(order.status) }}</span>
-            </p>
-            <p v-if="order.tracking_url" class="text-sm pt-1">
+
+            <div class="pt-1">
+              <div class="flex items-center justify-between gap-4 mb-3">
+                <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">배송 진행</p>
+                <p
+                  class="text-xs font-medium"
+                  :class="
+                    order.status === 'cancelled'
+                      ? 'text-rose-500 dark:text-rose-400'
+                      : 'text-sky-600 dark:text-sky-300'
+                  "
+                >
+                  {{ orderStatusLabel(order.status) }}
+                </p>
+              </div>
+
+              <ol class="relative border-l border-slate-200 dark:border-white/10 ml-3 pl-4 space-y-4">
+                <li v-for="s in timelineSteps" :key="s.key" class="relative">
+                  <span
+                    class="absolute -left-[11px] top-[6px] h-3.5 w-3.5 rounded-full"
+                    :class="stepDotClass(stepVariant(order.status, s.key))"
+                  />
+                  <div class="flex items-start justify-between gap-3">
+                    <p class="text-sm" :class="stepTextClass(stepVariant(order.status, s.key))">
+                      {{ s.label }}
+                    </p>
+                    <p
+                      v-if="s.key === 'shipping' && order.tracking_url"
+                      class="text-[11px] font-medium text-indigo-600 dark:text-sky-300 whitespace-nowrap"
+                    >
+                      송장 등록
+                    </p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+
+            <p v-if="order.tracking_url" class="text-sm pt-2">
               <a
                 :href="order.tracking_url"
                 target="_blank"

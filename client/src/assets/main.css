@@ -10,11 +10,12 @@
   }
 
   body {
-    @apply text-slate-900 dark:text-slate-100 bg-white dark:bg-[#0f172a];
+    @apply text-slate-900 bg-white
+           dark:bg-zinc-950 dark:text-zinc-100;
   }
 
   ::placeholder {
-    @apply text-slate-400 dark:text-slate-400;
+    @apply text-slate-400 dark:text-zinc-500;
   }
 }
 
@@ -24,17 +25,17 @@
   }
 
   .shop-section-title {
-    @apply text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50;
+    @apply text-3xl font-bold tracking-tight text-slate-900 dark:text-zinc-50;
   }
 
   .shop-link-muted {
-    @apply text-sm font-medium text-slate-600 dark:text-slate-400 hover:underline shrink-0
-           hover:text-sky-800 dark:hover:text-sky-300
+    @apply text-sm font-medium text-slate-600 dark:text-zinc-400 hover:underline shrink-0
+           hover:text-sky-800 dark:hover:text-sky-400
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 rounded;
   }
 
   .shop-page-title {
-    @apply text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100;
+    @apply text-2xl font-semibold tracking-tight text-slate-800 dark:text-zinc-100;
   }
 
   
@@ -45,14 +46,13 @@
            border border-sky-800/30
            shadow-[0_10px_24px_-14px_rgba(2,132,199,0.38)]
            hover:shadow-[0_12px_28px_-14px_rgba(2,132,199,0.42)]
-           dark:bg-gradient-to-br dark:from-slate-100 dark:via-slate-200 dark:to-slate-300 dark:text-slate-900
-           dark:hover:from-white dark:hover:via-slate-100 dark:hover:to-slate-200
-           dark:border-white/30
-           dark:shadow-[0_10px_24px_-16px_rgba(0,0,0,0.35)]
-           dark:hover:shadow-[0_12px_28px_-16px_rgba(0,0,0,0.4)]
+           dark:from-violet-800 dark:to-purple-900 dark:hover:from-violet-700 dark:hover:to-purple-800
+           dark:text-white dark:border-violet-300/20
+           dark:shadow-[0_10px_28px_-12px_rgba(139,92,246,0.22)]
+           dark:hover:shadow-[0_12px_32px_-12px_rgba(139,92,246,0.3)]
            active:translate-y-[1px]
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/80
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f172a];
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
   .shop-btn-cart {
@@ -65,43 +65,48 @@
            border border-slate-300/80
            hover:bg-slate-50 hover:text-slate-900
            shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]
-           dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600/55
-           dark:hover:bg-slate-700 dark:hover:text-slate-100
+           dark:bg-zinc-900/90 dark:text-zinc-100 dark:border-white/10
+           dark:hover:bg-zinc-800 dark:hover:border-white/[0.14]
+           dark:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.5)]
            active:translate-y-[1px]
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/65
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f172a];
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
   .shop-btn-danger {
     @apply font-medium transition-all
            bg-rose-50 text-rose-700 border border-rose-300/80
            hover:bg-rose-100 hover:text-rose-800
-           dark:bg-rose-900/25 dark:text-rose-300 dark:border-rose-600/40
-           dark:hover:bg-rose-900/35
+           dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-500/30
+           dark:hover:bg-rose-950/55
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0f172a];
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
   .shop-btn-disabled {
     @apply bg-neutral-200 text-neutral-600 border border-neutral-300/80 cursor-not-allowed shadow-none
-           dark:bg-slate-700/60 dark:text-slate-200/85 dark:border-slate-600/55;
+           dark:bg-zinc-800/70 dark:text-zinc-400 dark:border-white/10;
   }
 
   .shop-input-select {
-    @apply px-4 py-2 rounded-lg bg-white dark:bg-[#1a2235]
-           border border-slate-200/80 dark:border-slate-600/45
-           text-neutral-800 dark:text-neutral-200 text-sm
+    @apply px-4 py-2 rounded-lg bg-white
+           border border-slate-200/80
+           text-neutral-800 text-sm
            shadow-[0_8px_20px_-16px_rgba(15,23,42,0.25)]
-           focus:outline-none focus:ring-2 focus:ring-sky-600/80;
+           dark:bg-zinc-900/80 dark:border-white/10 dark:text-zinc-100
+           focus:outline-none focus:ring-2 focus:ring-violet-600/80 dark:focus:ring-violet-500/50;
   }
 
   .shop-card-product {
     @apply relative overflow-hidden rounded-[1.75rem] cursor-pointer
-           bg-white/90 dark:bg-[#121827]/60
-           border border-neutral-900/10 dark:border-white/10
+           bg-white/90
+           border border-neutral-900/10
            shadow-[0_14px_34px_-26px_rgba(15,23,42,0.45)]
            hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.55)]
-           transition-[transform,box-shadow,border-color,background-color] duration-300;
+           transition-[transform,box-shadow,border-color,background-color] duration-300
+           dark:bg-zinc-900/35 dark:border-white/[0.08]
+           dark:shadow-[0_14px_40px_-24px_rgba(0,0,0,0.55)]
+           dark:hover:border-white/[0.12] dark:hover:bg-zinc-900/50;
   }
 
   .shop-card-product::before {
@@ -119,16 +124,17 @@
   }
 
   .shop-card-product-media {
-    @apply overflow-hidden flex items-center justify-center bg-neutral-50/90 dark:bg-[#0b1020]/55;
+    @apply overflow-hidden flex items-center justify-center bg-neutral-50/90
+           dark:bg-zinc-950/80;
   }
 
   .header-utility-link {
-    @apply font-medium text-neutral-800 dark:text-slate-100
+    @apply font-medium text-neutral-800 dark:text-zinc-200
            hover:text-neutral-950 dark:hover:text-white
            transition rounded px-0.5
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/70
            focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-100/30
-           dark:focus-visible:ring-offset-slate-900;
+           dark:focus-visible:ring-offset-zinc-950;
   }
 
   .header-icon-btn {
@@ -136,35 +142,95 @@
            border border-slate-200/85 bg-white text-neutral-700
            shadow-[0_8px_20px_-16px_rgba(15,23,42,0.3)]
            hover:scale-105 hover:text-neutral-900 hover:border-slate-300 transition
-           dark:bg-slate-800 dark:border-slate-600/45 dark:text-slate-100
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900;
+           dark:bg-zinc-900/85 dark:border-white/10 dark:text-zinc-100
+           dark:hover:bg-zinc-800 dark:hover:border-white/[0.14]
+           dark:shadow-[0_8px_24px_-16px_rgba(0,0,0,0.45)]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
   .header-theme-btn {
-    @apply cursor-pointer hover:scale-110 transition-transform rounded-full p-1
-           text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/65
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900;
+    @apply relative inline-flex items-center justify-center w-9 h-9 rounded-full
+           border border-slate-200/85 bg-white text-slate-700
+           shadow-[0_8px_20px_-16px_rgba(15,23,42,0.3)]
+           hover:scale-105 hover:text-slate-900 hover:border-slate-300 transition
+           dark:bg-zinc-900/85 dark:border-white/10 dark:text-zinc-100
+           dark:hover:bg-zinc-800 dark:hover:border-white/[0.14]
+           dark:shadow-[0_8px_24px_-16px_rgba(0,0,0,0.45)]
+           cursor-pointer
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
   .header-user-text {
-    @apply text-sm font-semibold text-slate-700 dark:text-slate-100;
+    @apply text-sm font-semibold text-slate-700 dark:text-zinc-200;
   }
 
   .header-user-link {
     @apply text-sm px-3 py-1.5 rounded-lg
-           bg-white/70 dark:bg-white/20 text-slate-700 dark:text-slate-100
-           hover:bg-white/90 dark:hover:bg-white/30 transition
+           bg-white/70 text-slate-700
+           hover:bg-white/90 transition
+           dark:bg-zinc-900/80 dark:border dark:border-white/10 dark:text-zinc-100
+           dark:hover:bg-zinc-800 dark:hover:border-white/[0.14]
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900;
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
   .header-user-text-link {
     @apply text-sm rounded px-1 hover:underline
-           text-slate-700 dark:text-slate-100 hover:text-slate-900 dark:hover:text-white
+           text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900;
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
+  }
+
+  .shop-admin-shell {
+    @apply min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/90
+           dark:from-zinc-950 dark:via-zinc-950 dark:to-neutral-950;
+  }
+
+  .shop-admin-card {
+    @apply rounded-2xl border border-slate-200/85 bg-white/95
+           shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]
+           dark:border-white/[0.08] dark:bg-zinc-900/40
+           dark:shadow-[0_12px_40px_-24px_rgba(0,0,0,0.5)];
+  }
+
+  .shop-admin-input {
+    @apply w-full rounded-xl border border-slate-200/85 bg-white px-3 py-2.5 text-sm
+           text-slate-800
+           shadow-[0_4px_14px_-12px_rgba(15,23,42,0.25)]
+           dark:bg-zinc-900/75 dark:border-white/10 dark:text-zinc-100
+           focus:outline-none focus:ring-2 focus:ring-violet-500/45 focus:border-violet-400/50
+           dark:focus:ring-violet-500/35;
+  }
+
+  .shop-admin-kpi {
+    @apply shop-admin-card p-4 md:p-5 flex flex-col gap-1;
+  }
+
+  .shop-admin-table-wrap {
+    @apply shop-admin-card overflow-hidden;
+  }
+
+  .shop-admin-table {
+    @apply w-full text-sm text-slate-800 dark:text-zinc-200;
+  }
+
+  .shop-admin-table thead {
+    @apply bg-slate-50/95 dark:bg-zinc-900/90 text-left;
+  }
+
+  .shop-admin-table th {
+    @apply px-3 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-zinc-500
+           border-b border-slate-200/80 dark:border-white/[0.08];
+  }
+
+  .shop-admin-table td {
+    @apply px-3 py-2.5 border-b border-slate-100 dark:border-white/[0.06] align-middle;
+  }
+
+  .shop-admin-table tbody tr:hover {
+    @apply bg-slate-50/70 dark:bg-zinc-800/35;
   }
 }
 
@@ -179,66 +245,92 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 102, 241, 0.55) rgba(148, 163, 184, 0.16);
+  scrollbar-color: rgba(14, 165, 233, 0.72) rgba(203, 213, 225, 0.55);
 }
 
 *::-webkit-scrollbar {
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
 }
 
 *::-webkit-scrollbar-track {
   background: linear-gradient(
     180deg,
-    rgba(241, 245, 249, 0.7),
-    rgba(226, 232, 240, 0.55)
+    rgba(248, 250, 252, 0.95),
+    rgba(226, 232, 240, 0.88)
   );
+  border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
 *::-webkit-scrollbar-thumb {
   background: linear-gradient(
     180deg,
-    rgba(99, 102, 241, 0.75),
-    rgba(56, 189, 248, 0.7)
+    rgba(56, 189, 248, 0.95) 0%,
+    rgba(14, 165, 233, 0.92) 52%,
+    rgba(2, 132, 199, 0.9) 100%
   );
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(241, 245, 249, 0.96);
   border-radius: 999px;
+  box-shadow:
+    0 3px 10px rgba(2, 132, 199, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 *::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     180deg,
-    rgba(79, 70, 229, 0.9),
-    rgba(14, 165, 233, 0.88)
+    rgba(14, 165, 233, 0.98) 0%,
+    rgba(2, 132, 199, 0.96) 55%,
+    rgba(3, 105, 161, 0.94) 100%
+  );
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(
+    180deg,
+    rgba(2, 132, 199, 0.95),
+    rgba(3, 105, 161, 0.95)
   );
 }
 
 .dark * {
-  scrollbar-color: rgba(129, 140, 248, 0.6) rgba(30, 41, 59, 0.42);
+  scrollbar-color: rgba(56, 189, 248, 0.65) rgba(24, 24, 27, 0.9);
 }
 
 .dark *::-webkit-scrollbar-track {
-  background: linear-gradient(
-    180deg,
-    rgba(30, 41, 59, 0.65),
-    rgba(15, 23, 42, 0.62)
-  );
+  background: linear-gradient(180deg, rgba(39, 39, 42, 0.95), rgba(24, 24, 27, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 .dark *::-webkit-scrollbar-thumb {
   background: linear-gradient(
     180deg,
-    rgba(129, 140, 248, 0.72),
-    rgba(56, 189, 248, 0.66)
+    rgba(56, 189, 248, 0.88) 0%,
+    rgba(14, 165, 233, 0.82) 55%,
+    rgba(3, 105, 161, 0.78) 100%
   );
-  border: 2px solid rgba(15, 23, 42, 0.75);
+  border: 2px solid rgba(9, 9, 11, 0.9);
+  box-shadow:
+    0 4px 14px rgba(14, 165, 233, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .dark *::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     180deg,
-    rgba(165, 180, 252, 0.9),
-    rgba(125, 211, 252, 0.86)
+    rgba(125, 211, 252, 0.97) 0%,
+    rgba(56, 189, 248, 0.94) 55%,
+    rgba(14, 165, 233, 0.9) 100%
+  );
+}
+
+.dark *::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(
+    180deg,
+    rgba(14, 165, 233, 0.95),
+    rgba(3, 105, 161, 0.95)
   );
 }

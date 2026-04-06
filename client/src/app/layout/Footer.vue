@@ -2,8 +2,8 @@
   <footer
     class="text-sm
            bg-gradient-to-b from-[#d3dae4] to-[#c0c8d4]
-           dark:from-[#141826] dark:to-[#0d1020]
-           border-t border-[#c0c8d4] dark:border-neutral-700/80"
+           dark:from-zinc-950 dark:to-neutral-950
+           border-t border-[#c0c8d4] dark:border-white/[0.08]"
   >
     <div class="max-w-6xl mx-auto px-6 py-10">
       <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
@@ -91,7 +91,7 @@ const slogan = "세련된 선택";
 
 const contact = {
   phone: "010-5599-8710",
-  fax: "-",
+  fax: "123-456-789",
   kakaoUrl: getKakaoChatUrl(import.meta.env.VITE_KAKAO_CHAT_URL),
   hours: "월~금요일 09:00 - 18:00",
   lunch: "점심시간 12:00 - 13:00",
@@ -104,8 +104,8 @@ const address = {
 };
 
 const bank = {
-  account: "-",
-  holder: "-",
+  account: "123-789-456",
+  holder: "김승태",
 };
 
 const company = {

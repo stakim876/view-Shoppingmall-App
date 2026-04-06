@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#f9fafb] text-neutral-800 font-sans dark:bg-[#0f172a] dark:text-neutral-200">
+  <div class="min-h-screen bg-[#f9fafb] text-neutral-800 font-sans dark:bg-zinc-950 dark:text-neutral-200">
     
     <div v-if="loading" class="min-h-screen flex items-center justify-center">
       <div class="text-center">

@@ -373,7 +373,7 @@ const secondaryNavItems = computed(() => {
 
     <div
       class="flex justify-between items-center gap-4 px-4 sm:px-6 py-3.5
-             bg-gradient-to-b from-white to-slate-50/95 dark:from-[#0f172a]/96 dark:to-[#111b2b]/96
+             bg-gradient-to-b from-white to-slate-50/95 dark:from-zinc-950/98 dark:to-neutral-950/98
              border-b border-slate-200/80 dark:border-slate-700/55"
     >
       <router-link
@@ -392,7 +392,7 @@ const secondaryNavItems = computed(() => {
       <div class="relative flex-1 max-w-xl mx-4">
         <div
           class="flex items-center gap-2 px-4 py-2.5 rounded-full
-                 bg-white dark:bg-[#0f172a]
+                 bg-white dark:bg-zinc-950
                  border border-slate-200/80 dark:border-slate-700/55
                  shadow-[0_8px_20px_-16px_rgba(15,23,42,0.28)]"
         >
@@ -420,7 +420,7 @@ const secondaryNavItems = computed(() => {
 
         <div
           v-if="showSearchDropdown"
-          class="absolute z-50 mt-2 w-full rounded-2xl border border-slate-200/85 dark:border-slate-700/55 bg-white dark:bg-[#0f172a] shadow-[0_16px_40px_-26px_rgba(15,23,42,0.38)] p-3"
+          class="absolute z-50 mt-2 w-full rounded-2xl border border-slate-200/85 dark:border-white/10 bg-white dark:bg-zinc-950 shadow-[0_16px_40px_-26px_rgba(15,23,42,0.38)] dark:shadow-[0_16px_40px_-26px_rgba(0,0,0,0.45)] p-3"
         >
           <div v-if="searchSuggestions.length > 0" class="mb-2">
             <p class="px-1 text-[11px] font-semibold tracking-wide text-neutral-500 dark:text-neutral-400">추천 검색어</p>
@@ -598,11 +598,11 @@ const secondaryNavItems = computed(() => {
     <div class="group/cat w-full">
       <div
         class="category-glass-bar relative flex items-center gap-2 overflow-x-auto overflow-y-hidden px-4 py-3 no-scrollbar
-               bg-slate-50/95 dark:bg-[#0f172a]/95
+               bg-slate-50/95 dark:bg-zinc-950/95
                border-b border-slate-200/80 dark:border-slate-700/55
                shadow-[0_10px_26px_-22px_rgba(15,23,42,0.34)]
                transition-all duration-300 ease-out
-               group-hover/cat:bg-white dark:group-hover/cat:bg-[#111b2b]
+               group-hover/cat:bg-white dark:group-hover/cat:bg-zinc-900
                group-hover/cat:border-slate-300/80 dark:group-hover/cat:border-slate-600/55"
       >
       <button

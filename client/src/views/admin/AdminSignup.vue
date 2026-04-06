@@ -16,7 +16,7 @@
           class="mix-blend-screen h-32 w-auto sm:h-40 sm:w-auto object-contain"
         />
       </div>
-      <p class="text-sm text-gray-500 mb-2">유리병 · 포장용기 전문 쇼핑몰</p>
+      <p class="text-sm text-gray-500 mb-2">당신의 취향을 모은 셀렉트샵</p>
       <h2 class="text-xl font-bold text-gray-800 mb-6">관리자 회원가입</h2>
 
       <form @submit.prevent="handleSignup" class="flex flex-col gap-4 text-left">

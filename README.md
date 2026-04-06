@@ -1,153 +1,54 @@
-# MY Shop - 유리병 전문 쇼핑몰
+# My Shop
 
-투명한 품질, 깨끗한 선택 — 당신의 일상을 더욱 특별하게 만드는 프리미엄 유리병 전문샵
+포폴 겸 연습으로 만든 쇼핑몰 데모. 사이트 카피는 셀렉트샵 느낌으로 잡아 놨고, 관리자가 상품·주문·공지 건드리고 사용자는 담기→결제→배송 조회까지 도는 구조로 맞춰 둠.
 
-## 🚀 시작하기
+프론트는 Vue 3, Vite, Pinia, Vue Router, Tailwind. API는 `client/src/lib/api.js` axios 한 군데로만 쓰고, 인터셉터에서 Bearer 달고 401/403(토큰 깨짐)이면 로컬 스토리지 비운 뒤 로그인으로 보냄. 다크모드는 `useTheme`, 체크아웃은 다음 우편번호로 주소만 받아오게 해둠. 홈은 히어로·캐러셀·추천 상품 위주.
 
-### 사전 요구사항
+## 에러 처리
 
-- Node.js (v18 이상)
-- MySQL (v8.0 이상)
-- npm 또는 yarn
+프론트는 `errorHandler.js`에서 타임아웃·끊김·HTTP 코드별로 사용자 문구 한번 정리해 두고, axios 인터셉터가 `error.userMessage`에 붙임. 페이지마다 `catch`에서 토스트나 본문에 뿌림. `main.js`에 Vue 전역 `errorHandler`, `unhandledrejection`, `router.onError`까지 걸어서 컴포넌트 밖에서 터진 것도 그냥 하얀 화면만 나오진 않게 함.
 
-### 설치 방법
+백은 검증·권한·비즈니스 규칙 깨지면 status랑 `message`/`code`로 내려주고, DB는 라우트에서 `try/catch`. 주문은 트랜잭션, 금액이랑 쿠폰은 서버에서 다시 까서 안 맞으면 거절. 테이블 없으면 그 기능만 빈 값·안내로 넘기는 코드도 있음(SQL 깔면 본격 동작).
 
-1. 저장소 클론:
+보려면: `client/src/lib/errorHandler.js`, `api.js`, `main.js` / 백은 `backend/server.js`의 `fail()`이랑 각 라우트 `catch`.
+
+## 백엔드
+
+진짜 쓰는 API는 `backend/server.js` 한 파일이 진입점. (루트에 다른 `server/` 폴더 있어도 프론트는 `VITE_API_URL`이 가리키는 쪽만 보면 됨.) JSON은 대부분 `success` / `message` 패턴.
+
+로직은 `backend/lib/`에 흩어 놨음. 인증·비번 해시·JWT는 `auth.js`, 상품 목록 쿼리 조립은 `productQuery.js` — 여기서 `sortBy`는 화이트리스트만 통과. 쿠폰은 `coupon.js`에서 기간·최소금액·정액정률·사용횟수 체크. 로그인 실패/캡차는 `loginSecurity`, Turnstile은 `captcha`, 메일은 `mailer`, 택배 조회 링크 조립은 `tracking.js`.
+
+`GET /api/products`는 옛날 호환 때문에 기본이 배열이고, 메타까지 필요하면 `withMeta=1`. 목록은 메모리에 잠깐 캐시했다가 상품 바뀌면 비움. 인덱스는 `database/performance_indexes.sql` 참고.
+
+주문 `POST /api/orders`는 트랜잭션. 서버가 다시 깐 금액이랑 클라이언트 `total_price`가 어긋나면 거절하고, 쿠폰도 서버에서 한 번 더 검증함. `imp_uid` / `merchant_uid`는 컬럼 있을 때만 넣게 해서 스키마 덜 맞춘 DB에서도 안 터지게 해둠.
+
+배송 상태는 paid → preparing → shipping → done 기준으로 마이페이지에 타임라인 그렸고, 예전에 쓰던 shipped 같은 값도 라벨에서 흡수. 관리자가 택배사·송장 넣으면 조회 URL까지 내려줌.
+
+JWT 로그인. 관리자는 `ADMIN_INVITE_CODE` 있는 `/signup-admin` 쪽. 비번 찾기·재입고 메일은 SMTP 없으면 그냥 안 감. 챗봇은 `POST /api/ai/chat`, OpenAI 키는 백엔드 env에만 (프론트에 넣지 말 것). 나머지는 찜, 리뷰, 공지, 관리자 KPI, 짧은 analytics 정도.
+
+## DB
+
+처음 한 번에 박을 거면 `init_full.sql`. 이후 기능별로 `coupons.sql`, `wishlist.sql`, `reviews_and_gallery.sql`, `notices.sql`, `restock_subscriptions.sql`, `order_tracking.sql`, `orders_update.sql` 같은 거 골라서. 테이블 없으면 어떤 API는 빈 결과로 넘어가서, 기능이 안 붙으면 SQL 안 깐 경우부터 의심하면 됨.
+
+## env
+
+전체 목록은 `backend/.env.example`, `client/.env.example`. 포트는 백 `PORT`랑 `VITE_API_URL`이랑 꼭 짝 맞추고, CORS랑 `CLIENT_BASE_URL`은 보통 로컬이면 `http://localhost:5173`.
+
+## 로컬
+
+MySQL 깔고, Node 18쯤 있으면 됨.
+
 ```bash
-git clone <repository-url>
-cd my-shop
+cd backend && npm i && cp .env.example .env
+cd ../client && npm i && cp .env.example .env
 ```
 
-2. Backend 설정:
-```bash
-cd backend
-npm install
+윈도우면 `cp` 대신 `copy`.
 
-# .env 파일 생성
-cp .env.example .env
-# .env 파일을 열어 데이터베이스 정보 등 실제 값 입력
-```
+루트에서 `npm i` 하고 `npm run dev` 하면 concurrently로 백이랑 Vite 같이 올라감.
 
-3. Frontend 설정:
-```bash
-cd client
-npm install
+## 페이지 대충
 
-# .env 파일 생성
-cp .env.example .env
-# .env 파일을 열어 API URL 등 실제 값 입력
-```
+`/home` 메인, `/products` `/product/:id` 상품, `/cart` `/wishlist`, `/checkout`은 로그인 후 쿠폰+포트원, `/order-complete`, `/order/:id`, `/mypage` 주문·타임라인, `/notice`, `/admin` 운영판, `/admin-signup`. `/order-lookup`은 번호 치는 화면만 있는데 상세 API가 JWT+본인/관리자라 비회원만으로는 안 열릴 수 있음 — 그냥 그렇게 묶여 있음.
 
-4. 데이터베이스 설정:
-```sql
-CREATE DATABASE myshop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-5. 개발 서버 실행:
-
-Backend:
-```bash
-cd backend
-npm start
-```
-
-Frontend:
-```bash
-cd client
-npm run dev
-```
-
-## 📁 프로젝트 구조
-
-```
-my-shop/
-├── backend/          # Express.js 백엔드 서버
-│   ├── lib/         # 유틸리티 및 라이브러리
-│   ├── server.js    # 메인 서버 파일
-│   └── .env         # 환경 변수 (생성 필요)
-├── client/          # Vue.js 프론트엔드
-│   ├── src/
-│   │   ├── components/  # Vue 컴포넌트
-│   │   ├── store/       # Pinia 스토어
-│   │   ├── router/      # Vue Router
-│   │   └── lib/         # 유틸리티
-│   └── .env         # 환경 변수 (생성 필요)
-└── DEPLOYMENT.md    # 배포 가이드
-```
-
-## 🔧 환경 변수 설정
-
-### Backend (.env)
-
-```env
-PORT=3001
-NODE_ENV=development
-JWT_SECRET=replace_with_strong_random_secret
-JWT_EXPIRES_IN=7d
-ADMIN_INVITE_CODE=replace_with_admin_invite_code
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=myshop
-DB_PORT=3306
-CORS_ORIGIN=http://localhost:5173
-CLIENT_URL=http://localhost:5173
-```
-
-### Frontend (.env)
-
-```env
-VITE_API_URL=http://localhost:3001/api
-VITE_PORTONE_STORE_ID=impXXXXXXXX
-VITE_OPENAI_API_KEY=your_openai_api_key
-```
-
-자세한 내용은 각 디렉토리의 `.env.example` 파일을 참고하세요.
-
-## 📦 주요 기능
-
-- ✅ 상품 조회 및 검색
-- ✅ 장바구니 기능
-- ✅ 주문 및 결제
-- ✅ 쿠폰 할인 (정액/정률)
-- ✅ 관리자 페이지
-- ✅ AI 챗봇
-- ✅ 카테고리 필터링
-- ✅ 가격대 필터링
-- ✅ 정렬 기능
-- ✅ 페이지네이션
-- ✅ Toast 알림 시스템
-- ✅ 스켈레톤 로딩
-- ✅ 재입고 알림 신청 (품절 상품 이메일 알림)
-
-## 🔎 상품 API 고도화
-
-- `GET /api/products`는 `search`, `category`, `minPrice`, `maxPrice`, `sortBy`, `sortOrder`, `page`, `limit`를 지원합니다.
-- 기본 응답은 기존 호환을 위해 배열입니다.
-- `withMeta=1`을 추가하면 페이지네이션 메타가 포함된 객체 응답을 받습니다.
-- 조회 성능을 위해 응답 캐시(TTL 기본 60초)를 사용하며, 상품 추가/수정/삭제 시 캐시를 무효화합니다.
-- DB 인덱스는 `backend/database/performance_indexes.sql`을 실행해 적용할 수 있습니다.
-- 재입고 알림 기능은 `backend/database/restock_subscriptions.sql` 실행 후 사용할 수 있습니다.
-
-## 🛠️ 기술 스택
-
-### Frontend
-- Vue 3 (Composition API)
-- Pinia (상태 관리)
-- Vue Router
-- Tailwind CSS
-- Vite
-
-### Backend
-- Node.js
-- Express.js
-- MySQL
-
-## 📚 배포
-
-프로덕션 배포 방법은 [DEPLOYMENT.md](./DEPLOYMENT.md) 파일을 참고하세요.
-결제 리허설은 [PAYMENT_REHEARSAL_CHECKLIST.md](./PAYMENT_REHEARSAL_CHECKLIST.md) 파일을 참고하세요.
-
-## 📝 라이선스
-
-이 프로젝트는 MIT 라이선스를 따릅니다.
+배포: 포폴용 **Vercel + Railway(MySQL)** 는 [VERCEL_RAILWAY.md](./VERCEL_RAILWAY.md). VPS·Nginx는 [DEPLOYMENT.md](./DEPLOYMENT.md). 결제 연습은 [PAYMENT_REHEARSAL_CHECKLIST.md](./PAYMENT_REHEARSAL_CHECKLIST.md).

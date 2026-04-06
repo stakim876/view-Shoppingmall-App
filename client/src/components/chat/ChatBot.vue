@@ -1,10 +1,26 @@
 <template>
   <div
-    class="fixed bottom-24 right-6 w-80 bg-white dark:bg-[#0f172a] rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200 dark:border-white/10"
+    class="fixed bottom-24 right-6 w-80 bg-white dark:bg-zinc-950 rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200 dark:border-white/[0.1]"
   >
-    <div class="bg-gradient-to-br from-sky-600 via-sky-700 to-sky-900 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 text-white px-4 py-2 flex justify-between items-center border-b border-white/15 dark:border-slate-600/40">
-      <span class="font-semibold">Myshop AI 도우미</span>
-      <button @click="$emit('close')" class="text-white hover:text-gray-200">✖</button>
+    <div
+      class="bg-gradient-to-br from-sky-600 via-sky-700 to-sky-900 dark:from-violet-900 dark:via-purple-950 dark:to-zinc-950 text-white px-4 py-3 flex justify-between items-start gap-2 border-b border-white/15 dark:border-white/10"
+    >
+      <div class="min-w-0">
+        <span class="font-semibold tracking-tight block">쇼핑 도움말</span>
+        <span class="text-[11px] text-white/80 font-normal leading-snug block mt-0.5">
+          배송·교환·상품 문의를 도와드려요
+        </span>
+      </div>
+      <button
+        type="button"
+        @click="$emit('close')"
+        class="shrink-0 rounded-lg p-1.5 text-white/90 hover:bg-white/15 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+        aria-label="닫기"
+      >
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
+        </svg>
+      </button>
     </div>
 
     <div class="flex-1 p-3 overflow-y-auto space-y-2 text-sm">
@@ -15,7 +31,7 @@
       >
         <div
           :class="[
-            'inline-block px-3 py-2 rounded-xl max-w-[80%]',
+            'inline-block px-3 py-2 rounded-xl max-w-[85%] whitespace-pre-line break-words text-left',
             msg.role === 'user'
               ? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700/50 dark:text-neutral-100'
               : 'bg-neutral-100 text-neutral-700 dark:bg-white/10 dark:text-neutral-200',
@@ -31,14 +47,17 @@
         v-model="input"
         @keyup.enter="send"
         type="text"
-        placeholder="무엇을 찾고 계신가요?"
-        class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none"
+        placeholder="궁금한 점을 입력해 주세요"
+        class="flex-1 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900/80 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+        :disabled="sending"
       />
       <button
+        type="button"
         @click="send"
-        class="shop-btn-primary px-3 py-2 rounded-lg text-sm shrink-0"
+        class="shop-btn-primary px-3 py-2 rounded-lg text-sm shrink-0 disabled:opacity-50 disabled:pointer-events-none"
+        :disabled="sending"
       >
-        전송
+        {{ sending ? "응답 중…" : "전송" }}
       </button>
     </div>
   </div>
@@ -49,15 +68,21 @@ import { ref } from "vue";
 import { askChatBot } from "../../lib/openai.js";
 
 const input = ref("");
+const sending = ref(false);
 const messages = ref([
-  { role: "assistant", text: "안녕하세요 😊 Myshop AI 도우미입니다. 무엇을 도와드릴까요?" },
+  {
+    role: "assistant",
+    text: "안녕하세요. Myshop 쇼핑 도움말입니다. 배송, 교환, 상품 관련해서 편하게 물어보세요.",
+  },
 ]);
 
 const send = async () => {
-  if (!input.value) return;
+  if (sending.value || !input.value) return;
   const userText = input.value.trim();
+  if (!userText) return;
   messages.value.push({ role: "user", text: userText });
   input.value = "";
+  sending.value = true;
 
   try {
     const reply = await askChatBot(userText);
@@ -65,8 +90,10 @@ const send = async () => {
   } catch (e) {
     messages.value.push({
       role: "assistant",
-      text: "죄송합니다. 지금은 잠시 연결이 원활하지 않습니다 😢",
+      text: "죄송합니다. 지금은 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.",
     });
+  } finally {
+    sending.value = false;
   }
 };
 </script>

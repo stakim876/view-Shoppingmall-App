@@ -2,7 +2,7 @@
   <div
     class="min-h-screen flex items-center justify-center 
            bg-gradient-to-br from-slate-100 to-slate-200 
-           dark:from-[#0f172a] dark:to-[#1e293b]
+           dark:from-zinc-950 dark:to-neutral-950
            px-6"
   >
     <div class="text-center max-w-md">

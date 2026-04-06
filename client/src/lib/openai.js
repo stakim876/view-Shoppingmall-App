@@ -1,23 +1,24 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
-
-const cache = new Map();
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3102/api";
+const API_BASE = API_URL.replace(/\/api\/?$/, "");
 
 export async function askChatBot(message) {
   try {
-    if (!message || message.trim() === "") return "질문을 입력해주세요 🙂";
+    if (!message || message.trim() === "") return "질문을 입력해 주세요.";
 
-    if (cache.has(message)) return cache.get(message);
+    const res = await axios.post(
+      `${API_BASE}/api/ai/chat`,
+      { message },
+      { timeout: 120000 }
+    );
 
-    const res = await axios.post(`${API_BASE}/api/ai/chat`, { message }); // AI API 요청
-
-    const answer = res.data?.text?.trim() || "죄송합니다, 답변을 가져오지 못했어요 😢"; // AI 응답을 Vue로 반환
-    cache.set(message, answer);
-
+    const answer = res.data?.text?.trim() || "죄송합니다. 답변을 가져오지 못했습니다.";
     return answer;
   } catch (error) {
-    console.error("🚨 ChatBot Error:", error);
-    return "현재 서버 응답이 지연되고 있어요. 잠시 후 다시 시도해주세요 ⚙️";
+    console.error("ChatBot request failed:", error);
+    const serverText = error?.response?.data?.text;
+    if (serverText && String(serverText).trim()) return String(serverText).trim();
+    return "일시적으로 응답을 받지 못했습니다. 잠시 후 다시 시도하거나, 푸터의 카카오 문의를 이용해 주세요.";
   }
 }

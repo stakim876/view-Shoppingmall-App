@@ -24,7 +24,7 @@ const checkout = () => {
   <div
     class="min-h-screen px-8 py-10 
            bg-gradient-to-b from-slate-100 to-slate-200 
-           dark:from-[#0f172a] dark:to-[#1e293b]
+           dark:from-zinc-950 dark:to-neutral-950
            transition-colors duration-300"
   >
     <h1

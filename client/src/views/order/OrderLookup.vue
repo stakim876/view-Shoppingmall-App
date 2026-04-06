@@ -2,7 +2,7 @@
   <div
     class="min-h-screen py-16 px-6
            bg-gradient-to-b from-slate-100 to-slate-200
-           dark:from-[#0f172a] dark:to-[#1e293b]
+           dark:from-zinc-950 dark:to-neutral-950
            text-neutral-800 dark:text-gray-100 font-['Inter']"
   >
     <div class="max-w-xl mx-auto">

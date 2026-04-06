@@ -15,7 +15,7 @@ router.post("/chat", async (req, res) => {
     }
 
     if (!message || typeof message !== "string" || !message.trim()) {
-      return res.status(400).json({ text: "질문을 입력해주세요 🙂" });
+      return res.status(400).json({ text: "질문을 입력해 주세요." });
     }
 
     const { data } = await axios.post(
@@ -27,7 +27,7 @@ router.post("/chat", async (req, res) => {
             role: "system",
             content:
               process.env.OPENAI_SYSTEM_PROMPT ||
-              "당신은 쇼핑몰 고객 상담 챗봇입니다. 친절하고 간결하게 답변하세요.",
+              "당신은 쇼핑몰 쇼핑 도움말 담당입니다. 배송·교환·상품 문의에 친절하고 간결하게 답합니다. 답변에 이모지는 사용하지 마세요.",
           },
           { role: "user", content: message.trim() },
         ],
@@ -45,7 +45,7 @@ router.post("/chat", async (req, res) => {
 
     const text =
       data?.choices?.[0]?.message?.content?.trim() ||
-      "죄송합니다, 답변을 생성하지 못했어요 😢";
+      "죄송합니다. 답변을 생성하지 못했습니다.";
 
     res.json({ text });
   } catch (err) {
@@ -61,12 +61,13 @@ router.post("/chat", async (req, res) => {
     }
     if (status === 429) {
       return res.status(503).json({
-        text: "요청이 너무 많아요. 잠시 후 다시 시도해주세요 ⚙️",
+        text:
+          "지금은 질문 처리 한도에 걸려 잠시 답변이 어렵습니다. 1~2분 뒤에 다시 시도해 주세요. 계속되면 OpenAI 계정의 사용량·결제를 확인해 주세요.",
       });
     }
 
     res.status(500).json({
-      text: "현재 서버 응답이 지연되고 있어요. 잠시 후 다시 시도해주세요 ⚙️",
+      text: "일시적으로 응답을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.",
     });
   }
 });

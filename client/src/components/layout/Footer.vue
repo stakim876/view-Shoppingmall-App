@@ -83,10 +83,10 @@ import LayoutFooter from "@/app/layout/Footer.vue";
 
     <div class="max-w-6xl mx-auto px-6 py-6">
       <div class="space-y-1 text-neutral-600 dark:text-white/85 text-xs leading-relaxed">
-        <p>{{ company.name }} | 대표자: {{ company.representative }}</p>
+        <p>{{ company.name }} | 대표자: 김승태{{ company.representative }}</p>
         <p>{{ company.address }}</p>
-        <p>사업자등록번호: {{ company.bizNo }} | 통신판매신고번호: {{ company.mailOrderNo }}</p>
-        <p>E-MAIL: {{ company.email }}</p>
+        <p>사업자등록번호:123-456-789 {{ company.bizNo }} | 통신판매신고번호: 1546-456-7894{{ company.mailOrderNo }}</p>
+        <p>E-MAIL: stkim3752@naver.com{{ company.email }}</p>
         <p class="text-neutral-500 dark:text-white/70 pt-1">{{ company.copyright }}</p>
       </div>
     </div>
@@ -123,7 +123,7 @@ const company = {
   address: "경기도 수원시",
   bizNo: "123-456-789",
   mailOrderNo: "-",
-  email: "-",
+  email: "stkim3752@gmail.com",
   copyright: "COPYRIGHT © 2025 MY Shop. ALL RIGHTS RESERVED.",
 };
 </script>
