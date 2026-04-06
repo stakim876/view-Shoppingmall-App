@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
+import axios from "axios";
 import mysql from "mysql2/promise";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -13,9 +14,9 @@ import { verifyCaptchaToken } from "./lib/captcha.js";
 import { sendPasswordResetEmail, sendRestockAlertEmail } from "./lib/mailer.js";
 import { buildTrackingUrl, getCarrierLabel, isValidCarrierCode, listCarriers } from "./lib/tracking.js";
 
-dotenv.config();
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, ".env") });
+
 const app = express();
 
 function ok(res, payload = {}, message = "OK", status = 200) {
@@ -198,6 +199,155 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+async function openAiChatCompletion(prompt, apiKey) {
+  const maxTokens = Math.min(800, Math.max(64, Number(process.env.OPENAI_MAX_TOKENS || 350)));
+  const payload = {
+    model: process.env.OPENAI_MODEL || "gpt-3.5-turbo",
+    messages: [
+      {
+        role: "system",
+        content:
+              process.env.OPENAI_SYSTEM_PROMPT ||
+              "당신은 쇼핑몰 쇼핑 도움말 담당입니다. 배송·교환·상품 문의에 친절하고 간결하게 답합니다. 답변에 이모지는 사용하지 마세요.",
+      },
+      { role: "user", content: prompt },
+    ],
+    max_tokens: maxTokens,
+    temperature: 0.7,
+  };
+  const maxAttempts = Number(process.env.OPENAI_RETRY_ATTEMPTS || 4);
+  let lastErr;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const { data } = await axios.post("https://api.openai.com/v1/chat/completions", payload, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 45000,
+      });
+      return data;
+    } catch (err) {
+      lastErr = err;
+      const status = err.response?.status;
+      if (status === 429 && attempt < maxAttempts - 1) {
+        const ra = parseInt(String(err.response?.headers?.["retry-after"] || ""), 10);
+        const waitMs = Number.isFinite(ra) && ra > 0 ? ra * 1000 : Math.min(12000, 1200 * 2 ** attempt);
+        console.warn(`⏳ OpenAI 429, ${waitMs}ms 후 재시도 (${attempt + 1}/${maxAttempts})`);
+        await new Promise((r) => setTimeout(r, waitMs));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
+
+/** OpenAI 미설정·한도·오류 시에도 쇼핑몰 데모가 끊기지 않도록 고정 안내 문구 */
+function shoppingHelpFallback(userMessage) {
+  const t = String(userMessage || "").trim();
+  const lower = t.toLowerCase();
+
+  if (/배송|택배|송장|배송지|언제\s*와|도착/.test(t)) {
+    return [
+      "배송은 이렇게 진행됩니다.",
+      "",
+      "• 결제가 완료되면 상품 준비 후 택배로 발송됩니다.",
+      "• 발송이 되면 주문 상세에서 택배사·송장 번호를 확인할 수 있습니다. 비회원이시면 상단 메뉴의 「주문/배송 조회」에서도 조회할 수 있습니다.",
+      "• 배송지는 주문 시 입력한 주소로 보내드리니, 오타가 없는지 한 번 더 확인해 주세요.",
+      "",
+      "배송 지연·오배송 등 급한 문의는 푸터의 카카오 문의로 연락 주시면 빠르게 도와드리겠습니다.",
+    ].join("\n");
+  }
+
+  if (/교환|반품|환불|취소/.test(t)) {
+    return [
+      "교환·반품·환불은 아래를 참고해 주세요.",
+      "",
+      "• 단순 변심: 상품 수령 후 일정 기간 내 미개봉·미사용 상태에서 가능한 경우가 많습니다. (카테고리·상품에 따라 상이할 수 있습니다.)",
+      "• 불량·오배송: 수령 직후 고객센터로 사진과 함께 연락 주시면 안내해 드립니다.",
+      "",
+      "정확한 조건과 절차는 푸터의 카카오 문의로 문의 주시면 주문 내역을 확인한 뒤 안내해 드립니다.",
+    ].join("\n");
+  }
+
+  if (/주문\s*조회|배송\s*조회|주문번호|조회/.test(t) || /order-lookup/.test(lower)) {
+    return [
+      "주문·배송 조회 방법입니다.",
+      "",
+      "• 로그인하셨다면 「마이페이지」에서 주문 목록을 확인할 수 있습니다.",
+      "• 비회원이시거나 링크가 필요하면 상단/푸터의 주문/배송 조회 메뉴를 이용해 주세요.",
+      "",
+      "조회가 되지 않으면 푸터 카카오 문의로 주문자명·연락처를 알려 주시면 도와드리겠습니다.",
+    ].join("\n");
+  }
+
+  if (/결제|카드|포트원|imp_|환불/.test(t) || /payment/.test(lower)) {
+    return [
+      "결제 관련 안내입니다.",
+      "",
+      "• 결제는 체크아웃 화면에서 안내되는 결제 수단으로 진행됩니다.",
+      "• 결제 완료 후 주문 내역에서 상태를 확인할 수 있습니다.",
+      "• 결제 오류·취소 확인이 필요하면 푸터 카카오 문의로 결제 시각과 증상을 남겨 주세요.",
+    ].join("\n");
+  }
+
+  if (/쿠폰|할인|프로모/.test(t)) {
+    return [
+      "쿠폰·할인 안내입니다.",
+      "",
+      "• 장바구니 또는 결제 단계에서 사용 가능한 쿠폰이 있으면 입력·적용할 수 있습니다.",
+      "• 쿠폰마다 최소 주문 금액·사용 기한이 다를 수 있습니다.",
+      "• 적용이 안 되면 푸터 카카오 문의로 쿠폰 코드를 알려 주시면 확인해 드립니다.",
+    ].join("\n");
+  }
+
+  if (/문의|고객|연락|전화|카카오/.test(t)) {
+    return [
+      "고객 문의 방법입니다.",
+      "",
+      "• 푸터 카카오 문의로 배송·교환·상품 문의를 남겨 주세요.",
+      "• 고객센터 운영 시간은 푸터에 안내되어 있습니다.",
+      "",
+      "긴급한 주문·결제 문제는 카카오 문의에 주문번호 또는 주문자 정보를 함께 적어 주시면 빠르게 처리할 수 있습니다.",
+    ].join("\n");
+  }
+
+  return [
+    "Myshop 쇼핑 도움말입니다.",
+    "",
+    "• 상품은 「상품」 메뉴에서 검색·필터로 찾을 수 있습니다.",
+    "• 장바구니에 담은 뒤 결제하면 주문이 완료됩니다.",
+    "• 배송·송장은 마이페이지 또는 주문/배송 조회에서 확인할 수 있습니다.",
+    "",
+    "배송 일정, 교환·반품, 결제 오류 등 구체적인 내용은 푸터 카카오 문의로 질문을 남겨 주시면 순서대로 답변드립니다.",
+  ].join("\n");
+}
+
+app.post("/api/ai/chat", async (req, res) => {
+  const prompt = String(req.body?.message || "").trim();
+  if (!prompt) {
+    return res.status(400).json({ text: "질문을 입력해 주세요." });
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return res.json({ text: shoppingHelpFallback(prompt), fallback: true });
+  }
+
+  try {
+    const data = await openAiChatCompletion(prompt, apiKey);
+    const text = data?.choices?.[0]?.message?.content?.trim();
+    if (text) {
+      return res.json({ text });
+    }
+    return res.json({ text: shoppingHelpFallback(prompt), fallback: true });
+  } catch (err) {
+    console.error("OpenAI API 오류 (폴백 응답 사용):", err.response?.data || err.message);
+    return res.json({ text: shoppingHelpFallback(prompt), fallback: true });
+  }
+});
 
 const db = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
