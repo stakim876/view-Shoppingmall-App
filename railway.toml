@@ -1,8 +1,9 @@
-# Railway: 서비스 Root Directory = backend
+# Backend API. 레포 루트 = 빌드 컨텍스트 → Railway에서 Root Directory 비워도 됨.
 # https://docs.railway.com/reference/config-as-code
 
 [build]
 builder = "DOCKERFILE"
+dockerfilePath = "backend/Dockerfile"
 
 [deploy]
 startCommand = "npm start"
