@@ -349,16 +349,28 @@ app.post("/api/ai/chat", async (req, res) => {
   }
 });
 
-const db = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "myshop",
-  port: Number(process.env.DB_PORT || 3306),
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
+function buildMysqlPoolConfig() {
+  const config = {
+    host: process.env.DB_HOST || process.env.MYSQLHOST || "localhost",
+    user: process.env.DB_USER || process.env.MYSQLUSER || "root",
+    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || "",
+    database: process.env.DB_NAME || process.env.MYSQLDATABASE || "myshop",
+    port: Number(process.env.DB_PORT || process.env.MYSQLPORT || 3306),
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+  };
+
+  const sslFlag = process.env.DB_SSL;
+  if (sslFlag === "true" || sslFlag === "1") {
+    const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false";
+    config.ssl = { rejectUnauthorized };
+  }
+  
+  return config;
+}
+
+const db = mysql.createPool(buildMysqlPoolConfig());
 
 console.log("✅ MySQL Connection Pool 생성 완료");
 
@@ -1621,7 +1633,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = Number(process.env.PORT || 3001);
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다.`);
   console.log("✅ 찜 API: GET/POST/DELETE /api/wishlist, GET /api/wishlist/ids");
 });
