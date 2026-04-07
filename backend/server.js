@@ -351,10 +351,13 @@ app.post("/api/ai/chat", async (req, res) => {
 
 function buildMysqlPoolConfig() {
   const config = {
-    host: process.env.DB_HOST || process.env.MYSQLHOST || "localhost",
-    user: process.env.DB_USER || process.env.MYSQLUSER || "root",
-    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || "",
-    database: process.env.DB_NAME || process.env.MYSQLDATABASE || "myshop",
+    host: process.env.DB_HOST || process.env.MYSQLHOST,
+    user: process.env.DB_USER || process.env.MYSQLUSER,
+    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+    database:
+      process.env.DB_NAME ||
+      process.env.MYSQLDATABASE ||
+      process.env.MYSQL_DATABASE,
     port: Number(process.env.DB_PORT || process.env.MYSQLPORT || 3306),
     waitForConnections: true,
     connectionLimit: 10,
@@ -363,14 +366,32 @@ function buildMysqlPoolConfig() {
 
   const sslFlag = process.env.DB_SSL;
   if (sslFlag === "true" || sslFlag === "1") {
-    const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false";
+    const rejectUnauthorized =
+      process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false";
     config.ssl = { rejectUnauthorized };
   }
-  
+
   return config;
 }
 
-const db = mysql.createPool(buildMysqlPoolConfig());
+const mysqlConfig = buildMysqlPoolConfig();
+
+console.log("DB ENV CHECK", {
+  DB_HOST: process.env.DB_HOST,
+  DB_USER: process.env.DB_USER,
+  DB_NAME: process.env.DB_NAME,
+  MYSQLHOST: process.env.MYSQLHOST,
+  MYSQLUSER: process.env.MYSQLUSER,
+  MYSQLDATABASE: process.env.MYSQLDATABASE,
+  MYSQL_DATABASE: process.env.MYSQL_DATABASE,
+  MYSQLPORT: process.env.MYSQLPORT,
+  resolvedHost: mysqlConfig.host,
+  resolvedUser: mysqlConfig.user,
+  resolvedDatabase: mysqlConfig.database,
+  resolvedPort: mysqlConfig.port,
+});
+
+const db = mysql.createPool(mysqlConfig);
 
 console.log("✅ MySQL Connection Pool 생성 완료");
 
