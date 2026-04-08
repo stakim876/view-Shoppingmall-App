@@ -94,7 +94,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import api from "../../lib/api";
+import api from "@/api";
 import { useCartStore } from "../../store/cart";
 import { useToastStore } from "../../store/toast";
 import { useRouter, useRoute } from "vue-router";
@@ -130,7 +130,9 @@ const error = ref(null);
 const fetchProducts = async () => {
   error.value = null;
   try {
+    // baseURL이 VITE_API_URL(…/api)이므로 경로는 /products (= …/api/products)
     const res = await api.get("/products");
+    console.log(res.data);
     products.value = res.data;
   } catch (err) {
     error.value = err.userMessage || "상품을 불러오는 중 오류가 발생했습니다.";
@@ -138,8 +140,8 @@ const fetchProducts = async () => {
   }
 };
 
-onMounted(() => {
-  fetchProducts();
+onMounted(async () => {
+  await fetchProducts();
 });
 
 watch(
