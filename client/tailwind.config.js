@@ -8,7 +8,15 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: [
+          'Inter',
+          'Noto Sans KR',
+          'system-ui',
+          'Segoe UI',
+          'Malgun Gothic',
+          'Apple SD Gothic Neo',
+          'sans-serif',
+        ],
       },
       keyframes: {
         slideUpBlur: {

@@ -27,7 +27,7 @@
     <div class="relative z-10">
     
     <section
-      class="relative flex items-center justify-center min-h-[300px] sm:min-h-[360px] md:min-h-[400px] lg:min-h-[440px] xl:min-h-[480px] py-10 sm:py-12 overflow-hidden"
+      class="relative flex items-center justify-center min-h-[300px] sm:min-h-[360px] md:min-h-[400px] lg:min-h-[440px] xl:min-h-[480px] py-10 sm:py-12 overflow-x-hidden overflow-y-visible pb-14 sm:pb-16"
     >
       <div
         class="absolute inset-0 bg-gradient-to-b from-white/35 via-sky-50/15 to-transparent dark:from-white/[0.03] dark:via-slate-950/30 dark:to-transparent"
