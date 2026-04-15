@@ -6,7 +6,7 @@
       :aria-expanded="isOpen"
       aria-controls="shop-chatbot-panel"
       :aria-label="isOpen ? '쇼핑 도움말 닫기' : '쇼핑 도움말 열기'"
-      class="group fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center
+      class="group fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center
              rounded-2xl text-white
              bg-gradient-to-br from-sky-500 via-sky-600 to-sky-800
              shadow-[0_12px_40px_-8px_rgba(2,132,199,0.55),0_4px_14px_-6px_rgba(15,23,42,0.25)]

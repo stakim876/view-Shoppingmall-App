@@ -87,6 +87,31 @@
               {{ product?.description || "상품 설명이 준비 중입니다." }}
             </p>
 
+            <div v-if="productColorList.length" class="mb-4">
+              <p class="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">색상 옵션</p>
+              <ul class="flex flex-wrap gap-2">
+                <li
+                  v-for="(c, i) in productColorList"
+                  :key="i"
+                  class="px-3 py-1 rounded-full text-sm bg-neutral-100 text-neutral-800 dark:bg-zinc-800 dark:text-neutral-200 border border-neutral-200/80 dark:border-zinc-700"
+                >
+                  {{ c }}
+                </li>
+              </ul>
+            </div>
+
+            <div v-if="productLaptopSpecRows.length" class="mb-4 rounded-xl border border-neutral-200 dark:border-zinc-700 overflow-hidden">
+              <p class="text-xs font-semibold text-neutral-500 uppercase tracking-wide px-4 pt-3 pb-2 bg-neutral-50 dark:bg-zinc-900/80">
+                주요 사양
+              </p>
+              <dl class="divide-y divide-neutral-100 dark:divide-zinc-800 text-sm">
+                <div v-for="row in productLaptopSpecRows" :key="row.key" class="grid grid-cols-[6.5rem_1fr] gap-2 px-4 py-2">
+                  <dt class="text-neutral-500 dark:text-neutral-400">{{ row.label }}</dt>
+                  <dd class="text-neutral-800 dark:text-neutral-200 font-medium">{{ row.value }}</dd>
+                </div>
+              </dl>
+            </div>
+
             <p class="text-3xl font-semibold text-blue-600 mb-2">
               {{ formatPrice(product?.price) }}원
             </p>
@@ -305,6 +330,44 @@ const stockNumber = computed(() => {
   const p = product.value;
   if (!p || p.stock == null || p.stock === undefined) return 0;
   return Number(p.stock);
+});
+
+const productColorList = computed(() => {
+  const raw = product.value?.color_options;
+  if (raw == null || raw === "") return [];
+  try {
+    const p = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return Array.isArray(p) ? p.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+});
+
+const LAPTOP_SPEC_LABELS = {
+  cpu: "CPU",
+  ram: "RAM",
+  storage: "저장장치",
+  display: "디스플레이",
+  gpu: "GPU",
+};
+
+const productLaptopSpecRows = computed(() => {
+  const raw = product.value?.laptop_specs;
+  if (raw == null || raw === "") return [];
+  let obj;
+  try {
+    obj = typeof raw === "string" ? JSON.parse(raw) : raw;
+  } catch {
+    return [];
+  }
+  if (!obj || typeof obj !== "object") return [];
+  return Object.entries(LAPTOP_SPEC_LABELS)
+    .map(([key, label]) => {
+      const value = obj[key];
+      const s = value != null ? String(value).trim() : "";
+      return s ? { key, label, value: s } : null;
+    })
+    .filter(Boolean);
 });
 
 const addToCart = (p) => {

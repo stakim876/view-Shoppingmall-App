@@ -348,15 +348,17 @@ const secondaryNavItems = computed(() => {
     </div>
 
     <div
-      class="flex items-center justify-center gap-6 px-4 py-2.5 text-sm leading-none
+      class="flex items-center justify-start sm:justify-center gap-4 sm:gap-6 px-4 py-2.5 text-xs sm:text-sm leading-none
+             overflow-x-auto no-scrollbar whitespace-nowrap
              bg-slate-50/95 dark:bg-slate-900
              border-b border-slate-200/70 dark:border-slate-700/55"
     >
-      <template v-for="link in topLinks" :key="link.label">
+      <template v-for="(link, idx) in topLinks" :key="link.label">
         <router-link
           v-if="!link.external"
           :to="link.path"
           class="header-utility-link"
+          :class="idx >= 4 ? 'hidden sm:inline-flex' : 'inline-flex'"
         >
           {{ link.label }}
         </router-link>
@@ -365,6 +367,7 @@ const secondaryNavItems = computed(() => {
           href="#"
           @click.prevent="openExternal(link.url)"
           class="header-utility-link"
+          :class="idx >= 4 ? 'hidden sm:inline-flex' : 'inline-flex'"
         >
           {{ link.label }}
         </a>
@@ -372,24 +375,24 @@ const secondaryNavItems = computed(() => {
     </div>
 
     <div
-      class="flex justify-between items-center gap-4 px-4 sm:px-6 py-3.5
+      class="flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5
              bg-gradient-to-b from-white to-slate-50/95 dark:from-zinc-950/98 dark:to-neutral-950/98
              border-b border-slate-200/80 dark:border-slate-700/55"
     >
       <router-link
         to="/home"
         aria-label="My Shop 홈으로 이동"
-        class="flex items-center justify-start hover:opacity-90 transition shrink-0 overflow-visible h-14 sm:h-[4.25rem] md:h-[4.7rem] w-[min(46vw,17.5rem)] sm:w-[19rem] md:w-[21rem] rounded-md focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(99,102,241,0.55)]"
+        class="order-1 flex items-center justify-start hover:opacity-90 transition shrink-0 overflow-visible h-14 sm:h-[4.25rem] md:h-[4.7rem] w-[min(48vw,16rem)] sm:w-[19rem] md:w-[21rem] rounded-md focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(99,102,241,0.55)]"
       >
         <img
           src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
           alt=""
           role="presentation"
-          class="block h-full w-full max-h-full object-contain object-left shrink-0 origin-left scale-[1.34] sm:scale-[1.42] md:scale-[1.5] opacity-95 drop-shadow-[0_2px_10px_rgba(148,163,184,0.18)]"
+          class="block h-full w-full max-h-full object-contain object-left shrink-0 origin-left scale-[1.48] sm:scale-[1.42] md:scale-[1.5] opacity-95 drop-shadow-[0_2px_10px_rgba(148,163,184,0.18)]"
         />
       </router-link>
 
-      <div class="relative flex-1 max-w-xl mx-4">
+      <div class="relative order-3 basis-full sm:order-2 sm:basis-auto flex-1 max-w-xl mx-0 sm:mx-4 mt-1 sm:mt-0">
         <div
           class="flex items-center gap-2 px-4 py-2.5 rounded-full
                  bg-white dark:bg-zinc-950
@@ -495,7 +498,7 @@ const secondaryNavItems = computed(() => {
         </div>
       </div>
 
-      <div class="flex items-center gap-3 sm:gap-4 shrink-0">
+      <div class="order-2 sm:order-3 ml-auto flex items-center gap-2 sm:gap-4 shrink-0">
         <router-link
           to="/wishlist"
           class="header-icon-btn"
@@ -552,7 +555,7 @@ const secondaryNavItems = computed(() => {
           />
         </button>
 
-        <div v-if="auth.isLoggedIn" class="flex items-center gap-2">
+        <div v-if="auth.isLoggedIn" class="hidden sm:flex items-center gap-2">
           <span class="header-user-text hidden sm:inline">
             {{ auth.user?.name }}님
           </span>
@@ -578,7 +581,7 @@ const secondaryNavItems = computed(() => {
           </button>
         </div>
 
-        <div v-else class="flex items-center gap-2">
+        <div v-else class="hidden sm:flex items-center gap-2">
           <router-link
             to="/signup"
             class="text-sm text-neutral-700 dark:text-slate-100 hover:text-neutral-900 dark:hover:text-white rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"

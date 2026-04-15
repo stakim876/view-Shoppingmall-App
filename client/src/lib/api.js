@@ -31,11 +31,17 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const serverMessage = error.response?.data?.message || "";
+    const reqUrl = String(error.config?.url || "");
+    const isAuthLogin =
+      String(error.config?.method || "").toLowerCase() === "post" &&
+      /(^|\/)auth\/login(\?|$)/.test(reqUrl);
+
     const shouldResetAuth =
       status === 401 ||
       (status === 403 && /유효하지 않은 토큰|인증 토큰/i.test(serverMessage));
 
-    if (shouldResetAuth) {
+    // 비밀번호 틀림 등으로 로그인 API가 401을 줄 때는 "세션 만료" 처리하지 않음
+    if (shouldResetAuth && !isAuthLogin) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       if (window.location.pathname !== "/login") {

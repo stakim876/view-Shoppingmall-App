@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen bg-gray-50 transition-colors duration-300
+    class="min-h-dvh min-h-screen bg-gray-50 transition-colors duration-300
            dark:bg-[radial-gradient(ellipse_120%_80%_at_50%_-25%,rgba(56,189,248,0.07),transparent_48%),#09090b]"
   >
     <Header v-if="!isAuthPage" />

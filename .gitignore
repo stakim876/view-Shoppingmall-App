@@ -23,5 +23,9 @@ server/api/backend/.env
 # local tools
 bfg.jar
 
+# npm run gen:admin-sql 출력 (한 번 쓰고 지워도 됨)
+backend/database/_gen_admin_sql_output.sql
+
 .vscode/
 .DS_Store
+.vercel

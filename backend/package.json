@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "gen:admin-sql": "node scripts/gen-admin-sql.mjs"
   },
   "keywords": [],
   "author": "",

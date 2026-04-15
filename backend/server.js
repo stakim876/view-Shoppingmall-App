@@ -443,11 +443,42 @@ async function ensureReviewAndGalleryTables() {
   }
 }
 
+/** Railway 등에서 SQL 붙여넣기가 불안할 때: Variables에 ADMIN_BOOTSTRAP_* 넣고 재배포 후 로그인, 그다음 변수 제거 */
+async function bootstrapAdminFromEnv() {
+  const rawEmail = process.env.ADMIN_BOOTSTRAP_EMAIL;
+  const plain = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+  if (!rawEmail || !plain) return;
+  const email = normalizeEmail(rawEmail);
+  if (!isValidEmail(email) || String(plain).length < 8) {
+    console.warn("⚠️ ADMIN_BOOTSTRAP_* 가 있으나 이메일 형식 또는 비밀번호(8자+)가 아니어서 건너뜁니다.");
+    return;
+  }
+  const name = process.env.ADMIN_BOOTSTRAP_NAME || "관리자";
+  try {
+    const hashed = await hashPassword(plain);
+    const [rows] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (rows.length > 0) {
+      await db.query("UPDATE users SET password = ?, role = 'admin' WHERE email = ?", [hashed, email]);
+    } else {
+      await db.query(
+        "INSERT INTO users (email, password, name, gender, role) VALUES (?, ?, ?, ?, ?)",
+        [email, hashed, name, "male", "admin"]
+      );
+    }
+    console.log(
+      `✅ ADMIN_BOOTSTRAP 적용: ${email} → 로그인 후 Railway Variables 에서 ADMIN_BOOTSTRAP_EMAIL / ADMIN_BOOTSTRAP_PASSWORD 를 삭제하세요.`
+    );
+  } catch (e) {
+    console.warn("⚠️ ADMIN_BOOTSTRAP 적용 실패:", e.message);
+  }
+}
+
 (async () => {
   try {
     const [rows] = await db.query("SELECT 1 AS ok");
     console.log("✅ DB 연결 테스트 OK:", rows[0]);
     await ensureReviewAndGalleryTables();
+    await bootstrapAdminFromEnv();
   } catch (e) {
     console.error("❌ DB 연결 테스트 실패:", e.message);
   }
@@ -743,15 +774,28 @@ app.post("/api/products/:id/restock-subscriptions", async (req, res) => {
 });
 
 app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) => {
-  const { name, description, price, image_url, category, stock } = req.body;
+  const { name, description, price, image_url, category, stock, color_options, laptop_specs } = req.body;
 
   if (!name || price == null) {
     return res.status(400).json({ success: false, message: "상품명과 가격은 필수입니다." });
   }
 
+  const colorStr =
+    color_options == null || color_options === ""
+      ? null
+      : typeof color_options === "string"
+        ? color_options
+        : JSON.stringify(color_options);
+  const specsStr =
+    laptop_specs == null || laptop_specs === ""
+      ? null
+      : typeof laptop_specs === "string"
+        ? laptop_specs
+        : JSON.stringify(laptop_specs);
+
   try {
     await db.query(
-      "INSERT INTO products (name, description, price, image_url, category, stock) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO products (name, description, price, image_url, category, stock, color_options, laptop_specs) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [
         name,
         description || "",
@@ -759,6 +803,8 @@ app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) 
         image_url || "",
         category || null,
         stock != null && stock !== "" ? Number(stock) : 0,
+        colorStr,
+        specsStr,
       ]
     );
     clearProductCache();
@@ -771,7 +817,7 @@ app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) 
 
 app.put("/api/products/:id", authenticateToken, requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
-  const { name, description, price, image_url, category, stock } = req.body;
+  const { name, description, price, image_url, category, stock, color_options, laptop_specs } = req.body;
   if (!id) {
     return res.status(400).json({ success: false, message: "상품 ID가 필요합니다." });
   }
@@ -783,13 +829,49 @@ app.put("/api/products/:id", authenticateToken, requireAdmin, async (req, res) =
     }
     const previousStock = Number(beforeProduct.stock || 0);
 
-    const [result] = await db.query(
-      `UPDATE products SET 
-        name = COALESCE(?, name), description = COALESCE(?, description), price = COALESCE(?, price),
-        image_url = COALESCE(?, image_url), category = ?, stock = COALESCE(?, stock)
-      WHERE id = ?`,
-      [name, description, price != null ? Number(price) : null, image_url, category || null, stock != null ? Number(stock) : null, id]
-    );
+    const colorStr =
+      color_options === undefined
+        ? undefined
+        : color_options == null || color_options === ""
+          ? null
+          : typeof color_options === "string"
+            ? color_options
+            : JSON.stringify(color_options);
+    const specsStr =
+      laptop_specs === undefined
+        ? undefined
+        : laptop_specs == null || laptop_specs === ""
+          ? null
+          : typeof laptop_specs === "string"
+            ? laptop_specs
+            : JSON.stringify(laptop_specs);
+
+    const setParts = [
+      "name = COALESCE(?, name)",
+      "description = COALESCE(?, description)",
+      "price = COALESCE(?, price)",
+      "image_url = COALESCE(?, image_url)",
+      "category = ?",
+      "stock = COALESCE(?, stock)",
+    ];
+    const params = [
+      name,
+      description,
+      price != null ? Number(price) : null,
+      image_url,
+      category || null,
+      stock != null ? Number(stock) : null,
+    ];
+    if (Object.prototype.hasOwnProperty.call(req.body, "color_options")) {
+      setParts.push("color_options = ?");
+      params.push(colorStr);
+    }
+    if (Object.prototype.hasOwnProperty.call(req.body, "laptop_specs")) {
+      setParts.push("laptop_specs = ?");
+      params.push(specsStr);
+    }
+    params.push(id);
+    const [result] = await db.query(`UPDATE products SET ${setParts.join(", ")} WHERE id = ?`, params);
     const nextStock = stock != null ? Number(stock) : previousStock;
     if (previousStock <= 0 && nextStock > 0) {
       await notifyRestockSubscribers({

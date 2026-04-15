@@ -1,0 +1,10 @@
+-- 관리자 로그인 비밀번호를 DB에 맞출 때는 아래 파일만 Workbench에서 열어 전체 실행하세요.
+-- (주석 없이 SQL만 있음 — 그대로 복사해 넣기 쉬움)
+--
+--   backend/database/PASTE_ADMIN_RAILWAY.sql
+--
+-- 로그인: admin@myshop.com / MyShopAdmin1
+-- DB 이름이 railway 가 아니면 PASTE 파일의 첫 줄 USE 만 본인 DB 이름으로 수정.
+--
+-- 다른 비밀번호: npm run gen:admin-sql -- 이메일 비밀번호 DB이름
+-- 또는 Railway Variables: ADMIN_BOOTSTRAP_EMAIL / ADMIN_BOOTSTRAP_PASSWORD

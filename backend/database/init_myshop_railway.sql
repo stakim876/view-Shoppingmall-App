@@ -1,9 +1,7 @@
--- 로컬 MySQL: 그대로 실행하면 myshop DB가 생깁니다.
--- Railway 등 “이미 쓰는 DB 하나만 있는” 환경: database/init_myshop_railway.sql 을 실행하거나,
--- 맨 위 두 줄만 지우고 USE 본인DB이름; (Variables의 MYSQLDATABASE, 보통 railway) 한 줄로 바꾸세요.
+-- Railway MySQL 등: 이미 발급된 DB 하나만 쓸 때 (CREATE DATABASE 없음)
+-- Variables의 MYSQLDATABASE 가 railway 가 아니면 아래 USE 만 해당 이름으로 바꾸세요.
 
-CREATE DATABASE IF NOT EXISTS myshop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE myshop;
+USE railway;
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS order_items;
@@ -95,4 +93,4 @@ VALUES
 (2, 2, 1, 2000000),
 (2, 4, 1, 150000);
 
-SELECT 'myshop DB 초기화 완료 (users, products, orders, order_items)' AS result;
+SELECT 'Railway DB 초기화 완료 (users, products, orders, order_items)' AS result;

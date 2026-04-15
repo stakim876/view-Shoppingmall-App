@@ -53,10 +53,27 @@
         </button>
       </div>
 
-      <div v-show="activeTab === 'products'" class="space-y-8">
-        <section class="shop-admin-card p-5 md:p-6">
+      <div v-show="activeTab === 'products'" class="space-y-6">
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="s in productSections"
+            :key="s.id"
+            type="button"
+            @click="productSection = s.id"
+            :class="[
+              'px-4 py-2 rounded-full text-sm font-medium transition-all',
+              productSection === s.id ? 'shop-btn-primary' : 'shop-btn-secondary',
+            ]"
+          >
+            {{ s.label }}
+          </button>
+        </div>
+
+        <section v-show="productSection === 'register'" class="shop-admin-card p-5 md:p-6">
           <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">상품 등록</h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">필수 항목을 채운 뒤 등록하면 고객 목록에 반영됩니다.</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+            필수 항목을 채운 뒤 등록하면 고객 목록에 반영됩니다. 색상은 쉼표로 구분하고, 노트북·PC는 사양 필드를 선택 입력하세요.
+          </p>
           <form @submit.prevent="addProduct" class="space-y-3 max-w-xl">
             <input v-model="newProduct.name" placeholder="상품명 *" class="shop-admin-input" required />
             <textarea
@@ -88,13 +105,29 @@
               placeholder="이미지 URL (예: /images/상품.jpg)"
               class="shop-admin-input"
             />
+            <div class="pt-3 border-t border-slate-200/80 dark:border-white/[0.08] space-y-3">
+              <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">색상 옵션 (선택)</p>
+              <input
+                v-model="newColorsText"
+                placeholder="예: 실버, 스페이스 그레이, 미드나이트 (쉼표로 구분)"
+                class="shop-admin-input"
+              />
+              <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">노트북·PC 사양 (선택)</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input v-model="newLaptopSpecs.cpu" placeholder="CPU" class="shop-admin-input" />
+                <input v-model="newLaptopSpecs.ram" placeholder="RAM (예: 16GB)" class="shop-admin-input" />
+                <input v-model="newLaptopSpecs.storage" placeholder="저장장치 (예: 512GB SSD)" class="shop-admin-input" />
+                <input v-model="newLaptopSpecs.display" placeholder="디스플레이" class="shop-admin-input" />
+                <input v-model="newLaptopSpecs.gpu" placeholder="GPU" class="shop-admin-input sm:col-span-2" />
+              </div>
+            </div>
             <button type="submit" class="shop-btn-primary px-5 py-2.5 rounded-xl text-sm w-full sm:w-auto">
               등록하기
             </button>
           </form>
         </section>
 
-        <section>
+        <section v-show="productSection === 'list'">
           <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
             <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100">상품 목록</h2>
             <span v-if="!productsLoading" class="text-xs text-slate-500 dark:text-slate-400">
@@ -115,12 +148,13 @@
             <router-link to="/products" class="shop-link-muted inline-block mt-4 text-sm">고객용 상품 목록 보기</router-link>
           </div>
           <div v-else class="shop-admin-table-wrap overflow-x-auto rounded-2xl">
-            <table class="shop-admin-table min-w-[760px]">
+            <table class="shop-admin-table min-w-[880px]">
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>상품명</th>
                   <th>카테고리</th>
+                  <th>색상</th>
                   <th>가격</th>
                   <th>재고</th>
                   <th>재입고</th>
@@ -133,6 +167,7 @@
                   <td class="tabular-nums">{{ p.id }}</td>
                   <td class="font-medium text-left">{{ p.name }}</td>
                   <td>{{ p.category || "—" }}</td>
+                  <td class="text-left text-xs max-w-[8rem]">{{ colorSummary(p) }}</td>
                   <td class="tabular-nums">{{ formatPrice(p.price) }}원</td>
                   <td class="tabular-nums">{{ p.stock ?? "—" }}</td>
                   <td class="tabular-nums">{{ p.restock_subscriber_count ?? 0 }}명</td>
@@ -335,11 +370,12 @@
 
     <div
       v-if="editingProduct"
-      class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/50 dark:bg-black/70 p-4"
       @click.self="editingProduct = null"
     >
+      <div class="flex min-h-[100dvh] min-h-screen items-center justify-center py-8">
       <div
-        class="shop-admin-card w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 bg-white dark:bg-slate-900"
+        class="shop-admin-card w-full max-w-xl p-6 bg-white dark:bg-slate-900 my-auto"
       >
         <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">
           상품 수정 (ID: {{ editingProduct.id }})
@@ -354,6 +390,22 @@
           </select>
           <input v-model.number="editForm.stock" type="number" min="0" placeholder="재고 수량" class="shop-admin-input" />
           <input v-model="editForm.image_url" placeholder="이미지 URL" class="shop-admin-input" />
+          <div class="pt-3 border-t border-slate-200/80 dark:border-white/[0.08] space-y-3">
+            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">색상 옵션 (선택)</p>
+            <input
+              v-model="editColorsText"
+              placeholder="예: 실버, 스페이스 그레이 (쉼표로 구분)"
+              class="shop-admin-input"
+            />
+            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">노트북·PC 사양 (선택)</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input v-model="editLaptopSpecs.cpu" placeholder="CPU" class="shop-admin-input" />
+              <input v-model="editLaptopSpecs.ram" placeholder="RAM" class="shop-admin-input" />
+              <input v-model="editLaptopSpecs.storage" placeholder="저장장치" class="shop-admin-input" />
+              <input v-model="editLaptopSpecs.display" placeholder="디스플레이" class="shop-admin-input" />
+              <input v-model="editLaptopSpecs.gpu" placeholder="GPU" class="shop-admin-input sm:col-span-2" />
+            </div>
+          </div>
           <div class="flex flex-wrap gap-2 pt-2">
             <button type="submit" class="shop-btn-primary px-5 py-2 rounded-xl text-sm">저장</button>
             <button type="button" class="shop-btn-secondary px-5 py-2 rounded-xl text-sm" @click="editingProduct = null">
@@ -361,6 +413,7 @@
             </button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   </div>
@@ -374,11 +427,79 @@ import { formatPrice } from "../../lib/format";
 
 const toast = useToastStore();
 const activeTab = ref("products");
+const productSection = ref("register");
+const productSections = [
+  { id: "register", label: "상품 등록" },
+  { id: "list", label: "목록 · 삭제 · 수정" },
+];
 const tabItems = [
   { id: "products", label: "상품 관리" },
   { id: "orders", label: "주문 관리" },
   { id: "notices", label: "공지사항" },
 ];
+
+const emptyLaptopSpecs = () => ({
+  cpu: "",
+  ram: "",
+  storage: "",
+  display: "",
+  gpu: "",
+});
+
+const newColorsText = ref("");
+const editColorsText = ref("");
+const newLaptopSpecs = reactive(emptyLaptopSpecs());
+const editLaptopSpecs = reactive(emptyLaptopSpecs());
+
+function colorsToPayload(text) {
+  const t = String(text || "").trim();
+  if (!t) return null;
+  const arr = t.split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+  return arr.length ? JSON.stringify(arr) : null;
+}
+
+function colorsFromRow(val) {
+  if (val == null || val === "") return "";
+  try {
+    const p = typeof val === "string" ? JSON.parse(val) : val;
+    return Array.isArray(p) ? p.join(", ") : "";
+  } catch {
+    return "";
+  }
+}
+
+function specsToPayload(spec) {
+  const o = {};
+  for (const [k, v] of Object.entries(spec)) {
+    const s = String(v || "").trim();
+    if (s) o[k] = s;
+  }
+  return Object.keys(o).length ? JSON.stringify(o) : null;
+}
+
+function specsFromRow(val) {
+  const empty = emptyLaptopSpecs();
+  if (val == null || val === "") return empty;
+  try {
+    const p = typeof val === "string" ? JSON.parse(val) : val;
+    return { ...empty, ...p };
+  } catch {
+    return empty;
+  }
+}
+
+function colorSummary(p) {
+  const raw = p?.color_options;
+  if (raw == null || raw === "") return "—";
+  try {
+    const arr = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(arr) || !arr.length) return "—";
+    const head = arr.slice(0, 2).join(" · ");
+    return arr.length > 2 ? `${head}…` : head;
+  } catch {
+    return "—";
+  }
+}
 
 const products = ref([]);
 const orders = ref([]);
@@ -582,10 +703,16 @@ const fetchProducts = async () => {
 
 const addProduct = async () => {
   try {
-    await api.post("/products/add", newProduct.value);
+    await api.post("/products/add", {
+      ...newProduct.value,
+      color_options: colorsToPayload(newColorsText.value),
+      laptop_specs: specsToPayload(newLaptopSpecs),
+    });
     toast.success("상품이 등록되었습니다!");
     fetchProducts();
     newProduct.value = { name: "", description: "", price: "", image_url: "", category: "", stock: "" };
+    newColorsText.value = "";
+    Object.assign(newLaptopSpecs, emptyLaptopSpecs());
   } catch (error) {
     toast.error(error.userMessage || "상품 등록 중 오류가 발생했습니다.");
   }
@@ -601,12 +728,18 @@ const openEdit = (p) => {
     category: p.category || "",
     stock: p.stock ?? "",
   };
+  editColorsText.value = colorsFromRow(p.color_options);
+  Object.assign(editLaptopSpecs, specsFromRow(p.laptop_specs));
 };
 
 const updateProduct = async () => {
   if (!editingProduct.value) return;
   try {
-    await api.put(`/products/${editingProduct.value.id}`, editForm.value);
+    await api.put(`/products/${editingProduct.value.id}`, {
+      ...editForm.value,
+      color_options: colorsToPayload(editColorsText.value),
+      laptop_specs: specsToPayload(editLaptopSpecs),
+    });
     toast.success("상품이 수정되었습니다!");
     editingProduct.value = null;
     fetchProducts();

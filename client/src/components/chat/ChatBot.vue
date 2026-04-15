@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed bottom-24 right-6 w-80 bg-white dark:bg-zinc-950 rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200 dark:border-white/[0.1]"
+    class="fixed bottom-24 right-6 z-[45] w-[min(100vw-2rem,20rem)] max-h-[min(85dvh,calc(100dvh-7rem))] bg-white dark:bg-zinc-950 rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200 dark:border-white/[0.1]"
   >
     <div
       class="bg-gradient-to-br from-sky-600 via-sky-700 to-sky-900 dark:from-violet-900 dark:via-purple-950 dark:to-zinc-950 text-white px-4 py-3 flex justify-between items-start gap-2 border-b border-white/15 dark:border-white/10"
@@ -23,7 +23,7 @@
       </button>
     </div>
 
-    <div class="flex-1 p-3 overflow-y-auto space-y-2 text-sm">
+    <div class="flex-1 min-h-0 p-3 overflow-y-auto overscroll-contain space-y-2 text-sm">
       <div
         v-for="(msg, idx) in messages"
         :key="idx"

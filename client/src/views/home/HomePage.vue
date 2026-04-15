@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative min-h-screen overflow-x-hidden bg-gradient-to-b
+    class="relative min-h-screen bg-gradient-to-b
            from-white via-slate-50 to-slate-100
            dark:from-[#0c0f16] dark:via-[#0f141d] dark:to-[#121925]
            text-slate-700 dark:text-slate-200
@@ -27,7 +27,7 @@
     <div class="relative z-10">
     
     <section
-      class="relative flex items-center justify-center min-h-[300px] sm:min-h-[360px] md:min-h-[400px] lg:min-h-[440px] xl:min-h-[480px] py-10 sm:py-12 overflow-x-hidden overflow-y-visible pb-14 sm:pb-16"
+      class="relative flex items-center justify-center min-h-[300px] sm:min-h-[360px] md:min-h-[400px] lg:min-h-[440px] xl:min-h-[480px] py-10 sm:py-12 pb-14 sm:pb-16"
     >
       <div
         class="absolute inset-0 bg-gradient-to-b from-white/35 via-sky-50/15 to-transparent dark:from-white/[0.03] dark:via-slate-950/30 dark:to-transparent"
@@ -267,7 +267,7 @@
           전체보기 →
         </button>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div
           v-for="p in bestSellers"
           :key="`best-${p.id}`"
@@ -313,7 +313,7 @@
           전체보기 →
         </button>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div
           v-for="p in newProducts"
           :key="`new-${p.id}`"
@@ -391,7 +391,7 @@
           전체보기 →
         </button>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div
           v-for="p in recommendedProducts"
           :key="`rec-${p.id}`"
@@ -484,7 +484,7 @@
 
       <div
         v-else
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10"
+        class="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8"
       >
         <div
           v-for="p in paginatedProducts"
@@ -496,7 +496,7 @@
             <WishlistButton :product-id="p.id" size="sm" />
           </div>
           <div
-            class="shop-card-product-media h-80"
+            class="shop-card-product-media h-52 sm:h-80"
           >
             <img
               :src="imgSrc(p)"
@@ -508,17 +508,17 @@
             />
           </div>
 
-          <div class="p-6">
-            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-1">
+          <div class="p-3 sm:p-6">
+            <h3 class="font-semibold text-sm sm:text-lg text-neutral-900 dark:text-neutral-100 mb-1 line-clamp-1">
               {{ p.name }}
             </h3>
-            <p class="text-neutral-500 dark:text-neutral-400 text-sm mb-3 line-clamp-2">
+            <p class="hidden sm:block text-neutral-500 dark:text-neutral-400 text-sm mb-3 line-clamp-2">
               {{ p.description }}
             </p>
-            <p class="text-neutral-900 dark:text-neutral-100 font-semibold text-lg mb-6">
+            <p class="text-neutral-900 dark:text-neutral-100 font-semibold text-sm sm:text-lg mb-3 sm:mb-6">
               {{ formatPrice(p.price) }}원
             </p>
-            <button type="button" class="shop-btn-cart group py-2" @click.stop="addToCart(p)">
+            <button type="button" class="shop-btn-cart group py-1.5 sm:py-2 text-xs sm:text-sm" @click.stop="addToCart(p)">
               장바구니 담기
               <span
                 class="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/20 translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-[1.2s] ease-out opacity-70 blur-[2px]"
