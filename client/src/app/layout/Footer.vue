@@ -90,7 +90,7 @@
 <script setup>
 import { getKakaoChatUrl } from "../../lib/kakaoChat.js";
 
-const slogan = "세련된 선택";
+const slogan = "세련된 선택 (배포 테스트)";
 
 const contact = {
   phone: "010-5599-8710",
