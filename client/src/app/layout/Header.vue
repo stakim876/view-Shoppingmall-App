@@ -298,7 +298,6 @@ const topLinks = [
   { label: "카카오 문의", external: true, url: kakaoChatUrl },
   { label: "주문/배송 조회", path: "/order-lookup" },
   { label: "구매후기", path: "/home" },
-  { label: "개인결제창", path: "/home" },
 ];
 
 const defaultCategories = [
