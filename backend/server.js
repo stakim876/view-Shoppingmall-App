@@ -18,6 +18,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
+const FREE_SHIPPING_MIN = Number(process.env.FREE_SHIPPING_MIN || 30000);
+const SHIPPING_FEE = Number(process.env.SHIPPING_FEE || 3000);
+
+function calcShippingFee(subtotal) {
+  const amount = Number(subtotal || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  if (amount >= FREE_SHIPPING_MIN) return 0;
+  return Number.isFinite(SHIPPING_FEE) && SHIPPING_FEE >= 0 ? SHIPPING_FEE : 0;
+}
 
 function ok(res, payload = {}, message = "OK", status = 200) {
   return res.status(status).json({ success: true, message, ...payload });
@@ -972,7 +981,7 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
   }
 
   const subtotal = items.reduce((sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
-  let finalTotal = subtotal;
+  let discountedSubtotal = subtotal;
   let couponId = null;
   let discountAmount = 0;
 
@@ -981,10 +990,13 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
     if (!couponResult.valid) {
       return res.status(400).json({ success: false, message: couponResult.message || "쿠폰 적용에 실패했습니다." });
     }
-    finalTotal = couponResult.finalTotal;
+    discountedSubtotal = couponResult.finalTotal;
     discountAmount = couponResult.discount;
     couponId = couponResult.coupon?.id ?? null;
   }
+
+  const shippingFee = calcShippingFee(discountedSubtotal);
+  const finalTotal = discountedSubtotal + shippingFee;
 
   if (total_price == null || isNaN(Number(total_price))) {
     return res.status(400).json({
@@ -997,7 +1009,7 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
   if (Math.abs(requestedTotal - finalTotal) > 1) {
     return res.status(400).json({
       success: false,
-      message: "결제 금액이 일치하지 않습니다. 쿠폰 적용 상태를 확인한 뒤 다시 시도해주세요.",
+      message: "결제 금액이 일치하지 않습니다. 쿠폰/배송비 적용 상태를 확인한 뒤 다시 시도해주세요.",
     });
   }
 
@@ -1005,6 +1017,32 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
 
   try {
     await conn.beginTransaction();
+
+    const itemProductIds = [...new Set(items.map((it) => Number(it.id)).filter((v) => Number.isFinite(v) && v > 0))];
+    if (!itemProductIds.length) {
+      return fail(res, 400, "INVALID_ORDER_ITEMS", "주문 상품 데이터가 올바르지 않습니다.");
+    }
+
+    const lockSql = `
+      SELECT id, name, stock
+      FROM products
+      WHERE id IN (${itemProductIds.map(() => "?").join(",")})
+      FOR UPDATE
+    `;
+    const [stockRows] = await conn.query(lockSql, itemProductIds);
+    const stockMap = new Map(stockRows.map((r) => [Number(r.id), Number(r.stock || 0)]));
+
+    for (const it of items) {
+      const productId = Number(it.id);
+      const qty = Number(it.quantity || 1);
+      const currentStock = stockMap.get(productId);
+      if (currentStock == null) {
+        return fail(res, 400, "PRODUCT_NOT_FOUND", `상품(ID:${productId})을 찾을 수 없습니다.`);
+      }
+      if (qty > currentStock) {
+        return fail(res, 400, "INSUFFICIENT_STOCK", "재고가 부족한 상품이 있습니다. 장바구니를 확인해 주세요.");
+      }
+    }
 
     if (imp_uid) {
       console.log(`✅ 결제 검증: imp_uid=${imp_uid}, merchant_uid=${merchant_uid}`);
@@ -1061,6 +1099,15 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
        VALUES ${placeholders}`,
       flatValues
     );
+
+    for (const it of items) {
+      const productId = Number(it.id);
+      const qty = Number(it.quantity || 1);
+      await conn.query(
+        "UPDATE products SET stock = GREATEST(stock - ?, 0) WHERE id = ?",
+        [qty, productId]
+      );
+    }
 
     await conn.commit();
     console.log("✅ 주문 전체 처리 완료:", orderId);

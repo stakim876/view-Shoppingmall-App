@@ -2,7 +2,7 @@
   <div class="shop-admin-shell">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-10">
       <header class="mb-8">
-        <p class="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300 mb-1">
+        <p class="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-1">
           Admin
         </p>
         <h1 class="shop-page-title">운영 대시보드</h1>
@@ -32,7 +32,7 @@
         </div>
         <div class="shop-admin-kpi">
           <span class="text-xs font-medium text-slate-500 dark:text-slate-400">재고 주의 (≤5)</span>
-          <span class="text-2xl font-bold text-amber-700 dark:text-amber-300 tabular-nums">{{
+          <span class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">{{
             adminKpi.lowStock
           }}</span>
         </div>
@@ -169,7 +169,16 @@
                   <td>{{ p.category || "—" }}</td>
                   <td class="text-left text-xs max-w-[8rem]">{{ colorSummary(p) }}</td>
                   <td class="tabular-nums">{{ formatPrice(p.price) }}원</td>
-                  <td class="tabular-nums">{{ p.stock ?? "—" }}</td>
+                  <td class="tabular-nums">
+                    <span>{{ p.stock ?? "—" }}</span>
+                    <span
+                      v-if="stockStateText(p.stock)"
+                      class="ml-2 inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold"
+                      :class="stockStateClass(p.stock)"
+                    >
+                      {{ stockStateText(p.stock) }}
+                    </span>
+                  </td>
                   <td class="tabular-nums">{{ p.restock_subscriber_count ?? 0 }}명</td>
                   <td class="text-center">
                     <button type="button" class="shop-link-muted text-xs" @click="openEdit(p)">수정</button>
@@ -226,7 +235,7 @@
                 <td class="tabular-nums font-medium">{{ o.id }}</td>
                 <td class="tabular-nums">{{ o.user_id }}</td>
                 <td class="tabular-nums whitespace-nowrap">{{ formatPrice(o.total_price) }}원</td>
-                <td class="text-sky-700 dark:text-sky-300 font-medium whitespace-nowrap">
+                <td class="text-emerald-800 dark:text-emerald-300 font-medium whitespace-nowrap">
                   {{ orderStatusLabel(o.status) }}
                 </td>
                 <td class="text-left text-xs text-slate-600 dark:text-slate-400 max-w-[14rem]">{{ o.products }}</td>
@@ -499,6 +508,22 @@ function colorSummary(p) {
   } catch {
     return "—";
   }
+}
+
+function stockStateText(stock) {
+  const n = Number(stock);
+  if (!Number.isFinite(n)) return "";
+  if (n <= 0) return "품절";
+  if (n <= 5) return "주의";
+  return "";
+}
+
+function stockStateClass(stock) {
+  const n = Number(stock);
+  if (!Number.isFinite(n)) return "";
+  if (n <= 0) return "bg-rose-100 text-rose-700 dark:bg-rose-900/35 dark:text-rose-300";
+  if (n <= 5) return "bg-amber-100 text-amber-700 dark:bg-amber-900/35 dark:text-amber-300";
+  return "";
 }
 
 const products = ref([]);

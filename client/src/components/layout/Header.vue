@@ -335,8 +335,8 @@ const secondaryNavItems = computed(() => {
     <div
       v-if="bannerNotice && !bannerClosed"
       class="flex items-center gap-2 px-3 py-2 text-sm
-             bg-amber-100/95 dark:bg-amber-950/80 text-amber-950 dark:text-amber-100
-             border-b border-amber-200/80 dark:border-amber-800/50"
+             bg-emerald-50/95 dark:bg-emerald-950/75 text-emerald-950 dark:text-emerald-100
+             border-b border-emerald-200/70 dark:border-emerald-800/45"
     >
       <Megaphone class="w-4 h-4 shrink-0 opacity-80" aria-hidden="true" />
       <router-link
@@ -347,8 +347,8 @@ const secondaryNavItems = computed(() => {
       </router-link>
       <button
         type="button"
-        class="shrink-0 p-1 rounded-md hover:bg-amber-200/60 dark:hover:bg-amber-900/50
-               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+        class="shrink-0 p-1 rounded-md hover:bg-emerald-200/55 dark:hover:bg-emerald-900/45
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
         aria-label="공지 배너 닫기"
         @click="dismissNoticeBanner"
       >
@@ -390,7 +390,7 @@ const secondaryNavItems = computed(() => {
       <router-link
         to="/home"
         aria-label="My Shop 홈으로 이동"
-        class="flex items-center justify-start hover:opacity-90 transition shrink-0 overflow-visible h-14 sm:h-[4.25rem] md:h-[4.7rem] w-[min(46vw,17.5rem)] sm:w-[19rem] md:w-[21rem] rounded-md focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(99,102,241,0.55)]"
+        class="flex items-center justify-start hover:opacity-90 transition shrink-0 overflow-visible h-14 sm:h-[4.25rem] md:h-[4.7rem] w-[min(46vw,17.5rem)] sm:w-[19rem] md:w-[21rem] rounded-md focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(16,185,129,0.38)]"
       >
         <img
           src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
@@ -494,8 +494,8 @@ const secondaryNavItems = computed(() => {
                 :class="[
                   'rounded-full px-3 py-1.5 text-xs transition',
                   highlightedIndex === searchSuggestions.length + recentSearches.length + popIdx
-                    ? 'bg-amber-200 text-amber-900 dark:bg-amber-400/35 dark:text-amber-100'
-                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/15 dark:text-amber-200 dark:hover:bg-amber-500/25'
+                    ? 'bg-emerald-200 text-emerald-950 dark:bg-emerald-400/30 dark:text-emerald-50'
+                    : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:bg-emerald-500/12 dark:text-emerald-200 dark:hover:bg-emerald-500/22'
                 ]"
                 @mousedown.prevent="pickSuggestion(item)"
                 @mouseenter="highlightedIndex = searchSuggestions.length + recentSearches.length + popIdx"
@@ -560,7 +560,7 @@ const secondaryNavItems = computed(() => {
           />
           <Sun
             v-else
-            class="w-6 h-6 text-amber-500 dark:text-amber-300 transition"
+            class="w-6 h-6 text-yellow-500 dark:text-yellow-300 transition"
           />
         </button>
 
@@ -626,9 +626,9 @@ const secondaryNavItems = computed(() => {
         :aria-label="`${item.name} 카테고리 보기`"
         @click="goCategory(item.category)"
         :class="[
-          'relative z-10 shrink-0 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/65 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
+          'relative z-10 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
           isCategoryActive(item)
-            ? 'shop-btn-primary text-white dark:text-slate-900 border-sky-800/30'
+            ? 'shop-btn-primary text-white dark:text-white border-emerald-900/25'
             : 'shop-btn-secondary'
         ]"
       >

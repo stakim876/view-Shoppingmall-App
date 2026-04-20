@@ -80,11 +80,25 @@
             <dd>
               <span
                 class="px-2 py-0.5 rounded-full text-xs font-medium"
-                :class="statusClass(order.status)"
+                :class="getOrderStatusBadgeClass(order.status)"
               >
-                {{ statusLabel(order.status) }}
+                {{ getOrderStatusLabel(order.status) }}
               </span>
             </dd>
+          </div>
+          <div class="pt-2 border-t border-neutral-200 dark:border-neutral-600 mt-2">
+            <dt class="text-neutral-500 dark:text-neutral-400 text-xs mb-2">배송 진행</dt>
+            <ol class="relative border-l border-slate-200 dark:border-white/10 ml-3 pl-4 space-y-3">
+              <li v-for="s in ORDER_TIMELINE_STEPS" :key="s.key" class="relative">
+                <span
+                  class="absolute -left-[11px] top-[6px] h-3.5 w-3.5 rounded-full"
+                  :class="getOrderStepDotClass(getOrderStepVariant(order.status, s.key))"
+                />
+                <p class="text-sm" :class="getOrderStepTextClass(getOrderStepVariant(order.status, s.key))">
+                  {{ s.label }}
+                </p>
+              </li>
+            </ol>
           </div>
           <div
             v-if="order.tracking_number && order.tracking_url"
@@ -137,6 +151,14 @@
 import { ref } from "vue";
 import { formatPrice } from "../../lib/format";
 import api from "../../lib/api";
+import {
+  ORDER_TIMELINE_STEPS,
+  getOrderStatusLabel,
+  getOrderStatusBadgeClass,
+  getOrderStepVariant,
+  getOrderStepDotClass,
+  getOrderStepTextClass,
+} from "@/lib/orderStatus.js";
 
 const orderId = ref("");
 const loading = ref(false);
@@ -179,29 +201,5 @@ const formatDate = (dateStr) => {
     hour: "2-digit",
     minute: "2-digit",
   });
-};
-
-const statusLabel = (status) => {
-  const map = {
-    paid: "결제완료",
-    preparing: "상품준비중",
-    shipping: "배송중",
-    done: "배송완료",
-    delivered: "배송완료",
-    cancelled: "취소",
-  };
-  return map[status] || status;
-};
-
-const statusClass = (status) => {
-  const map = {
-    paid: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-    preparing: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
-    shipping: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-    done: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-    delivered: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-    cancelled: "bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300",
-  };
-  return map[status] || "bg-neutral-100 text-neutral-600";
 };
 </script>

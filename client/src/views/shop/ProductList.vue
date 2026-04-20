@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-b from-[#e6eaf3] to-[#d3dae4] dark:from-[#0d1020] dark:to-[#141826] text-neutral-800 dark:text-neutral-200 font-sans transition-colors duration-500"
+    class="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200/90 dark:from-[#0d1020] dark:to-[#141826] text-neutral-800 dark:text-neutral-200 font-sans transition-colors duration-500"
   >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       <div class="shop-section-head">
@@ -14,9 +14,9 @@
 
       <div class="mb-8 max-w-xl mx-auto sm:mx-0">
         <div
-          class="flex items-center gap-2 px-4 py-2.5 rounded-full
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl
                  bg-white/60 dark:bg-[#1a1d2f]/60 backdrop-blur-xl
-                 border border-white/50 dark:border-indigo-400/20
+                 border border-white/50 dark:border-emerald-500/12
                  shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_4px_16px_rgba(0,0,0,0.06)]"
         >
           <input
@@ -24,7 +24,7 @@
             type="search"
             placeholder="상품명 검색"
             aria-label="상품명 검색"
-            class="flex-1 bg-transparent text-sm text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-md py-1"
+            class="flex-1 bg-transparent text-sm text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/45 rounded-md py-1"
             @keyup.enter="() => {}"
           />
         </div>

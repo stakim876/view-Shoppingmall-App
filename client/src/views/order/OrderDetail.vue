@@ -4,6 +4,14 @@ import { useRoute, useRouter } from "vue-router";
 import api from "../../lib/api";
 import { ArrowLeft, Package } from "lucide-vue-next";
 import { formatPrice } from "../../lib/format";
+import {
+  ORDER_TIMELINE_STEPS,
+  getOrderStatusLabel,
+  getOrderStatusBadgeClass,
+  getOrderStepVariant,
+  getOrderStepDotClass,
+  getOrderStepTextClass,
+} from "@/lib/orderStatus.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -85,7 +93,10 @@ const formatDate = (dateStr) => {
             주문일자: {{ formatDate(order.order.created_at) }}
           </p>
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            상태: <span class="font-semibold text-sky-500">{{ order.order.status }}</span>
+            상태:
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="getOrderStatusBadgeClass(order.order.status)">
+              {{ getOrderStatusLabel(order.order.status) }}
+            </span>
           </p>
         </div>
 
@@ -94,6 +105,20 @@ const formatDate = (dateStr) => {
           <p>수령인: {{ order.order.recipient_name }}</p>
           <p>주소: {{ order.order.address }}</p>
           <p>연락처: {{ order.order.phone }}</p>
+          <div class="mt-4">
+            <p class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">배송 진행</p>
+            <ol class="relative border-l border-slate-200 dark:border-white/10 ml-3 pl-4 space-y-4">
+              <li v-for="s in ORDER_TIMELINE_STEPS" :key="s.key" class="relative">
+                <span
+                  class="absolute -left-[11px] top-[6px] h-3.5 w-3.5 rounded-full"
+                  :class="getOrderStepDotClass(getOrderStepVariant(order.order.status, s.key))"
+                />
+                <p class="text-sm" :class="getOrderStepTextClass(getOrderStepVariant(order.order.status, s.key))">
+                  {{ s.label }}
+                </p>
+              </li>
+            </ol>
+          </div>
           <div
             v-if="order.order.tracking_number && order.order.tracking_url"
             class="mt-4 p-4 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-500/30"

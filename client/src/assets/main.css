@@ -33,8 +33,8 @@
 
   .shop-link-muted {
     @apply text-sm font-medium text-slate-600 dark:text-zinc-400 hover:underline shrink-0
-           hover:text-sky-800 dark:hover:text-sky-400
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 rounded;
+           hover:text-emerald-800 dark:hover:text-emerald-400
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 rounded;
   }
 
   .shop-page-title {
@@ -44,22 +44,22 @@
   
   .shop-btn-primary {
     @apply font-medium text-white transition-all relative overflow-hidden
-           bg-gradient-to-b from-sky-600 to-sky-700
-           hover:from-sky-500 hover:to-sky-600
-           border border-sky-800/30
-           shadow-[0_10px_24px_-14px_rgba(2,132,199,0.38)]
-           hover:shadow-[0_12px_28px_-14px_rgba(2,132,199,0.42)]
-           dark:from-violet-800 dark:to-purple-900 dark:hover:from-violet-700 dark:hover:to-purple-800
-           dark:text-white dark:border-violet-300/20
-           dark:shadow-[0_10px_28px_-12px_rgba(139,92,246,0.22)]
-           dark:hover:shadow-[0_12px_32px_-12px_rgba(139,92,246,0.3)]
+           bg-gradient-to-b from-emerald-600 to-emerald-800
+           hover:from-emerald-500 hover:to-emerald-700
+           border border-emerald-900/30
+           shadow-[0_10px_26px_-14px_rgba(5,150,105,0.38)]
+           hover:shadow-[0_12px_30px_-14px_rgba(5,150,105,0.42)]
+           dark:from-emerald-800 dark:to-teal-900 dark:hover:from-emerald-700 dark:hover:to-teal-800
+           dark:text-white dark:border-emerald-400/20
+           dark:shadow-[0_10px_28px_-12px_rgba(16,185,129,0.22)]
+           dark:hover:shadow-[0_12px_32px_-12px_rgba(16,185,129,0.28)]
            active:translate-y-[1px]
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/80
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/75
            focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
   .shop-btn-cart {
-    @apply shop-btn-primary w-full py-2.5 rounded-full;
+    @apply shop-btn-primary w-full py-2.5 rounded-xl;
   }
 
   .shop-btn-secondary {
@@ -72,7 +72,7 @@
            dark:hover:bg-zinc-800 dark:hover:border-white/[0.14]
            dark:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.5)]
            active:translate-y-[1px]
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/65
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50
            focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
@@ -97,11 +97,11 @@
            text-neutral-800 text-sm
            shadow-[0_8px_20px_-16px_rgba(15,23,42,0.25)]
            dark:bg-zinc-900/80 dark:border-white/10 dark:text-zinc-100
-           focus:outline-none focus:ring-2 focus:ring-violet-600/80 dark:focus:ring-violet-500/50;
+           focus:outline-none focus:ring-2 focus:ring-emerald-600/55 dark:focus:ring-emerald-500/45;
   }
 
   .shop-card-product {
-    @apply relative overflow-hidden rounded-[1.75rem] cursor-pointer
+    @apply relative overflow-hidden rounded-2xl cursor-pointer
            bg-white/90
            border border-neutral-900/10
            shadow-[0_14px_34px_-26px_rgba(15,23,42,0.45)]
@@ -141,19 +141,19 @@
   }
 
   .header-icon-btn {
-    @apply relative inline-flex items-center justify-center w-9 h-9 rounded-full
+    @apply relative inline-flex items-center justify-center w-9 h-9 rounded-xl
            border border-slate-200/85 bg-white text-neutral-700
            shadow-[0_8px_20px_-16px_rgba(15,23,42,0.3)]
            hover:scale-105 hover:text-neutral-900 hover:border-slate-300 transition
            dark:bg-zinc-900/85 dark:border-white/10 dark:text-zinc-100
            dark:hover:bg-zinc-800 dark:hover:border-white/[0.14]
            dark:shadow-[0_8px_24px_-16px_rgba(0,0,0,0.45)]
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40
            focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
   .header-theme-btn {
-    @apply relative inline-flex items-center justify-center w-9 h-9 rounded-full
+    @apply relative inline-flex items-center justify-center w-9 h-9 rounded-xl
            border border-slate-200/85 bg-white text-slate-700
            shadow-[0_8px_20px_-16px_rgba(15,23,42,0.3)]
            hover:scale-105 hover:text-slate-900 hover:border-slate-300 transition
@@ -161,7 +161,7 @@
            dark:hover:bg-zinc-800 dark:hover:border-white/[0.14]
            dark:shadow-[0_8px_24px_-16px_rgba(0,0,0,0.45)]
            cursor-pointer
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40
            focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
@@ -248,7 +248,7 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(14, 165, 233, 0.72) rgba(203, 213, 225, 0.55);
+  scrollbar-color: rgba(16, 185, 129, 0.55) rgba(226, 232, 240, 0.9);
 }
 
 *::-webkit-scrollbar {
@@ -270,36 +270,36 @@
 *::-webkit-scrollbar-thumb {
   background: linear-gradient(
     180deg,
-    rgba(56, 189, 248, 0.95) 0%,
-    rgba(14, 165, 233, 0.92) 52%,
-    rgba(2, 132, 199, 0.9) 100%
+    rgba(110, 231, 183, 0.95) 0%,
+    rgba(52, 211, 153, 0.92) 48%,
+    rgba(16, 185, 129, 0.9) 100%
   );
-  border: 2px solid rgba(241, 245, 249, 0.96);
+  border: 2px solid rgba(248, 250, 252, 0.96);
   border-radius: 999px;
   box-shadow:
-    0 3px 10px rgba(2, 132, 199, 0.28),
+    0 3px 10px rgba(5, 150, 105, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 *::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     180deg,
-    rgba(14, 165, 233, 0.98) 0%,
-    rgba(2, 132, 199, 0.96) 55%,
-    rgba(3, 105, 161, 0.94) 100%
+    rgba(167, 243, 208, 0.98) 0%,
+    rgba(110, 231, 183, 0.96) 52%,
+    rgba(52, 211, 153, 0.94) 100%
   );
 }
 
 *::-webkit-scrollbar-thumb:active {
   background: linear-gradient(
     180deg,
-    rgba(2, 132, 199, 0.95),
-    rgba(3, 105, 161, 0.95)
+    rgba(52, 211, 153, 0.96),
+    rgba(16, 185, 129, 0.96)
   );
 }
 
 .dark * {
-  scrollbar-color: rgba(56, 189, 248, 0.65) rgba(24, 24, 27, 0.9);
+  scrollbar-color: rgba(52, 211, 153, 0.5) rgba(24, 24, 27, 0.9);
 }
 
 .dark *::-webkit-scrollbar-track {
@@ -311,29 +311,29 @@
 .dark *::-webkit-scrollbar-thumb {
   background: linear-gradient(
     180deg,
-    rgba(56, 189, 248, 0.88) 0%,
-    rgba(14, 165, 233, 0.82) 55%,
-    rgba(3, 105, 161, 0.78) 100%
+    rgba(110, 231, 183, 0.82) 0%,
+    rgba(52, 211, 153, 0.78) 52%,
+    rgba(16, 185, 129, 0.74) 100%
   );
   border: 2px solid rgba(9, 9, 11, 0.9);
   box-shadow:
-    0 4px 14px rgba(14, 165, 233, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 4px 14px rgba(16, 185, 129, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .dark *::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     180deg,
-    rgba(125, 211, 252, 0.97) 0%,
-    rgba(56, 189, 248, 0.94) 55%,
-    rgba(14, 165, 233, 0.9) 100%
+    rgba(167, 243, 208, 0.9) 0%,
+    rgba(110, 231, 183, 0.85) 52%,
+    rgba(52, 211, 153, 0.82) 100%
   );
 }
 
 .dark *::-webkit-scrollbar-thumb:active {
   background: linear-gradient(
     180deg,
-    rgba(14, 165, 233, 0.95),
-    rgba(3, 105, 161, 0.95)
+    rgba(52, 211, 153, 0.92),
+    rgba(16, 185, 129, 0.92)
   );
 }

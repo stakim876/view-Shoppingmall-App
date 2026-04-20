@@ -3,7 +3,7 @@
     
     <div v-if="loading" class="min-h-screen flex items-center justify-center">
       <div class="text-center">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
         <p class="text-neutral-600">상품 정보를 불러오는 중...</p>
       </div>
     </div>
@@ -93,7 +93,7 @@
                 <li
                   v-for="(c, i) in productColorList"
                   :key="i"
-                  class="px-3 py-1 rounded-full text-sm bg-neutral-100 text-neutral-800 dark:bg-zinc-800 dark:text-neutral-200 border border-neutral-200/80 dark:border-zinc-700"
+                  class="px-3 py-1 rounded-lg text-sm bg-neutral-100 text-neutral-800 dark:bg-zinc-800 dark:text-neutral-200 border border-neutral-200/80 dark:border-zinc-700"
                 >
                   {{ c }}
                 </li>
@@ -160,14 +160,14 @@
                 v-else
                 type="button"
                 disabled
-                class="px-6 py-3 rounded-full font-medium shop-btn-disabled"
+                class="px-6 py-3 rounded-xl font-medium shop-btn-disabled"
               >
                 장바구니 담기
               </button>
               <router-link
                 v-if="stockNumber > 0"
                 to="/checkout"
-                class="shop-btn-secondary px-6 py-3 rounded-full"
+                class="shop-btn-secondary px-6 py-3 rounded-xl"
               >
                 바로 구매
               </router-link>
@@ -219,7 +219,7 @@
             :key="r.id"
             class="flex gap-3 p-3 bg-white border border-neutral-100 rounded-lg"
           >
-            <div class="flex items-center gap-1 text-amber-500 shrink-0">
+            <div class="flex items-center gap-1 text-yellow-500 shrink-0">
               <span v-for="n in 5" :key="n">{{ r.rating >= n ? '★' : '☆' }}</span>
             </div>
             <div class="min-w-0 flex-1">
@@ -266,7 +266,7 @@
             </p>
             <router-link
               :to="`/product/${p.id}`"
-              class="shop-btn-primary text-sm inline-flex items-center justify-center px-4 py-2 rounded-full"
+              class="shop-btn-primary text-sm inline-flex items-center justify-center px-4 py-2 rounded-xl"
             >
               자세히 보기
             </router-link>
@@ -371,12 +371,24 @@ const productLaptopSpecRows = computed(() => {
 });
 
 const addToCart = (p) => {
-  cart.addToCart({
+  const stock = Number(p?.stock || 0);
+  const existing = cart.items.find((i) => i.id === p.id);
+  const currentQty = Number(existing?.quantity || 0);
+  if (stock <= 0 || currentQty >= stock) {
+    toast.warning("현재 재고보다 많이 담을 수 없습니다.");
+    return;
+  }
+
+  const ok = cart.addToCart({
     id: p.id,
     name: p.name,
     price: p.price,
     image_url: p.image_url,
-  });
+  }, stock);
+  if (!ok) {
+    toast.warning("현재 재고보다 많이 담을 수 없습니다.");
+    return;
+  }
   toast.success(`${p.name}을(를) 장바구니에 담았습니다.`);
 };
 

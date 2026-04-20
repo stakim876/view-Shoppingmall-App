@@ -4,23 +4,30 @@ import { ref, computed, watch } from "vue";
 export const useCartStore = defineStore("cart", () => {
   const items = ref(JSON.parse(localStorage.getItem("cartItems")) || []);
 
-  const addToCart = (product) => {
+  const addToCart = (product, maxStock = null) => {
     const existing = items.value.find((i) => i.id === product.id);
     if (existing) {
+      if (maxStock != null && existing.quantity >= Number(maxStock)) return false;
       existing.quantity += 1;
+      return true;
     } else {
+      if (maxStock != null && Number(maxStock) <= 0) return false;
       const cleanPrice = Number(String(product.price).replace(/,/g, "")) || 0;
       items.value.push({
         ...product,
         price: cleanPrice,
         quantity: 1,
       });
+      return true;
     }
   };
 
-  const increaseQuantity = (id) => {
+  const increaseQuantity = (id, maxStock = null) => {
     const item = items.value.find((i) => i.id === id);
-    if (item) item.quantity += 1;
+    if (!item) return false;
+    if (maxStock != null && item.quantity >= Number(maxStock)) return false;
+    item.quantity += 1;
+    return true;
   };
 
   const decreaseQuantity = (id) => {

@@ -1,9 +1,9 @@
 <template>
   <footer
     class="text-sm
-           bg-gradient-to-b from-[#d3dae4] to-[#c0c8d4]
-           dark:from-zinc-950 dark:to-neutral-950
-           border-t border-[#c0c8d4] dark:border-white/[0.08]"
+           bg-gradient-to-b from-emerald-50/70 via-slate-100 to-slate-200
+           dark:from-zinc-950 dark:via-emerald-950/20 dark:to-neutral-950
+           border-t border-emerald-200/60 dark:border-emerald-900/35"
   >
     <div class="max-w-6xl mx-auto px-6 py-10">
       <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
@@ -15,17 +15,17 @@
               class="h-16 w-auto sm:h-20 sm:w-auto object-contain drop-shadow-[0_2px_8px_rgba(148,163,184,0.18)]"
             />
           </router-link>
-          <p class="text-neutral-600 dark:text-white/80 text-xs max-w-[200px]">
+          <p class="text-slate-600 dark:text-white/80 text-xs max-w-[200px]">
             {{ slogan }}
           </p>
         </div>
 
         <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           <div>
-            <h3 class="font-semibold text-neutral-800 dark:text-white mb-3 pb-1 border-b border-neutral-400/60 dark:border-white/30 inline-block">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-emerald-700/35 dark:border-emerald-500/35 inline-block">
               고객센터
             </h3>
-            <ul class="space-y-1.5 text-neutral-700 dark:text-white/90">
+            <ul class="space-y-1.5 text-slate-700 dark:text-white/90">
               <li>전화: {{ contact.phone }}</li>
               <li>팩스: {{ contact.fax }}</li>
               <li>
@@ -33,13 +33,16 @@
                   :href="contact.kakaoUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-neutral-700 dark:text-neutral-300 hover:underline"
+                  class="text-slate-700 dark:text-neutral-300 hover:text-emerald-800 dark:hover:text-emerald-400 hover:underline transition-colors"
                 >
                   카카오 문의
                 </a>
               </li>
               <li>
-                <router-link to="/order-lookup" class="text-neutral-700 dark:text-neutral-300 hover:underline">
+                <router-link
+                  to="/order-lookup"
+                  class="text-slate-700 dark:text-neutral-300 hover:text-emerald-800 dark:hover:text-emerald-400 hover:underline transition-colors"
+                >
                   주문/배송 조회
                 </router-link>
               </li>
@@ -49,19 +52,19 @@
             </ul>
           </div>
           <div>
-            <h3 class="font-semibold text-neutral-800 dark:text-white mb-3 pb-1 border-b border-neutral-400/60 dark:border-white/30 inline-block">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-emerald-700/35 dark:border-emerald-500/35 inline-block">
               배송/반품지 주소
             </h3>
-            <p class="text-neutral-700 dark:text-white/90 leading-relaxed">
+            <p class="text-slate-700 dark:text-white/90 leading-relaxed">
               {{ address.line1 }}<br />
               {{ address.line2 }}
             </p>
           </div>
           <div>
-            <h3 class="font-semibold text-neutral-800 dark:text-white mb-3 pb-1 border-b border-neutral-400/60 dark:border-white/30 inline-block">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-emerald-700/35 dark:border-emerald-500/35 inline-block">
               계좌번호
             </h3>
-            <ul class="space-y-1.5 text-neutral-700 dark:text-white/90">
+            <ul class="space-y-1.5 text-slate-700 dark:text-white/90">
               <li>{{ bank.account }}</li>
               <li>예금주: {{ bank.holder }}</li>
             </ul>
@@ -70,15 +73,15 @@
       </div>
     </div>
 
-    <div class="border-t border-neutral-300/80 dark:border-white/15" />
+    <div class="border-t border-slate-200/90 dark:border-white/12" />
 
     <div class="max-w-6xl mx-auto px-6 py-6">
-      <div class="space-y-1 text-neutral-600 dark:text-white/85 text-xs leading-relaxed">
+      <div class="space-y-1 text-slate-600 dark:text-white/85 text-xs leading-relaxed">
         <p>{{ company.name }} | 대표자: {{ company.representative }}</p>
         <p>{{ company.address }}</p>
         <p>사업자등록번호: {{ company.bizNo }} | 통신판매신고번호: {{ company.mailOrderNo }}</p>
         <p>E-MAIL: {{ company.email }}</p>
-        <p class="text-neutral-500 dark:text-white/70 pt-1">{{ company.copyright }}</p>
+        <p class="text-slate-500 dark:text-white/70 pt-1">{{ company.copyright }}</p>
       </div>
     </div>
   </footer>
@@ -112,9 +115,9 @@ const company = {
   name: "My Shop",
   representative: "김승태",
   address: "경기도 수원시",
-  bizNo: "123-456-789",
-  mailOrderNo: "-",
-  email: "-",
+  bizNo: "123-45-67890",
+  mailOrderNo: "2026-수원권선-0001",
+  email: "stkim8719@gmail.com",
   copyright: "COPYRIGHT © 2025 MY Shop. ALL RIGHTS RESERVED.",
 };
 </script>

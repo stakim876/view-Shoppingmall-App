@@ -5,6 +5,13 @@ import { Package } from "lucide-vue-next";
 import { useAuthStore } from "../../store/auth";
 import { useToastStore } from "../../store/toast";
 import { formatPrice } from "../../lib/format";
+import {
+  ORDER_TIMELINE_STEPS,
+  getOrderStatusLabel,
+  getOrderStepVariant,
+  getOrderStepDotClass,
+  getOrderStepTextClass,
+} from "@/lib/orderStatus.js";
 
 const auth = useAuthStore();
 const toast = useToastStore();
@@ -50,62 +57,6 @@ const formatDate = (dateStr) => {
     minute: "2-digit",
   });
 };
-
-const orderStatusLabel = (status) => {
-  const map = {
-    paid: "결제완료",
-    preparing: "상품준비중",
-    shipping: "배송중",
-    done: "배송완료",
-    cancelled: "취소",
-    shipped: "배송중",
-    completed: "배송완료",
-  };
-  return map[status] || status;
-};
-
-const timelineSteps = [
-  { key: "paid", label: "결제완료" },
-  { key: "preparing", label: "상품준비중" },
-  { key: "shipping", label: "배송중" },
-  { key: "done", label: "배송완료" },
-];
-
-function stepVariant(orderStatus, stepKey) {
-  // 취소 주문은 첫 단계만 완료로 두고 나머지는 대기 처리
-  if (orderStatus === "cancelled") return stepKey === "paid" ? "done" : "pending";
-
-  const rank = {
-    paid: 1,
-    preparing: 2,
-    shipping: 3,
-    done: 4,
-  };
-
-  const oRank = rank[orderStatus] || 0;
-  const sRank = rank[stepKey] || 0;
-
-  if (oRank === sRank) return "active";
-  if (sRank < oRank) return "done";
-  return "pending";
-}
-
-function stepDotClass(variant) {
-  if (variant === "done") {
-    return "bg-indigo-500 dark:bg-sky-400";
-  }
-  if (variant === "active") {
-    return "bg-indigo-500 dark:bg-sky-400 ring-4 ring-indigo-500/15 dark:ring-sky-400/15";
-  }
-  return "bg-white/40 dark:bg-white/10";
-}
-
-function stepTextClass(variant) {
-  if (variant === "pending") {
-    return "text-gray-500 dark:text-gray-400";
-  }
-  return "text-gray-800 dark:text-gray-100 font-semibold";
-}
 
 const updateUserInfo = async () => {
   if (!userName.value.trim()) {
@@ -249,18 +200,18 @@ const updateUserInfo = async () => {
                       : 'text-sky-600 dark:text-sky-300'
                   "
                 >
-                  {{ orderStatusLabel(order.status) }}
+                  {{ getOrderStatusLabel(order.status) }}
                 </p>
               </div>
 
               <ol class="relative border-l border-slate-200 dark:border-white/10 ml-3 pl-4 space-y-4">
-                <li v-for="s in timelineSteps" :key="s.key" class="relative">
+                <li v-for="s in ORDER_TIMELINE_STEPS" :key="s.key" class="relative">
                   <span
                     class="absolute -left-[11px] top-[6px] h-3.5 w-3.5 rounded-full"
-                    :class="stepDotClass(stepVariant(order.status, s.key))"
+                    :class="getOrderStepDotClass(getOrderStepVariant(order.status, s.key))"
                   />
                   <div class="flex items-start justify-between gap-3">
-                    <p class="text-sm" :class="stepTextClass(stepVariant(order.status, s.key))">
+                    <p class="text-sm" :class="getOrderStepTextClass(getOrderStepVariant(order.status, s.key))">
                       {{ s.label }}
                     </p>
                     <p

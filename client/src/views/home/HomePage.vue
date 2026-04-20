@@ -1,23 +1,23 @@
 <template>
   <div
     class="relative min-h-screen bg-gradient-to-b
-           from-white via-slate-50 to-slate-100
+           from-slate-50 via-neutral-50 to-slate-100
            dark:from-[#0c0f16] dark:via-[#0f141d] dark:to-[#121925]
            text-slate-700 dark:text-slate-200
            font-sans transition-colors duration-500"
   >
     <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       <div
-        class="absolute inset-0 bg-[radial-gradient(ellipse_100%_55%_at_50%_-15%,rgba(125,211,252,0.12),transparent_55%)] dark:bg-[radial-gradient(ellipse_90%_45%_at_50%_0%,rgba(56,189,248,0.06),transparent_50%)]"
+        class="absolute inset-0 bg-[radial-gradient(ellipse_100%_55%_at_50%_-15%,rgba(110,231,183,0.11),transparent_55%)] dark:bg-[radial-gradient(ellipse_90%_45%_at_50%_0%,rgba(16,185,129,0.06),transparent_50%)]"
       />
       <div
-        class="absolute -top-24 left-[6%] h-[18rem] w-[18rem] rounded-full bg-sky-200/30 blur-[100px] dark:bg-slate-600/18"
+        class="absolute -top-24 left-[6%] h-[18rem] w-[18rem] rounded-full bg-emerald-200/30 blur-[100px] dark:bg-slate-600/18"
       />
       <div
         class="absolute top-[20%] -right-20 h-[22rem] w-[22rem] rounded-full bg-slate-200/35 blur-[118px] dark:bg-slate-700/14"
       />
       <div
-        class="absolute bottom-[5%] left-[18%] h-[14rem] w-[14rem] rounded-full bg-sky-100/40 blur-[88px] dark:bg-slate-700/12"
+        class="absolute bottom-[5%] left-[18%] h-[14rem] w-[14rem] rounded-full bg-teal-100/35 blur-[88px] dark:bg-slate-700/12"
       />
       <div
         class="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.35)_0%,transparent_35%,transparent_65%,rgba(15,23,42,0.04)_100%)] dark:bg-[linear-gradient(180deg,transparent_0%,transparent_55%,rgba(0,0,0,0.35)_100%)]"
@@ -27,36 +27,91 @@
     <div class="relative z-10">
     
     <section
-      class="relative flex items-center justify-center min-h-[300px] sm:min-h-[360px] md:min-h-[400px] lg:min-h-[440px] xl:min-h-[480px] py-10 sm:py-12 pb-14 sm:pb-16"
+      class="relative overflow-hidden border-b border-slate-200/70 dark:border-slate-800/55"
+      aria-labelledby="home-hero-heading"
     >
       <div
-        class="absolute inset-0 bg-gradient-to-b from-white/35 via-sky-50/15 to-transparent dark:from-white/[0.03] dark:via-slate-950/30 dark:to-transparent"
-      />
-      <div
-        class="hero-logo-glow pointer-events-none absolute left-1/2 top-1/2 h-[min(90vw,28rem)] w-[min(90vw,28rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-tr from-sky-100/35 via-slate-200/25 to-sky-100/30 blur-3xl dark:from-sky-950/25 dark:via-slate-800/20 dark:to-slate-900/15"
+        class="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-50/35 via-transparent to-transparent dark:from-emerald-950/12 dark:via-transparent"
         aria-hidden="true"
       />
-      <div class="relative z-10 flex flex-col items-center justify-center gap-1 jj-hero-logo">
-        <img
-          src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
-          alt="My Shop"
-          fetchpriority="high"
-          loading="eager"
-          decoding="async"
-          class="hero-logo-animate h-72 w-auto sm:h-80 sm:w-auto md:h-96 md:w-auto lg:h-[28rem] lg:w-auto xl:h-[32rem] xl:w-auto max-w-[90vw] object-contain"
-        />
-        <p
-          class="hero-tagline -mt-[5rem] sm:-mt-[6rem] md:-mt-[7rem] text-center text-sm sm:text-base md:text-lg font-medium max-w-xl px-4 tracking-wide text-slate-700/90 dark:text-slate-300/90 drop-shadow-sm"
+      <div
+        class="relative z-10 mx-auto max-w-7xl px-6 py-14 sm:py-16 md:py-20 md:flex md:items-end md:justify-between md:gap-12"
+      >
+        <div class="max-w-2xl">
+          <p
+            class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-900 dark:text-emerald-400"
+          >
+            MY SHOP
+          </p>
+          <h1
+            id="home-hero-heading"
+            class="mt-3 text-3xl font-bold leading-[1.18] tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-4xl md:text-[2.35rem]"
+          >
+            당신에게 맞는 상품을<br class="sm:hidden" />
+            <span class="sm:whitespace-nowrap">편하게 골라보세요</span>
+          </h1>
+          <p
+            class="mt-4 text-base leading-relaxed text-neutral-600 dark:text-neutral-400 sm:text-lg"
+          >
+            인기 상품부터 신상, 카테고리별 상품까지 한곳에서 만나보세요.
+          </p>
+          <div
+            class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+          >
+            <button
+              type="button"
+              class="shop-btn-primary inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold"
+              @click="goProducts"
+            >
+              상품 둘러보기
+            </button>
+            <button
+              type="button"
+              class="shop-btn-secondary inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold"
+              @click="scrollToFeatured"
+            >
+              주요 상품 보기
+            </button>
+          </div>
+          <p class="mt-5 text-sm text-neutral-500 dark:text-neutral-400">
+            <router-link
+              to="/notice"
+              class="font-medium text-emerald-900 underline-offset-4 hover:underline dark:text-emerald-400"
+            >
+              공지사항
+            </router-link>
+            <span class="mx-2 text-neutral-300 dark:text-neutral-600" aria-hidden="true">·</span>
+            <router-link
+              to="/order-lookup"
+              class="font-medium text-emerald-900 underline-offset-4 hover:underline dark:text-emerald-400"
+            >
+              주문 조회
+            </router-link>
+          </p>
+        </div>
+        <div
+          class="mt-10 hidden md:block md:mt-0 md:max-w-sm md:shrink-0"
+          aria-hidden="true"
         >
-          당신의 취향을 모은 셀렉트샵 !!
-        </p>
+          <div
+            class="rounded-2xl border border-slate-200/80 bg-white/75 p-5 shadow-[0_18px_40px_-22px_rgba(15,23,42,0.35)] dark:border-slate-700/50 dark:bg-slate-900/50"
+          >
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              안내
+            </p>
+            <p class="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+              배송·교환·반품 조건은 상품마다 다를 수 있습니다. 상품 상세와 하단 고객센터 안내를 확인해 주세요.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
 
     
     <section
       v-if="!loading && carouselSlides.length > 0"
-      class="relative rounded-lg px-4 pb-12 pt-0 outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-[#080a12] sm:px-6 sm:pb-14 border-b border-slate-200/75 dark:border-slate-800/55"
+      id="featured-carousel"
+      class="relative rounded-lg px-4 pb-12 pt-0 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-[#080a12] sm:px-6 sm:pb-14 border-b border-slate-200/75 dark:border-slate-800/55 scroll-mt-24"
       role="region"
       aria-label="추천 상품 슬라이드. 좌우 화살표 키로 넘길 수 있습니다."
       tabindex="0"
@@ -64,7 +119,7 @@
     >
       <p class="sr-only" aria-live="polite" aria-atomic="true">{{ heroCarouselLiveText }}</p>
       <div
-        class="hero-carousel-frame relative mx-auto max-w-[min(1120px,92vw)] overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white shadow-[0_20px_50px_-14px_rgba(30,41,59,0.16)] dark:border-slate-700/45 dark:bg-slate-900 dark:shadow-[0_24px_60px_-12px_rgba(0,0,0,0.45)]"
+        class="hero-carousel-frame relative mx-auto max-w-[min(1120px,92vw)] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_20px_50px_-14px_rgba(30,41,59,0.16)] dark:border-slate-700/45 dark:bg-slate-900 dark:shadow-[0_24px_60px_-12px_rgba(0,0,0,0.45)]"
         @mouseenter="heroPaused = true"
         @mouseleave="heroPaused = false"
       >
@@ -115,7 +170,7 @@
           <template v-if="carouselSlides.length > 1">
             <button
               type="button"
-              class="absolute left-2 sm:left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg border border-white/40 bg-white/90 text-slate-800 shadow-md transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/60 dark:border-slate-600 dark:bg-slate-800/92 dark:text-slate-100 dark:hover:bg-slate-800"
+              class="absolute left-2 sm:left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg border border-white/40 bg-white/90 text-slate-800 shadow-md transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/55 dark:border-slate-600 dark:bg-slate-800/92 dark:text-slate-100 dark:hover:bg-slate-800"
               aria-label="이전 슬라이드"
               @click.stop="prevHeroSlide"
             >
@@ -126,7 +181,7 @@
             </button>
             <button
               type="button"
-              class="absolute right-2 sm:right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg border border-white/40 bg-white/90 text-slate-800 shadow-md transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/60 dark:border-slate-600 dark:bg-slate-800/92 dark:text-slate-100 dark:hover:bg-slate-800"
+              class="absolute right-2 sm:right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg border border-white/40 bg-white/90 text-slate-800 shadow-md transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/55 dark:border-slate-600 dark:bg-slate-800/92 dark:text-slate-100 dark:hover:bg-slate-800"
               aria-label="다음 슬라이드"
               @click.stop="nextHeroSlide"
             >
@@ -165,8 +220,8 @@
         >
           <template v-for="(slide, idx) in carouselSlides" :key="'cap-' + slide.id">
             <div v-show="idx === heroSlideIndex">
-              <p class="text-xs font-semibold text-sky-800 dark:text-sky-400">
-                오늘의 셀렉션
+              <p class="text-xs font-semibold text-emerald-900 dark:text-emerald-400">
+                오늘의 상품
               </p>
               <h3
                 class="mt-1 text-lg font-bold leading-snug tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-2xl md:text-[1.65rem] line-clamp-2"
@@ -174,9 +229,9 @@
                 {{ slide.name }}
               </h3>
               <div class="mt-2 flex flex-wrap items-center gap-2">
-                <span class="hero-trust-pill">빠른 배송</span>
-                <span class="hero-trust-pill">정품 보장</span>
-                <span class="hero-trust-pill">간편 반품</span>
+                <span class="hero-trust-pill">{{ freeShippingBadge }}</span>
+                <span class="hero-trust-pill">교환·반품 조건 상세 확인</span>
+                <span class="hero-trust-pill">고객센터·카카오 문의</span>
               </div>
               <p
                 class="mt-3 text-sm leading-relaxed text-neutral-600 line-clamp-2 dark:text-neutral-400"
@@ -211,7 +266,7 @@
       <div class="flex items-end justify-between gap-4">
         <div>
           <h2 class="shop-section-title">빠른 탐색</h2>
-          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">원하는 카테고리로 바로 이동하세요.</p>
+          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">관심 있는 카테고리를 바로 찾아보세요.</p>
         </div>
         <button type="button" class="shop-link-muted" @click="goCategory('전체')">
           전체보기 →
@@ -235,34 +290,39 @@
       <div class="flex items-end justify-between gap-4">
         <div>
           <h2 class="shop-section-title">인기 상품</h2>
-          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">요즘 많이 찾는 아이템을 가볍게 모았어요.</p>
+          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">고객님께서 많이 찾는 인기 상품입니다.</p>
         </div>
       </div>
-      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
         <button
           v-for="(p, i) in trendingTop"
           :key="`trend-${p.id}`"
           type="button"
-          class="trend-row"
+          class="trend-row focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 dark:focus-visible:ring-offset-zinc-950"
           @click="goDetail(p.id)"
         >
-          <span class="trend-rank">{{ i + 1 }}</span>
+          <span class="trend-rank tabular-nums">{{ i + 1 }}</span>
           <span class="trend-thumb">
             <img :src="imgSrc(p)" :alt="p.name" loading="lazy" decoding="async" class="h-full w-full object-contain" @error="onImgError" />
           </span>
-          <span class="min-w-0 flex-1 text-left">
-            <span class="block truncate font-semibold text-neutral-900 dark:text-neutral-100">{{ p.name }}</span>
-            <span class="mt-0.5 block text-sm text-neutral-500 dark:text-neutral-400 truncate">{{ p.category || "전체" }}</span>
+          <span class="min-w-0 flex-1 self-center text-left">
+            <span class="block truncate font-semibold leading-snug text-neutral-900 dark:text-neutral-100">{{ p.name }}</span>
+            <span class="mt-0.5 block text-sm leading-normal text-neutral-500 dark:text-neutral-400 truncate">{{ p.category || "전체" }}</span>
           </span>
-          <span class="trend-price">{{ formatPrice(p.price) }}원</span>
+          <span class="trend-price tabular-nums">{{ formatPrice(p.price) }}원</span>
         </button>
       </div>
     </section>
 
     
     <section v-if="!loading && products.length > 0" class="max-w-7xl mx-auto px-6 py-16">
-      <div class="shop-section-head">
-        <h2 class="shop-section-title">베스트셀러</h2>
+      <div class="shop-section-head !items-start">
+        <div>
+          <h2 class="shop-section-title">베스트셀러</h2>
+          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 max-w-xl">
+            꾸준히 사랑받는 베스트 상품을 만나보세요.
+          </p>
+        </div>
         <button type="button" class="shop-link-muted" @click="goCategory('전체')">
           전체보기 →
         </button>
@@ -277,7 +337,7 @@
           <div class="absolute top-3 right-3 z-10" @click.stop>
             <WishlistButton :product-id="p.id" size="sm" />
           </div>
-          <div class="absolute top-3 left-3 z-10 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+          <div class="absolute top-3 left-3 z-10 bg-red-500 text-white px-3 py-1 rounded-md text-xs font-bold">
             BEST
           </div>
           <div class="shop-card-product-media h-64">
@@ -307,8 +367,13 @@
 
     
     <section v-if="!loading && newProducts.length > 0" class="max-w-7xl mx-auto px-6 py-16 rounded-3xl bg-white/88 dark:bg-[#111a2a]/86 border border-slate-200/70 dark:border-slate-700/45">
-      <div class="shop-section-head">
-        <h2 class="shop-section-title">신상품</h2>
+      <div class="shop-section-head !items-start">
+        <div>
+          <h2 class="shop-section-title">신상품</h2>
+          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 max-w-xl">
+            지금 막 올라온 따끈따끈한 신상입니다.
+          </p>
+        </div>
         <button type="button" class="shop-link-muted" @click="goCategory('전체')">
           전체보기 →
         </button>
@@ -323,7 +388,7 @@
           <div class="absolute top-3 right-3 z-10" @click.stop>
             <WishlistButton :product-id="p.id" size="sm" />
           </div>
-          <div class="absolute top-3 left-3 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+          <div class="absolute top-3 left-3 z-10 bg-green-500 text-white px-3 py-1 rounded-md text-xs font-bold">
             NEW
           </div>
           <div class="shop-card-product-media h-64">
@@ -353,7 +418,10 @@
 
     
     <section v-if="recentlyViewed.length > 0" class="max-w-7xl mx-auto px-6 py-16 rounded-3xl bg-white/88 dark:bg-[#111a2a]/86 border border-slate-200/70 dark:border-slate-700/45">
-      <h2 class="shop-section-title mb-10">최근 본 상품</h2>
+      <div class="mb-10">
+        <h2 class="shop-section-title">최근 본 상품</h2>
+        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">최근에 둘러보신 상품입니다.</p>
+      </div>
       <div class="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
         <div
           v-for="p in recentlyViewed"
@@ -385,8 +453,13 @@
 
     
     <section v-if="!loading && recommendedProducts.length > 0" class="max-w-7xl mx-auto px-6 py-16">
-      <div class="shop-section-head">
-        <h2 class="shop-section-title">추천 상품</h2>
+      <div class="shop-section-head !items-start">
+        <div>
+          <h2 class="shop-section-title">추천 상품</h2>
+          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 max-w-xl">
+            이런 상품은 어떠세요? 함께 보면 좋은 추천 상품입니다.
+          </p>
+        </div>
         <button type="button" class="shop-link-muted" @click="goCategory('전체')">
           전체보기 →
         </button>
@@ -424,7 +497,7 @@
     </section>
 
     
-    <div class="max-w-7xl mx-auto px-6 py-10">
+    <div id="home-catalog" class="max-w-7xl mx-auto px-6 py-10 scroll-mt-24">
       <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h2 class="shop-page-title">
           {{ selectedCategory === '전체' ? '전체 상품' : selectedCategory }}
@@ -628,13 +701,29 @@ import Footer from "@/app/layout/Footer.vue";
 import SkeletonLoader from "@/components/ui/SkeletonLoader.vue";
 import { getRecentlyViewed } from "../../composables/useRecentlyViewed";
 import { formatPrice, normalizeImageUrl } from "../../lib/format";
+import { formatFreeShippingBadge } from "@/lib/shopPolicy.js";
 import WishlistButton from "@/components/product/WishlistButton.vue";
 
 const router = useRouter();
 const route = useRoute();
 
+const freeShippingBadge = computed(() => formatFreeShippingBadge());
+
 const goDetail = (id) => {
   router.push(`/product/${id}`);
+};
+
+const goProducts = () => {
+  router.push("/products");
+};
+
+const scrollToFeatured = () => {
+  if (typeof window === "undefined") return;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const featured = document.getElementById("featured-carousel");
+  const catalog = document.getElementById("home-catalog");
+  const target = featured || catalog;
+  target?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 };
 
 const goCategory = (catName) => {
@@ -977,12 +1066,14 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  line-height: 1;
+  padding: 6px 9px;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.25;
   font-weight: 650;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
+  max-width: 100%;
+  text-align: center;
   color: rgba(15, 23, 42, 0.75);
   background: rgba(15, 23, 42, 0.07);
   border: 1px solid rgba(15, 23, 42, 0.14);
@@ -999,7 +1090,7 @@ onMounted(() => {
   justify-content: center;
   height: 42px;
   padding: 0 14px;
-  border-radius: 14px;
+  border-radius: 10px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   background: rgba(255, 255, 255, 0.92);
   color: rgba(15, 23, 42, 0.84);
@@ -1025,17 +1116,18 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 14px 14px;
-  border-radius: 18px;
+  min-height: 3.25rem;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   background: rgba(255, 255, 255, 0.92);
   transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
 }
 .trend-row:hover {
-  transform: translateY(-2px);
-  border-color: rgba(15, 23, 42, 0.18);
+  transform: translateY(-1px);
+  border-color: rgba(15, 23, 42, 0.16);
   background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 14px 30px -22px rgba(15, 23, 42, 0.38);
+  box-shadow: 0 12px 28px -20px rgba(15, 23, 42, 0.32);
 }
 :global(.dark) .trend-row {
   border-color: rgba(255, 255, 255, 0.12);
@@ -1043,83 +1135,52 @@ onMounted(() => {
 }
 
 .trend-rank {
-  width: 28px;
-  height: 28px;
+  min-width: 1.75rem;
+  height: 1.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 800;
-  font-size: 13px;
-  color: rgba(15, 23, 42, 0.72);
-  background: rgba(15, 23, 42, 0.06);
+  font-size: 12px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: rgba(15, 23, 42, 0.78);
+  background: rgba(15, 23, 42, 0.055);
+  border: 1px solid rgba(15, 23, 42, 0.06);
   flex: 0 0 auto;
 }
 :global(.dark) .trend-rank {
-  color: rgba(243, 244, 246, 0.8);
-  background: rgba(255, 255, 255, 0.08);
+  color: rgba(243, 244, 246, 0.85);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .trend-thumb {
   width: 52px;
   height: 52px;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(243, 244, 246, 0.8);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #fafafa 0%, #f4f4f5 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   flex: 0 0 auto;
 }
 :global(.dark) .trend-thumb {
-  border-color: rgba(148, 163, 184, 0.16);
-  background: rgba(2, 6, 23, 0.35);
+  border-color: rgba(148, 163, 184, 0.14);
+  background: linear-gradient(180deg, rgba(24, 24, 27, 0.55) 0%, rgba(9, 9, 11, 0.45) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .trend-price {
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
   color: rgba(15, 23, 42, 0.88);
   flex: 0 0 auto;
 }
 :global(.dark) .trend-price {
   color: rgba(243, 244, 246, 0.88);
-}
-
-.hero-logo-animate {
-  animation: heroLogoEnter 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  opacity: 0;
-}
-@keyframes heroLogoEnter {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-.hero-tagline {
-  animation: heroTaglineFade 0.6s ease-out 0.5s forwards;
-  opacity: 0;
-}
-@keyframes heroTaglineFade {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  
-  .hero-logo-animate,
-  .hero-tagline {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
 }
 
 .no-scrollbar::-webkit-scrollbar {

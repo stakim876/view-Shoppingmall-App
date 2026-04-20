@@ -9,6 +9,7 @@ import { useRouter } from "vue-router";
 import api from "../../lib/api";
 import PortOnePayment from "./PortOnePayment.vue";
 import { formatPrice } from "../../lib/format";
+import { calculateShippingFee, getFreeShippingMinimumWon } from "@/lib/shopPolicy.js";
 
 const cart = useCartStore();
 const authStore = useAuthStore();
@@ -71,9 +72,12 @@ const removeCoupon = () => {
   couponCode.value = "";
 };
 
-const finalTotal = computed(() =>
+const discountedSubtotal = computed(() =>
   appliedCoupon.value ? appliedCoupon.value.finalTotal : totalPrice.value
 );
+const shippingFee = computed(() => calculateShippingFee(discountedSubtotal.value));
+const freeShippingMinimum = getFreeShippingMinimumWon();
+const finalTotal = computed(() => discountedSubtotal.value + shippingFee.value);
 
 const openAddressSearch = () => {
   if (typeof window === "undefined" || !window.daum) {
@@ -354,6 +358,14 @@ const handlePaymentError = (errorMessage) => {
         <p v-if="appliedCoupon" class="text-sm text-gray-600 dark:text-gray-400 mt-1">
           소계: {{ formatPrice(totalPrice) }}원
           <span class="text-green-600 dark:text-green-400"> - {{ formatPrice(appliedCoupon.discount) }}원 (쿠폰)</span>
+        </p>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          배송비:
+          <span v-if="shippingFee === 0" class="text-emerald-600 dark:text-emerald-400 font-medium">
+            무료
+          </span>
+          <span v-else>{{ formatPrice(shippingFee) }}원</span>
+          <span class="ml-1 text-xs text-gray-500 dark:text-gray-500">( {{ formatPrice(freeShippingMinimum) }}원 이상 무료배송 )</span>
         </p>
         <p class="text-lg font-bold text-indigo-600 dark:text-sky-400 mt-2">
           총 결제금액: {{ formatPrice(finalTotal) }}원

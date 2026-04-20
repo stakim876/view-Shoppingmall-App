@@ -5,15 +5,67 @@ import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import { ShoppingCart } from "lucide-vue-next";
 import { formatPrice, normalizeImageUrl } from "../../lib/format";
+import { ref, computed, onMounted, watch } from "vue";
+import api from "../../lib/api";
 
 const cart = useCartStore();
 const toast = useToastStore();
 const { totalItems, totalPrice } = storeToRefs(cart);
 const router = useRouter();
+const stockMap = ref({});
+
+const refreshStock = async () => {
+  try {
+    const res = await api.get("/products");
+    const map = {};
+    for (const p of res.data || []) {
+      map[Number(p.id)] = Number(p.stock || 0);
+    }
+    stockMap.value = map;
+  } catch (_) {
+    // ignore: 장바구니 자체는 로컬 상태로 유지
+  }
+};
+
+const itemStock = (id) => {
+  const v = stockMap.value[Number(id)];
+  return Number.isFinite(v) ? v : null;
+};
+
+const isSoldOut = (id) => {
+  const s = itemStock(id);
+  return s != null && s <= 0;
+};
+
+const canIncrease = (item) => {
+  const s = itemStock(item.id);
+  if (s == null) return true;
+  return Number(item.quantity || 0) < s;
+};
+
+const hasStockIssue = computed(() =>
+  cart.items.some((item) => {
+    const s = itemStock(item.id);
+    if (s == null) return false;
+    return s <= 0 || Number(item.quantity || 0) > s;
+  })
+);
+
+onMounted(refreshStock);
+watch(
+  () => cart.items.map((i) => i.id).join(","),
+  () => {
+    refreshStock();
+  }
+);
 
 const checkout = () => {
   if (cart.items.length === 0) {
     toast.warning("담긴 상품이 없습니다. 먼저 상품을 담아 주세요.");
+    return;
+  }
+  if (hasStockIssue.value) {
+    toast.warning("품절 또는 재고 부족 상품이 있습니다. 수량을 조정해 주세요.");
     return;
   }
   router.push("/checkout");
@@ -75,6 +127,12 @@ const checkout = () => {
             <p class="text-gray-500 dark:text-gray-400 text-sm">
               {{ formatPrice(item.price) }}원
             </p>
+            <p v-if="isSoldOut(item.id)" class="text-xs text-rose-600 dark:text-rose-400 mt-1 font-medium">
+              품절
+            </p>
+            <p v-else-if="itemStock(item.id) != null" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              재고 {{ itemStock(item.id) }}개
+            </p>
             <p class="font-semibold text-gray-700 dark:text-gray-200 mt-1">
               합계:
               <span class="text-indigo-600 dark:text-sky-400">
@@ -97,9 +155,10 @@ const checkout = () => {
             {{ item.quantity }}
           </span>
           <button
-            @click="cart.increaseQuantity(item.id)"
+            @click="cart.increaseQuantity(item.id, itemStock(item.id))"
+            :disabled="!canIncrease(item)"
             class="px-3 py-1 rounded-lg bg-white/70 dark:bg-white/20 
-                   hover:bg-white/90 dark:hover:bg-white/30 
+                   hover:bg-white/90 dark:hover:bg-white/30 disabled:opacity-40 disabled:cursor-not-allowed
                    transition"
           >
             ＋
@@ -129,10 +188,14 @@ const checkout = () => {
         </p>
         <button
           @click="checkout"
+          :disabled="hasStockIssue"
           class="shop-btn-primary mt-4 px-6 py-2 rounded-lg font-semibold"
         >
           결제하기
         </button>
+        <p v-if="hasStockIssue" class="text-xs text-rose-600 dark:text-rose-400 mt-2">
+          품절/재고 부족 상품이 있어 결제를 진행할 수 없습니다.
+        </p>
       </div>
     </div>
   </div>
