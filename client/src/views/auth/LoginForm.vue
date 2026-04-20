@@ -57,6 +57,25 @@
           </div>
         </div>
 
+        <div class="flex items-center justify-between text-xs text-gray-600">
+          <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+            <input
+              v-model="rememberId"
+              type="checkbox"
+              class="rounded border-gray-300 text-[#5B5FEF] focus:ring-[#5B5FEF]"
+            />
+            아이디 저장
+          </label>
+          <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+            <input
+              v-model="autoLogin"
+              type="checkbox"
+              class="rounded border-gray-300 text-[#5B5FEF] focus:ring-[#5B5FEF]"
+            />
+            자동 로그인
+          </label>
+        </div>
+
         <div v-if="requiresCaptcha" class="text-left text-xs text-gray-600">
           <div v-if="isTurnstileEnabled" ref="turnstileEl" class="min-h-[65px]"></div>
           <label v-else class="flex items-center gap-2">
@@ -133,6 +152,8 @@ import { trackAuthEvent } from "../../lib/analytics";
 const email = ref("");
 const password = ref("");
 const error = ref("");
+const rememberId = ref(false);
+const autoLogin = ref(true);
 const isSubmitting = ref(false);
 const requiresCaptcha = ref(false);
 const captchaChecked = ref(false);
@@ -199,6 +220,11 @@ const ensureTurnstileScript = () => {
 };
 
 onMounted(() => {
+  const savedEmail = localStorage.getItem("remembered_email");
+  if (savedEmail) {
+    email.value = savedEmail;
+    rememberId.value = true;
+  }
   ensureTurnstileScript();
 });
 
@@ -247,7 +273,14 @@ const login = async () => {
     const res = await loginWithRetry(payload);
 
     if (res.data.success) {
-      authStore.login(res.data.user, res.data.token);
+      authStore.login(res.data.user, res.data.token, {
+        autoLogin: autoLogin.value,
+      });
+      if (rememberId.value) {
+        localStorage.setItem("remembered_email", email.value);
+      } else {
+        localStorage.removeItem("remembered_email");
+      }
       await wishlist.fetchIds();
       requiresCaptcha.value = false;
       captchaChecked.value = false;

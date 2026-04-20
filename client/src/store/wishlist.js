@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import api from "../lib/api";
+import { getAuthState } from "../lib/authStorage.js";
 
 export const useWishlistStore = defineStore("wishlist", () => {
   const productIds = ref(new Set());
@@ -10,7 +11,7 @@ export const useWishlistStore = defineStore("wishlist", () => {
   const count = computed(() => productIds.value.size);
 
   async function fetchIds() {
-    const token = localStorage.getItem("token");
+    const token = getAuthState().token;
     if (!token) {
       productIds.value = new Set();
       return;
@@ -24,7 +25,7 @@ export const useWishlistStore = defineStore("wishlist", () => {
   }
 
   async function fetchItems() {
-    const token = localStorage.getItem("token");
+    const token = getAuthState().token;
     if (!token) {
       items.value = [];
       return [];

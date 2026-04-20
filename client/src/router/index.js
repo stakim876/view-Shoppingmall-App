@@ -16,6 +16,7 @@ import NoticePage from "@/views/notice/NoticePage.vue";
 import OrderLookup from "@/views/order/OrderLookup.vue";
 import WishlistPage from "@/views/shop/WishlistPage.vue";
 import NotFound from "@/components/ui/NotFound.vue";
+import { getAuthState } from "@/lib/authStorage.js";
 
 const routes = [
   { path: "/", redirect: "/home" },
@@ -59,9 +60,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem("token");
-  const userStr = localStorage.getItem("user");
-  const user = userStr ? JSON.parse(userStr) : null;
+  const { token, user } = getAuthState();
   const isLoggedIn = !!(token && user);
   
   if (to.meta.requiresAuth && !isLoggedIn) {

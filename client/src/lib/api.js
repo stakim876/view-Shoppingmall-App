@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getErrorMessage } from "./errorHandler.js";
+import { clearAuthState, getAuthState } from "./authStorage.js";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3102/api";
 
@@ -13,7 +14,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = getAuthState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -42,8 +43,7 @@ api.interceptors.response.use(
 
     // 비밀번호 틀림 등으로 로그인 API가 401을 줄 때는 "세션 만료" 처리하지 않음
     if (shouldResetAuth && !isAuthLogin) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      clearAuthState();
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
