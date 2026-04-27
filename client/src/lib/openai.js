@@ -1,7 +1,7 @@
 import axios from "axios";
+import { resolveApiConfig } from "./runtimeConfig.js";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3102/api";
-const API_BASE = API_URL.replace(/\/api\/?$/, "");
+const { apiOrigin: API_BASE } = resolveApiConfig();
 
 export async function askChatBot(message) {
   try {

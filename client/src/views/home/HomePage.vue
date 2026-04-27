@@ -107,6 +107,61 @@
       </div>
     </section>
 
+    <section class="max-w-7xl mx-auto px-6 py-10">
+      <div class="rounded-2xl border border-emerald-200/70 dark:border-emerald-700/35 bg-white/80 dark:bg-[#14202b]/75 p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h2 class="shop-section-title">AI 맞춤 추천</h2>
+            <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+              원하는 조건을 자연어로 입력하면 맞는 상품을 추천해드려요.
+            </p>
+          </div>
+        </div>
+        <div class="mt-4 flex flex-col sm:flex-row gap-2">
+          <input
+            v-model.trim="aiRecommendPrompt"
+            type="text"
+            placeholder="예) 영상 편집용 노트북, 200만원 이하, 가벼운 모델"
+            class="flex-1 rounded-xl border border-neutral-200 dark:border-slate-600 bg-white/90 dark:bg-slate-900/60 px-4 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/45"
+            @keyup.enter="requestAiRecommendation"
+          />
+          <button
+            type="button"
+            class="shop-btn-ai px-5 py-3 rounded-xl text-sm font-semibold disabled:opacity-60"
+            :disabled="aiRecommendLoading"
+            @click="requestAiRecommendation"
+          >
+            {{ aiRecommendLoading ? "추천 중..." : "AI 추천 받기" }}
+          </button>
+        </div>
+        <p v-if="aiRecommendError" class="mt-3 text-sm text-red-500">{{ aiRecommendError }}</p>
+
+        <div v-if="aiRecommendIntentText" class="mt-4 text-xs text-neutral-500 dark:text-neutral-400">
+          해석된 조건: {{ aiRecommendIntentText }}
+        </div>
+
+        <div v-if="aiRecommendedProducts.length > 0" class="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <article
+            v-for="p in aiRecommendedProducts"
+            :key="`ai-rec-${p.id}`"
+            class="rounded-xl border border-neutral-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-900/45 p-4"
+          >
+            <button type="button" class="w-full text-left" @click="openAiRecommendedProduct(p)">
+              <div class="h-36 bg-neutral-100 dark:bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden">
+                <img :src="imgSrc(p)" :alt="p.name" class="w-full h-full object-contain" @error="onImgError" />
+              </div>
+              <h3 class="mt-3 font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1">{{ p.name }}</h3>
+              <p class="mt-1 text-sm font-bold text-emerald-700 dark:text-emerald-400">{{ formatPrice(p.price) }}원</p>
+            </button>
+            <ul class="mt-2 text-xs text-neutral-500 dark:text-neutral-400 space-y-1">
+              <li v-for="(reason, idx) in p.reasons || []" :key="`reason-${p.id}-${idx}`">- {{ reason }}</li>
+            </ul>
+            <button type="button" class="mt-3 shop-btn-cart py-2 text-sm" @click="addAiRecommendedToCart(p)">장바구니 담기</button>
+          </article>
+        </div>
+      </div>
+    </section>
+
     
     <section
       v-if="!loading && carouselSlides.length > 0"
@@ -771,6 +826,24 @@ const priceRange = ref("");
 const currentPage = ref(1);
 const itemsPerPage = ref(9);
 const recentlyViewed = ref([]);
+const aiRecommendPrompt = ref("");
+const aiRecommendLoading = ref(false);
+const aiRecommendError = ref("");
+const aiRecommendedProducts = ref([]);
+const aiRecommendIntent = ref(null);
+const aiRecommendSessionId = ref(
+  `ai-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+);
+
+const aiRecommendIntentText = computed(() => {
+  const intent = aiRecommendIntent.value;
+  if (!intent) return "";
+  const parts = [];
+  if (intent.category) parts.push(`카테고리 ${intent.category}`);
+  if (intent.budgetMax) parts.push(`예산 ${formatPrice(intent.budgetMax)}원 이하`);
+  if (Array.isArray(intent.keywords) && intent.keywords.length) parts.push(`키워드 ${intent.keywords.join(", ")}`);
+  return parts.join(" / ");
+});
 
 const filteredProducts = computed(() => {
   let list = [...products.value];
@@ -890,13 +963,23 @@ const quickCategories = computed(() => {
   return unique.slice(0, 11); // 전체 포함 11개
 });
 
+function stableHash(input) {
+  const s = String(input ?? "");
+  let hash = 0;
+  for (let i = 0; i < s.length; i++) {
+    hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
 const trendingTop = computed(() => {
   const list = products.value || [];
   if (!list.length) return [];
   const scored = list.map((p) => {
     const created = p.created_at ? new Date(p.created_at).getTime() : 0;
     const recency = created ? Math.max(0, 1 - (Date.now() - created) / (1000 * 60 * 60 * 24 * 21)) : 0; // 3주 내 가중
-    const jitter = Math.random() * 0.12;
+    // 랜덤 대신 안정적인 hash 기반 가중치를 사용해 새로고침 때 순서가 흔들리지 않게 유지
+    const jitter = (stableHash(`${p.id}:${p.name}`) % 120) / 1000;
     return { p, score: recency + jitter };
   });
   scored.sort((a, b) => b.score - a.score);
@@ -914,9 +997,16 @@ const newProducts = computed(() => {
 });
 
 const recommendedProducts = computed(() => {
-  if (products.value.length === 0) return [];
-  const shuffled = [...products.value].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 4);
+  const list = products.value || [];
+  if (!list.length) return [];
+  // 하루 단위로만 바뀌는 안정적인 추천 순서 (동일 세션 내 점프 방지)
+  const dayKey = new Date().toISOString().slice(0, 10);
+  const sorted = [...list].sort((a, b) => {
+    const sa = stableHash(`${dayKey}:${a.id}:${a.name}`);
+    const sb = stableHash(`${dayKey}:${b.id}:${b.name}`);
+    return sa - sb;
+  });
+  return sorted.slice(0, 4);
 });
 
 const carouselSlides = computed(() => {
@@ -1016,6 +1106,64 @@ const addToCart = (p) => {
     image_url: p.image_url,
   });
   toast.success(`${p.name}이(가) 장바구니에 추가되었습니다.`);
+};
+
+const sendAiRecommendEvent = async (eventName, extra = {}) => {
+  try {
+    await api.post("/analytics/ai-recommend-events", {
+      eventName,
+      promptText: aiRecommendPrompt.value || null,
+      productId: extra.productId || null,
+      source: "home_ai_widget",
+      sessionId: aiRecommendSessionId.value,
+      meta: extra.meta || null,
+    });
+  } catch (_) {
+    // UX를 막지 않기 위해 이벤트 전송 실패는 무시
+  }
+};
+
+const openAiRecommendedProduct = async (p) => {
+  await sendAiRecommendEvent("ai_recommend_click", {
+    productId: p?.id,
+    meta: { productName: p?.name || "" },
+  });
+  goDetail(p.id);
+};
+
+const addAiRecommendedToCart = async (p) => {
+  await sendAiRecommendEvent("ai_recommend_add_to_cart", {
+    productId: p?.id,
+    meta: { productName: p?.name || "" },
+  });
+  addToCart(p);
+};
+
+const requestAiRecommendation = async () => {
+  if (!aiRecommendPrompt.value || aiRecommendLoading.value) return;
+  aiRecommendLoading.value = true;
+  aiRecommendError.value = "";
+  try {
+    const res = await api.post("/ai/recommend", { prompt: aiRecommendPrompt.value });
+    aiRecommendedProducts.value = Array.isArray(res.data?.recommendations) ? res.data.recommendations : [];
+    aiRecommendIntent.value = res.data?.intent || null;
+    aiRecommendSessionId.value = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    if (aiRecommendedProducts.value.length > 0) {
+      await sendAiRecommendEvent("ai_recommend_impression", {
+        meta: {
+          resultCount: aiRecommendedProducts.value.length,
+          recommendedProductIds: aiRecommendedProducts.value.map((p) => p.id),
+        },
+      });
+    }
+    if (aiRecommendedProducts.value.length === 0) {
+      aiRecommendError.value = "추천 결과가 없어 다른 조건으로 시도해 주세요.";
+    }
+  } catch (err) {
+    aiRecommendError.value = err.userMessage || "AI 추천을 불러오지 못했습니다.";
+  } finally {
+    aiRecommendLoading.value = false;
+  }
 };
 
 const loadProducts = async () => {

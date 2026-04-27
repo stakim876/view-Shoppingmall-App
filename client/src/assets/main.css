@@ -76,6 +76,21 @@
            focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
   }
 
+  .shop-btn-ai {
+    @apply font-medium text-white transition-all relative overflow-hidden
+           bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600
+           hover:from-emerald-500 hover:via-teal-500 hover:to-cyan-500
+           border border-emerald-900/30
+           shadow-[0_12px_28px_-14px_rgba(13,148,136,0.42)]
+           hover:shadow-[0_14px_32px_-14px_rgba(14,165,233,0.44)]
+           dark:border-emerald-300/20
+           dark:shadow-[0_12px_30px_-14px_rgba(20,184,166,0.3)]
+           dark:hover:shadow-[0_14px_34px_-14px_rgba(56,189,248,0.33)]
+           active:translate-y-[1px]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/75
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
+  }
+
   .shop-btn-danger {
     @apply font-medium transition-all
            bg-rose-50 text-rose-700 border border-rose-300/80

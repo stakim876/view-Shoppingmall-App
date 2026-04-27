@@ -4,7 +4,7 @@
     <div v-if="loading" class="min-h-screen flex items-center justify-center">
       <div class="text-center">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
-        <p class="text-neutral-600">상품 정보를 불러오는 중...</p>
+        <p class="text-neutral-600 dark:text-neutral-300">상품 정보를 불러오는 중...</p>
       </div>
     </div>
 
@@ -13,7 +13,7 @@
       <div class="text-center max-w-md">
         <div class="text-6xl mb-4">⚠️</div>
         <h2 class="text-2xl font-bold text-red-600 mb-2">오류가 발생했습니다</h2>
-        <p class="text-neutral-600 mb-6">{{ error }}</p>
+        <p class="text-neutral-600 dark:text-neutral-300 mb-6">{{ error }}</p>
         <div class="flex gap-3 justify-center">
           <button
             @click="$router.back()"
@@ -42,7 +42,7 @@
           ]"
         />
       </div>
-      <section class="relative py-24 overflow-hidden border-b border-neutral-200">
+      <section class="relative py-24 overflow-hidden border-b border-neutral-200 dark:border-zinc-800">
         <div
           class="absolute inset-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-transparent blur-3xl opacity-70"
         ></div>
@@ -82,7 +82,7 @@
             </h1>
 
             <p
-              class="text-neutral-600 text-base leading-relaxed mb-4 font-['Noto_Serif_KR'] italic"
+              class="text-neutral-600 dark:text-neutral-300 text-base leading-relaxed mb-4 font-['Noto_Serif_KR'] italic"
             >
               {{ product?.description || "상품 설명이 준비 중입니다." }}
             </p>
@@ -118,7 +118,7 @@
 
             <p class="mb-6 text-sm">
               <span v-if="stockNumber === 0" class="text-red-600 font-medium">품절</span>
-              <span v-else class="text-neutral-600">남은 수량 {{ stockNumber }}개</span>
+              <span v-else class="text-neutral-600 dark:text-neutral-300">남은 수량 {{ stockNumber }}개</span>
             </p>
 
             <form
@@ -143,7 +143,7 @@
                   {{ restockSubmitting ? "신청 중..." : "신청" }}
                 </button>
               </div>
-              <p v-if="restockMessage" class="mt-2 text-xs text-neutral-600">{{ restockMessage }}</p>
+              <p v-if="restockMessage" class="mt-2 text-xs text-neutral-600 dark:text-neutral-300">{{ restockMessage }}</p>
             </form>
 
             <div class="flex flex-wrap items-center gap-3">
@@ -177,11 +177,11 @@
       </section>
 
       
-      <section class="max-w-4xl mx-auto px-6 py-12 border-b border-neutral-200">
-        <h2 class="text-xl font-semibold text-neutral-800 mb-6">구매 후기</h2>
+      <section class="max-w-4xl mx-auto px-6 py-12 border-b border-neutral-200 dark:border-zinc-800">
+        <h2 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100 mb-6">구매 후기</h2>
 
-        <form v-if="auth.isLoggedIn" @submit.prevent="submitReview" class="mb-8 p-4 bg-neutral-50 rounded-xl">
-          <p class="text-sm text-neutral-600 mb-2">별점을 선택하고 한 줄 리뷰를 남겨 주세요.</p>
+        <form v-if="auth.isLoggedIn" @submit.prevent="submitReview" class="mb-8 p-4 bg-neutral-50 dark:bg-zinc-900/70 rounded-xl border border-neutral-200 dark:border-zinc-800">
+          <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">별점을 선택하고 한 줄 리뷰를 남겨 주세요.</p>
           <div class="flex items-center gap-1 mb-3">
             <button
               v-for="n in 5"
@@ -192,12 +192,12 @@
             >
               {{ reviewRating >= n ? '★' : '☆' }}
             </button>
-            <span class="text-sm text-neutral-500 ml-2">{{ reviewRating }}점</span>
+            <span class="text-sm text-neutral-500 dark:text-neutral-400 ml-2">{{ reviewRating }}점</span>
           </div>
           <textarea
             v-model="reviewContent"
             placeholder="리뷰 내용 (선택)"
-            class="w-full border border-neutral-200 rounded-lg p-3 text-sm mb-2 resize-none"
+            class="w-full border border-neutral-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded-lg p-3 text-sm mb-2 resize-none"
             rows="2"
           />
           <button
@@ -217,7 +217,7 @@
           <li
             v-for="r in reviews"
             :key="r.id"
-            class="flex gap-3 p-3 bg-white border border-neutral-100 rounded-lg"
+            class="flex gap-3 p-3 bg-white dark:bg-zinc-900/60 border border-neutral-100 dark:border-zinc-800 rounded-lg"
           >
             <div class="flex items-center gap-1 text-yellow-500 shrink-0">
               <span v-for="n in 5" :key="n">{{ r.rating >= n ? '★' : '☆' }}</span>
@@ -233,7 +233,7 @@
 
       <div class="max-w-7xl mx-auto px-6 py-16">
         <h2
-          class="text-2xl font-semibold text-neutral-800 mb-8 text-center border-b border-neutral-200 pb-3"
+          class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100 mb-8 text-center border-b border-neutral-200 dark:border-zinc-800 pb-3"
         >
           비슷한 상품 추천
         </h2>
@@ -246,7 +246,7 @@
         <div
           v-for="p in relatedProducts"
           :key="p.id"
-          class="group relative overflow-hidden rounded-3xl bg-white border border-neutral-200 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-lg"
+          class="group relative overflow-hidden rounded-3xl bg-white dark:bg-zinc-900/60 border border-neutral-200 dark:border-zinc-800 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-lg"
         >
           <div class="absolute top-3 right-3 z-10" @click.stop>
             <WishlistButton :product-id="p.id" size="sm" />
@@ -275,9 +275,7 @@
       </div>
     </div>
 
-      <footer class="text-center text-neutral-500 text-sm py-10 border-t border-neutral-200">
-        ⓒ 2025 Myshop — Designed with 💙
-      </footer>
+      <Footer />
     </template>
   </div>
 </template>
@@ -292,6 +290,7 @@ import { useToastStore } from "../../store/toast";
 import { addRecentlyViewed } from "../../composables/useRecentlyViewed";
 import Breadcrumb from "@/components/ui/Breadcrumb.vue";
 import WishlistButton from "@/components/product/WishlistButton.vue";
+import Footer from "@/app/layout/Footer.vue";
 import { formatPrice, normalizeImageUrl } from "../../lib/format";
 
 const route = useRoute();
@@ -312,6 +311,11 @@ const restockEmail = ref("");
 const restockSubmitting = ref(false);
 const restockMessage = ref("");
 
+const duplicateGalleryFallbackByProduct = {
+  "맥북 프로": "/images/macbookpro-back.png",
+  "아이패드 프로": "/images/ipadpro-back.png",
+};
+
 const productImages = computed(() => {
   if (!product.value) return [];
   const rawImages = product.value.images;
@@ -321,9 +325,21 @@ const productImages = computed(() => {
       ? rawImages.split(",").map((s) => s.trim())
       : [];
   const fallback = [product.value.image_url, product.value.image].filter(Boolean);
-  return [...imageList, ...fallback]
+  const normalizedImages = [...imageList, ...fallback]
     .map((url) => (url ? normalizeImageUrl(url) : ""))
     .filter(Boolean);
+
+  const duplicateFallback = duplicateGalleryFallbackByProduct[product.value?.name];
+  if (duplicateFallback && normalizedImages.length > 1) {
+    const duplicateIndex = normalizedImages.findIndex(
+      (url, idx) => idx > 0 && url === normalizedImages[0]
+    );
+    if (duplicateIndex !== -1) {
+      normalizedImages[duplicateIndex] = normalizeImageUrl(duplicateFallback);
+    }
+  }
+
+  return normalizedImages;
 });
 
 const stockNumber = computed(() => {

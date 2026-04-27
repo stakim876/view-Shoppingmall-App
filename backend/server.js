@@ -20,6 +20,29 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 const app = express();
 const FREE_SHIPPING_MIN = Number(process.env.FREE_SHIPPING_MIN || 30000);
 const SHIPPING_FEE = Number(process.env.SHIPPING_FEE || 3000);
+const WEAK_JWT_SECRETS = new Set([
+  "",
+  "replace_with_strong_random_secret",
+  "changeme",
+  "secret",
+  "test",
+]);
+
+function validateRuntimeSecurityConfig() {
+  const jwtSecret = String(process.env.JWT_SECRET || "");
+  if (WEAK_JWT_SECRETS.has(jwtSecret.trim()) || jwtSecret.length < 16) {
+    console.warn(
+      "⚠️ JWT_SECRET 값이 약하거나 기본값입니다. 16자 이상 랜덤 문자열로 교체하세요."
+    );
+  }
+
+  const corsOriginRaw = String(process.env.CORS_ORIGIN || "").trim();
+  if (corsOriginRaw === "*") {
+    console.warn("⚠️ CORS_ORIGIN='*' 는 권장되지 않습니다. 허용할 도메인을 명시하세요.");
+  }
+}
+
+validateRuntimeSecurityConfig();
 
 function calcShippingFee(subtotal) {
   const amount = Number(subtotal || 0);
@@ -334,6 +357,81 @@ function shoppingHelpFallback(userMessage) {
   ].join("\n");
 }
 
+function parseBudgetFromText(text) {
+  const t = String(text || "").replace(/,/g, "");
+  const wonMatch = t.match(/(\d+(?:\.\d+)?)\s*만\s*원/);
+  if (wonMatch) {
+    return Math.round(Number(wonMatch[1]) * 10000);
+  }
+  const rawMatch = t.match(/(\d{5,})\s*원?/);
+  if (rawMatch) {
+    return Number(rawMatch[1]);
+  }
+  return null;
+}
+
+function inferCategoryFromText(text) {
+  const t = String(text || "");
+  // DB 실제 카테고리 값(디지털/가전, 악세서리 등)에 맞춰 매핑
+  if (/노트북|맥북|laptop/i.test(t)) return "디지털/가전";
+  if (/태블릿|아이패드|tablet/i.test(t)) return "디지털/가전";
+  if (/이어폰|에어팟|헤드폰|audio/i.test(t)) return "악세서리";
+  if (/시계|워치|watch/i.test(t)) return "디지털/가전";
+  if (/폰|아이폰|스마트폰|phone/i.test(t)) return "디지털/가전";
+  return null;
+}
+
+async function extractRecommendIntent(prompt, apiKey) {
+  const budget = parseBudgetFromText(prompt);
+  const category = inferCategoryFromText(prompt);
+  const keywords = String(prompt || "")
+    .split(/[\s,./]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 2)
+    .slice(0, 8);
+
+  if (!apiKey) {
+    return { budget, category, keywords };
+  }
+
+  const intentPrompt = [
+    "사용자 쇼핑 요청을 JSON으로 구조화하세요.",
+    "반드시 JSON만 출력: {\"budgetMax\": number|null, \"category\": string|null, \"keywords\": string[]}",
+    "category는 가능하면 쇼핑 카테고리(예: 노트북, 태블릿, 디지털/가전, 악세서리)로 추론하세요.",
+    `사용자 입력: ${String(prompt || "").trim()}`,
+  ].join("\n");
+
+  try {
+    const data = await openAiChatCompletion(intentPrompt, apiKey);
+    const content = data?.choices?.[0]?.message?.content?.trim() || "";
+    const parsed = JSON.parse(content);
+    return {
+      budget: Number.isFinite(Number(parsed?.budgetMax)) ? Number(parsed.budgetMax) : budget,
+      category: parsed?.category ? String(parsed.category).trim() : category,
+      keywords: Array.isArray(parsed?.keywords) ? parsed.keywords.map((k) => String(k).trim()).filter(Boolean) : keywords,
+    };
+  } catch {
+    return { budget, category, keywords };
+  }
+}
+
+function normalizeRecommendKeywords(keywords, category) {
+  const base = Array.isArray(keywords) ? keywords : [];
+  const categoryIntentWords = new Set([
+    "노트북", "맥북", "laptop",
+    "태블릿", "아이패드", "tablet",
+    "이어폰", "에어팟", "헤드폰", "audio",
+    "시계", "워치", "watch",
+    "폰", "아이폰", "스마트폰", "phone",
+  ]);
+  const cleaned = base
+    .map((k) => String(k || "").trim())
+    .filter(Boolean)
+    .filter((k) => !categoryIntentWords.has(k.toLowerCase()));
+  if (!cleaned.length && !category) return base.slice(0, 5);
+  return cleaned.slice(0, 5);
+}
+
 app.post("/api/ai/chat", async (req, res) => {
   const prompt = String(req.body?.message || "").trim();
   if (!prompt) {
@@ -355,6 +453,89 @@ app.post("/api/ai/chat", async (req, res) => {
   } catch (err) {
     console.error("OpenAI API 오류 (폴백 응답 사용):", err.response?.data || err.message);
     return res.json({ text: shoppingHelpFallback(prompt), fallback: true });
+  }
+});
+
+app.post("/api/ai/recommend", async (req, res) => {
+  const prompt = String(req.body?.prompt || "").trim();
+  if (!prompt) {
+    return res.status(400).json({ success: false, message: "추천 요청 문장을 입력해 주세요." });
+  }
+
+  try {
+    const apiKey = process.env.OPENAI_API_KEY;
+    const intent = await extractRecommendIntent(prompt, apiKey);
+    const budgetMax = Number.isFinite(intent.budget) ? Number(intent.budget) : null;
+    const category = intent.category || null;
+    const keywords = normalizeRecommendKeywords(intent.keywords, category);
+
+    const where = [];
+    const params = [];
+    if (budgetMax != null && budgetMax > 0) {
+      where.push("price <= ?");
+      params.push(budgetMax);
+    }
+    if (category) {
+      where.push("category = ?");
+      params.push(category);
+    }
+    const keywordClauses = [];
+    for (const kw of keywords.slice(0, 5)) {
+      keywordClauses.push("(name LIKE ? OR description LIKE ? OR category LIKE ?)");
+      params.push(`%${kw}%`, `%${kw}%`, `%${kw}%`);
+    }
+    if (keywordClauses.length > 0) {
+      // 키워드가 여러 개일 때 전부 AND로 묶으면 결과가 과도하게 비어 fallback이 자주 발생하므로 OR로 완화
+      where.push(`(${keywordClauses.join(" OR ")})`);
+    }
+
+    const whereSql = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+    let [rows] = await db.query(
+      `SELECT id, name, description, price, image_url, category, stock
+       FROM products
+       ${whereSql}
+       ORDER BY stock > 0 DESC, price ASC
+       LIMIT 6`,
+      params
+    );
+
+    if (!rows.length) {
+      [rows] = await db.query(
+        `SELECT id, name, description, price, image_url, category, stock
+         FROM products
+         ORDER BY stock > 0 DESC, created_at DESC, id DESC
+         LIMIT 6`
+      );
+    }
+
+    const recommendations = rows.map((p) => {
+      const reasons = [];
+      if (budgetMax != null && Number(p.price) <= budgetMax) {
+        reasons.push(`예산 ${budgetMax.toLocaleString("ko-KR")}원 이하`);
+      }
+      if (category && p.category === category) {
+        reasons.push(`요청 카테고리(${category}) 일치`);
+      }
+      if (Number(p.stock || 0) > 0) {
+        reasons.push("현재 구매 가능");
+      }
+      if (!reasons.length) reasons.push("요청 조건과 유사한 상품");
+      return { ...p, reasons: reasons.slice(0, 2) };
+    });
+
+    return res.json({
+      success: true,
+      message: "AI 추천 결과입니다.",
+      intent: {
+        budgetMax,
+        category,
+        keywords,
+      },
+      recommendations,
+    });
+  } catch (err) {
+    console.error("❌ AI 추천 오류:", err);
+    return res.status(500).json({ success: false, message: "추천 결과를 불러오지 못했습니다." });
   }
 });
 
@@ -385,19 +566,11 @@ function buildMysqlPoolConfig() {
 
 const mysqlConfig = buildMysqlPoolConfig();
 
-console.log("DB ENV CHECK", {
-  DB_HOST: process.env.DB_HOST,
-  DB_USER: process.env.DB_USER,
-  DB_NAME: process.env.DB_NAME,
-  MYSQLHOST: process.env.MYSQLHOST,
-  MYSQLUSER: process.env.MYSQLUSER,
-  MYSQLDATABASE: process.env.MYSQLDATABASE,
-  MYSQL_DATABASE: process.env.MYSQL_DATABASE,
-  MYSQLPORT: process.env.MYSQLPORT,
+console.log("DB CONFIG CHECK", {
   resolvedHost: mysqlConfig.host,
-  resolvedUser: mysqlConfig.user,
   resolvedDatabase: mysqlConfig.database,
   resolvedPort: mysqlConfig.port,
+  sslEnabled: Boolean(mysqlConfig.ssl),
 });
 
 const db = mysql.createPool(mysqlConfig);
@@ -443,6 +616,22 @@ async function ensureReviewAndGalleryTables() {
           FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
         CONSTRAINT fk_reviews_user
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    );
+
+    await db.query(
+      `CREATE TABLE IF NOT EXISTS ai_recommend_events (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        event_name VARCHAR(40) NOT NULL,
+        prompt_text TEXT NULL,
+        product_id INT NULL,
+        source VARCHAR(40) NULL,
+        session_id VARCHAR(100) NULL,
+        user_id INT NULL,
+        meta_json JSON NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_ai_recommend_events_name_created (event_name, created_at),
+        INDEX idx_ai_recommend_events_product_created (product_id, created_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
     );
 
@@ -501,6 +690,23 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "API 서버 정상" });
 });
 
+app.get("/api/health/db", async (req, res) => {
+  try {
+    await db.query("SELECT 1 AS ok");
+    return res.json({
+      ok: true,
+      message: "API+DB 정상",
+      uptimeSec: Math.round(process.uptime()),
+    });
+  } catch (err) {
+    console.error("❌ /api/health/db 오류:", err.message);
+    return res.status(500).json({
+      ok: false,
+      message: "DB 연결 실패",
+    });
+  }
+});
+
 app.get("/api/shipping/carriers", (req, res) => {
   res.json({ success: true, carriers: listCarriers() });
 });
@@ -553,6 +759,43 @@ app.post("/api/analytics/auth-events", (req, res) => {
     ip: req.ip,
   });
   return ok(res, {}, "auth event recorded");
+});
+
+app.post("/api/analytics/ai-recommend-events", async (req, res) => {
+  const { eventName, promptText, productId, source, sessionId, userId, meta } = req.body || {};
+  const allowed = new Set(["ai_recommend_impression", "ai_recommend_click", "ai_recommend_add_to_cart"]);
+  if (!eventName || !allowed.has(String(eventName))) {
+    return fail(res, 400, "INVALID_EVENT", "유효하지 않은 AI 추천 이벤트입니다.");
+  }
+
+  try {
+    await db.query(
+      `INSERT INTO ai_recommend_events
+      (event_name, prompt_text, product_id, source, session_id, user_id, meta_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        String(eventName),
+        promptText ? String(promptText) : null,
+        Number(productId) > 0 ? Number(productId) : null,
+        source ? String(source) : "home_ai_widget",
+        sessionId ? String(sessionId) : null,
+        Number(userId) > 0 ? Number(userId) : null,
+        meta ? JSON.stringify(meta) : null,
+      ]
+    );
+    return ok(res, {}, "ai recommend event recorded");
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(
+        res,
+        503,
+        "SCHEMA_MISSING",
+        "ai_recommend_events 테이블이 없습니다. 서버를 재시작해 자동 생성을 실행하세요."
+      );
+    }
+    console.error("AI 추천 이벤트 기록 오류:", err);
+    return fail(res, 500, "AI_RECOMMEND_EVENT_ERROR", "AI 추천 이벤트 기록에 실패했습니다.");
+  }
 });
 
 app.post("/api/coupons/validate", async (req, res) => {
