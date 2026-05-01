@@ -1,47 +1,15 @@
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center 
-           bg-gradient-to-br from-slate-100 to-slate-200 
-           dark:from-zinc-950 dark:to-neutral-950
-           px-6"
-  >
-    <div class="text-center max-w-md">
-      <div class="mb-8">
-        <h1
-          class="text-9xl font-extrabold bg-gradient-to-r 
-                 from-indigo-500 via-sky-400 to-blue-500 
-                 bg-clip-text text-transparent mb-4"
-        >
-          404
-        </h1>
-        <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-4">
-          페이지를 찾을 수 없습니다
-        </h2>
-        <p class="text-gray-600 dark:text-gray-400 mb-8">
-          요청하신 페이지가 존재하지 않거나 이동되었을 수 있습니다.
-        </p>
-      </div>
-
-      <div class="flex gap-4 justify-center">
-        <router-link
-          to="/home"
-          class="shop-btn-primary px-6 py-3 rounded-lg font-semibold"
-        >
-          홈으로 가기
-        </router-link>
-        <button
-          @click="$router.go(-1)"
-          class="shop-btn-secondary px-6 py-3 rounded-lg font-semibold"
-        >
-          이전 페이지
-        </button>
-      </div>
-    </div>
-  </div>
+  <section class="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
+    <p class="text-sm text-neutral-500 mb-2">404</p>
+    <h1 class="text-2xl font-bold text-neutral-900 mb-3">페이지를 찾을 수 없습니다</h1>
+    <p class="text-neutral-600 mb-6">
+      요청하신 주소가 변경되었거나 삭제되었습니다.
+    </p>
+    <router-link
+      to="/home"
+      class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 transition"
+    >
+      홈으로 이동
+    </router-link>
+  </section>
 </template>
-
-<script setup>
-</script>
-
-<style scoped>
-</style>

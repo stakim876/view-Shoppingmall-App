@@ -313,6 +313,7 @@ const restockMessage = ref("");
 
 const duplicateGalleryFallbackByProduct = {
   "맥북 프로": "/images/macbookpro-back.png",
+  "에어팟 프로": "/images/airpodspro-case.png",
   "아이패드 프로": "/images/ipadpro-back.png",
 };
 
