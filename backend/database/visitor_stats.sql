@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS visitor_daily (
+  visit_date DATE NOT NULL PRIMARY KEY,
+  view_count INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS visitor_total (
+  id TINYINT NOT NULL PRIMARY KEY DEFAULT 1,
+  view_count BIGINT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO visitor_total (id, view_count) VALUES (1, 0);

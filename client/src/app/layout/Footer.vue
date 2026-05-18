@@ -81,6 +81,12 @@
         <p>{{ company.address }}</p>
         <p>사업자등록번호: {{ company.bizNo }} | 통신판매신고번호: {{ company.mailOrderNo }}</p>
         <p>E-MAIL: {{ company.email }}</p>
+        <p
+          v-if="visitorStats"
+          class="text-slate-500 dark:text-white/70"
+        >
+          오늘 {{ formatCount(visitorStats.today) }} · 누적 {{ formatCount(visitorStats.total) }}
+        </p>
         <p class="text-slate-500 dark:text-white/70 pt-1">{{ company.copyright }}</p>
       </div>
     </div>
@@ -88,7 +94,23 @@
 </template>
 
 <script setup>
+import { onMounted } from "vue";
+import { fetchVisitorStats } from "../../lib/analytics.js";
 import { getKakaoChatUrl } from "../../lib/kakaoChat.js";
+import { visitorStats } from "../../lib/visitorStats.js";
+
+function formatCount(value) {
+  return Number(value || 0).toLocaleString("ko-KR");
+}
+
+onMounted(async () => {
+  if (visitorStats.value) return;
+  try {
+    visitorStats.value = await fetchVisitorStats();
+  } catch {
+    visitorStats.value = null;
+  }
+});
 
 const slogan = "세련된 선택";
 

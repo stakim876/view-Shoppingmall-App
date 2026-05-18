@@ -63,6 +63,40 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function getKstDateString() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+}
+
+async function recordVisitorPageView() {
+  const visitDate = getKstDateString();
+  await db.query(
+    `INSERT INTO visitor_daily (visit_date, view_count) VALUES (?, 1)
+     ON DUPLICATE KEY UPDATE view_count = view_count + 1`,
+    [visitDate]
+  );
+  await db.query(`UPDATE visitor_total SET view_count = view_count + 1 WHERE id = 1`);
+}
+
+async function getVisitorStats() {
+  const visitDate = getKstDateString();
+  let today = 0;
+  let total = 0;
+  try {
+    const [[dailyRow]] = await db.query(
+      `SELECT view_count FROM visitor_daily WHERE visit_date = ? LIMIT 1`,
+      [visitDate]
+    );
+    today = Number(dailyRow?.view_count) || 0;
+    const [[totalRow]] = await db.query(
+      `SELECT view_count FROM visitor_total WHERE id = 1 LIMIT 1`
+    );
+    total = Number(totalRow?.view_count) || 0;
+  } catch (err) {
+    if (err.code !== "ER_NO_SUCH_TABLE") throw err;
+  }
+  return { today, total };
+}
+
 function parseOptionalMysqlDatetime(input) {
   if (input == null || input === "") return null;
   const s = String(input).trim();
@@ -635,6 +669,20 @@ async function ensureReviewAndGalleryTables() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
     );
 
+    await db.query(
+      `CREATE TABLE IF NOT EXISTS visitor_daily (
+        visit_date DATE NOT NULL PRIMARY KEY,
+        view_count INT NOT NULL DEFAULT 0
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    );
+    await db.query(
+      `CREATE TABLE IF NOT EXISTS visitor_total (
+        id TINYINT NOT NULL PRIMARY KEY DEFAULT 1,
+        view_count BIGINT NOT NULL DEFAULT 0
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    );
+    await db.query(`INSERT IGNORE INTO visitor_total (id, view_count) VALUES (1, 0)`);
+
     console.log("✅ 리뷰/갤러리 테이블 점검 완료");
   } catch (err) {
     console.warn("⚠️ 리뷰/갤러리 테이블 자동 생성 실패:", err.message);
@@ -759,6 +807,30 @@ app.post("/api/analytics/auth-events", (req, res) => {
     ip: req.ip,
   });
   return ok(res, {}, "auth event recorded");
+});
+
+app.get("/api/analytics/visitor-stats", async (_req, res) => {
+  try {
+    const stats = await getVisitorStats();
+    return ok(res, stats, "visitor stats");
+  } catch (err) {
+    console.error("방문자 통계 조회 오류:", err);
+    return fail(res, 500, "VISITOR_STATS_ERROR", "방문자 통계를 불러오지 못했습니다.");
+  }
+});
+
+app.post("/api/analytics/page-views", async (_req, res) => {
+  try {
+    await recordVisitorPageView();
+    const stats = await getVisitorStats();
+    return ok(res, stats, "page view recorded");
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return ok(res, { today: 0, total: 0 }, "page view recorded");
+    }
+    console.error("방문자 집계 오류:", err);
+    return fail(res, 500, "PAGE_VIEW_ERROR", "방문 기록에 실패했습니다.");
+  }
 });
 
 app.post("/api/analytics/ai-recommend-events", async (req, res) => {

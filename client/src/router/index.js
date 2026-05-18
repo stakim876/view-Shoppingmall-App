@@ -17,6 +17,7 @@ import OrderLookup from "@/views/order/OrderLookup.vue";
 import WishlistPage from "@/views/shop/WishlistPage.vue";
 import NotFound from "@/components/ui/NotFound.vue";
 import { getAuthState } from "@/lib/authStorage.js";
+import { trackPageView } from "@/lib/analytics.js";
 
 const routes = [
   { path: "/", redirect: "/home" },
@@ -74,6 +75,10 @@ router.beforeEach((to, from, next) => {
   }
 
   next();
+});
+
+router.afterEach(() => {
+  trackPageView();
 });
 
 export default router;
