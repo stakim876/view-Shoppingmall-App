@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <div
     class="fixed bottom-24 right-6 z-[45] w-[min(100vw-2rem,20rem)] max-h-[min(85dvh,calc(100dvh-7rem))] bg-white dark:bg-zinc-950 rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200 dark:border-white/[0.1]"
   >
     <div
-      class="bg-gradient-to-br from-emerald-700 via-emerald-800 to-teal-950 dark:from-emerald-900 dark:via-teal-950 dark:to-zinc-950 text-white px-4 py-3 flex justify-between items-start gap-2 border-b border-white/15 dark:border-white/10"
+      class="bg-gradient-to-br from-indigo-700 via-indigo-800 to-violet-950 dark:from-indigo-900 dark:via-violet-950 dark:to-zinc-950 text-white px-4 py-3 flex justify-between items-start gap-2 border-b border-white/15 dark:border-white/10"
     >
       <div class="min-w-0">
         <span class="font-semibold tracking-tight block">쇼핑 도움말</span>
@@ -48,7 +48,7 @@
         @keyup.enter="send"
         type="text"
         placeholder="궁금한 점을 입력해 주세요"
-        class="flex-1 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900/80 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/45"
+        class="flex-1 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900/80 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/45"
         :disabled="sending"
       />
       <button

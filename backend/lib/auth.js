@@ -56,3 +56,16 @@ export function authenticateToken(req, res, next) {
   req.user = decoded;
   next();
 }
+
+export function optionalAuthenticate(req, _res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) {
+    return next();
+  }
+  const decoded = verifyToken(token);
+  if (decoded) {
+    req.user = decoded;
+  }
+  next();
+}

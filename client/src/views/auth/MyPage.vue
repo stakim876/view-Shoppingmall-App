@@ -5,6 +5,7 @@ import { Package } from "lucide-vue-next";
 import { useAuthStore } from "../../store/auth";
 import { useToastStore } from "../../store/toast";
 import { formatPrice } from "../../lib/format";
+import { getRecentlyViewed } from "../../composables/useRecentlyViewed";
 import {
   ORDER_TIMELINE_STEPS,
   getOrderStatusLabel,
@@ -19,6 +20,9 @@ const orders = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const userName = ref(auth.user?.name || "");
+const personalizedProducts = ref([]);
+const personalizedSummary = ref("");
+const personalizedLoading = ref(false);
 
 const fetchOrders = async () => {
   if (!auth.user) {
@@ -45,7 +49,32 @@ const fetchOrders = async () => {
   }
 };
 
-onMounted(fetchOrders);
+onMounted(async () => {
+  await fetchOrders();
+  await loadPersonalizedRecommendations();
+});
+
+const loadPersonalizedRecommendations = async () => {
+  personalizedLoading.value = true;
+  try {
+    const recentIds = getRecentlyViewed().map((p) => p.id).filter(Boolean);
+    const res = await api.get("/recommendations/personalized", {
+      params: {
+        recentProductIds: recentIds.join(","),
+        limit: 6,
+      },
+    });
+    personalizedProducts.value = Array.isArray(res.data?.recommendations)
+      ? res.data.recommendations
+      : [];
+    personalizedSummary.value = res.data?.summary || "";
+  } catch (_) {
+    personalizedProducts.value = [];
+    personalizedSummary.value = "";
+  } finally {
+    personalizedLoading.value = false;
+  }
+};
 
 const formatDate = (dateStr) => {
   const d = new Date(dateStr);
@@ -136,6 +165,27 @@ const updateUserInfo = async () => {
           </button>
         </div>
       </div>
+
+      <div
+        v-if="personalizedProducts.length > 0"
+        class="bg-white/50 dark:bg-white/10 backdrop-blur-md border border-white/40 rounded-2xl p-6 mb-8 shadow-[0_8px_32px_rgba(31,38,135,0.15)]"
+      >
+        <h2 class="text-xl font-semibold mb-1 text-gray-700 dark:text-gray-200">맞춤 추천</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ personalizedSummary }}</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <router-link
+            v-for="p in personalizedProducts"
+            :key="p.id"
+            :to="`/product/${p.id}`"
+            class="rounded-xl border border-white/50 dark:border-white/10 p-4 hover:border-indigo-300 dark:hover:border-indigo-500/40 transition"
+          >
+            <p class="font-medium text-gray-800 dark:text-gray-100 line-clamp-2">{{ p.name }}</p>
+            <p class="text-sm text-indigo-600 dark:text-sky-400 mt-1">{{ formatPrice(p.price) }}원</p>
+            <p class="text-xs text-gray-500 mt-2">{{ p.reason }}</p>
+          </router-link>
+        </div>
+      </div>
+      <div v-else-if="personalizedLoading" class="text-center text-gray-500 mb-8">맞춤 추천 불러오는 중...</div>
 
       <h2 class="text-xl font-semibold text-center mb-8 text-gray-700 dark:text-gray-200">
         주문 내역

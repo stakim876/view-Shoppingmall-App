@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <LayoutHeader />
 </template>
 
@@ -334,8 +334,8 @@ const secondaryNavItems = computed(() => {
     <div
       v-if="bannerNotice && !bannerClosed"
       class="flex items-center gap-2 px-3 py-2 text-sm
-             bg-emerald-50/95 dark:bg-emerald-950/75 text-emerald-950 dark:text-emerald-100
-             border-b border-emerald-200/70 dark:border-emerald-800/45"
+             bg-indigo-50/95 dark:bg-indigo-950/75 text-indigo-950 dark:text-indigo-100
+             border-b border-indigo-200/70 dark:border-indigo-800/45"
     >
       <Megaphone class="w-4 h-4 shrink-0 opacity-80" aria-hidden="true" />
       <router-link
@@ -346,8 +346,8 @@ const secondaryNavItems = computed(() => {
       </router-link>
       <button
         type="button"
-        class="shrink-0 p-1 rounded-md hover:bg-emerald-200/55 dark:hover:bg-emerald-900/45
-               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        class="shrink-0 p-1 rounded-md hover:bg-indigo-200/55 dark:hover:bg-indigo-900/45
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         aria-label="공지 배너 닫기"
         @click="dismissNoticeBanner"
       >
@@ -389,7 +389,7 @@ const secondaryNavItems = computed(() => {
       <router-link
         to="/home"
         aria-label="My Shop 홈으로 이동"
-        class="flex items-center justify-start hover:opacity-90 transition shrink-0 overflow-visible h-14 sm:h-[4.25rem] md:h-[4.7rem] w-[min(46vw,17.5rem)] sm:w-[19rem] md:w-[21rem] rounded-md focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(16,185,129,0.38)]"
+        class="flex items-center justify-start hover:opacity-90 transition shrink-0 overflow-visible h-14 sm:h-[4.25rem] md:h-[4.7rem] w-[min(46vw,17.5rem)] sm:w-[19rem] md:w-[21rem] rounded-md focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(99, 102, 241,0.38)]"
       >
         <img
           src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
@@ -493,8 +493,8 @@ const secondaryNavItems = computed(() => {
                 :class="[
                   'rounded-full px-3 py-1.5 text-xs transition',
                   highlightedIndex === searchSuggestions.length + recentSearches.length + popIdx
-                    ? 'bg-emerald-200 text-emerald-950 dark:bg-emerald-400/30 dark:text-emerald-50'
-                    : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:bg-emerald-500/12 dark:text-emerald-200 dark:hover:bg-emerald-500/22'
+                    ? 'bg-indigo-200 text-indigo-950 dark:bg-indigo-400/30 dark:text-indigo-50'
+                    : 'bg-indigo-50 text-indigo-900 hover:bg-indigo-100 dark:bg-indigo-500/12 dark:text-indigo-200 dark:hover:bg-indigo-500/22'
                 ]"
                 @mousedown.prevent="pickSuggestion(item)"
                 @mouseenter="highlightedIndex = searchSuggestions.length + recentSearches.length + popIdx"
@@ -570,7 +570,7 @@ const secondaryNavItems = computed(() => {
           <router-link
             v-if="auth.user?.role === 'admin'"
             to="/admin"
-            class="text-sm bg-gradient-to-r from-green-500 to-emerald-400 text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+            class="shop-btn-accent text-sm px-3 py-1.5 rounded-lg"
           >
             관리자
           </router-link>
@@ -625,9 +625,9 @@ const secondaryNavItems = computed(() => {
         :aria-label="`${item.name} 카테고리 보기`"
         @click="goCategory(item.category)"
         :class="[
-          'relative z-10 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
+          'relative z-10 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
           isCategoryActive(item)
-            ? 'shop-btn-primary text-white dark:text-white border-emerald-900/25'
+            ? 'shop-btn-primary text-white dark:text-white border-indigo-900/25'
             : 'shop-btn-secondary'
         ]"
       >

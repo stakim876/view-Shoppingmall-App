@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, computed } from "vue";
 import { ShoppingCart } from "lucide-vue-next";
 import { useCartStore } from "../../store/cart";
@@ -361,7 +361,7 @@ const handlePaymentError = (errorMessage) => {
         </p>
         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
           배송비:
-          <span v-if="shippingFee === 0" class="text-emerald-600 dark:text-emerald-400 font-medium">
+          <span v-if="shippingFee === 0" class="text-indigo-600 dark:text-indigo-400 font-medium">
             무료
           </span>
           <span v-else>{{ formatPrice(shippingFee) }}원</span>

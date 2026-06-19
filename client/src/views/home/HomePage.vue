@@ -1,333 +1,303 @@
-<template>
+﻿<template>
   <div
-    class="relative min-h-screen bg-gradient-to-b
-           from-slate-50 via-neutral-50 to-slate-100
-           dark:from-[#0c0f16] dark:via-[#0f141d] dark:to-[#121925]
+    class="relative min-h-screen bg-slate-50 dark:bg-[#0c0f16]
            text-slate-700 dark:text-slate-200
            font-sans transition-colors duration-500"
   >
     <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       <div
-        class="absolute inset-0 bg-[radial-gradient(ellipse_100%_55%_at_50%_-15%,rgba(110,231,183,0.11),transparent_55%)] dark:bg-[radial-gradient(ellipse_90%_45%_at_50%_0%,rgba(16,185,129,0.06),transparent_50%)]"
-      />
-      <div
-        class="absolute -top-24 left-[6%] h-[18rem] w-[18rem] rounded-full bg-emerald-200/30 blur-[100px] dark:bg-slate-600/18"
-      />
-      <div
-        class="absolute top-[20%] -right-20 h-[22rem] w-[22rem] rounded-full bg-slate-200/35 blur-[118px] dark:bg-slate-700/14"
-      />
-      <div
-        class="absolute bottom-[5%] left-[18%] h-[14rem] w-[14rem] rounded-full bg-teal-100/35 blur-[88px] dark:bg-slate-700/12"
-      />
-      <div
-        class="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.35)_0%,transparent_35%,transparent_65%,rgba(15,23,42,0.04)_100%)] dark:bg-[linear-gradient(180deg,transparent_0%,transparent_55%,rgba(0,0,0,0.35)_100%)]"
+        class="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(99, 102, 241,0.08),transparent_55%)] dark:bg-[radial-gradient(ellipse_70%_40%_at_50%_0%,rgba(99, 102, 241,0.05),transparent_50%)]"
       />
     </div>
 
     <div class="relative z-10">
-    
-    <section
-      class="relative overflow-hidden border-b border-slate-200/70 dark:border-slate-800/55"
-      aria-labelledby="home-hero-heading"
-    >
-      <div
-        class="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-50/35 via-transparent to-transparent dark:from-emerald-950/12 dark:via-transparent"
-        aria-hidden="true"
-      />
-      <div
-        class="relative z-10 mx-auto max-w-7xl px-6 py-14 sm:py-16 md:py-20 md:flex md:items-end md:justify-between md:gap-12"
-      >
-        <div class="max-w-2xl">
-          <p
-            class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-900 dark:text-emerald-400"
-          >
-            MY SHOP
-          </p>
-          <h1
-            id="home-hero-heading"
-            class="mt-3 text-3xl font-bold leading-[1.18] tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-4xl md:text-[2.35rem]"
-          >
-            당신에게 맞는 상품을<br class="sm:hidden" />
-            <span class="sm:whitespace-nowrap">편하게 골라보세요</span>
-          </h1>
-          <p
-            class="mt-4 text-base leading-relaxed text-neutral-600 dark:text-neutral-400 sm:text-lg"
-          >
-            인기 상품부터 신상, 카테고리별 상품까지 한곳에서 만나보세요.
-          </p>
-          <div
-            class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
-          >
-            <button
-              type="button"
-              class="shop-btn-primary inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold"
-              @click="goProducts"
-            >
-              상품 둘러보기
-            </button>
-            <button
-              type="button"
-              class="shop-btn-secondary inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold"
-              @click="scrollToFeatured"
-            >
-              주요 상품 보기
-            </button>
-          </div>
-          <p class="mt-5 text-sm text-neutral-500 dark:text-neutral-400">
-            <router-link
-              to="/notice"
-              class="font-medium text-emerald-900 underline-offset-4 hover:underline dark:text-emerald-400"
-            >
-              공지사항
-            </router-link>
-            <span class="mx-2 text-neutral-300 dark:text-neutral-600" aria-hidden="true">·</span>
-            <router-link
-              to="/order-lookup"
-              class="font-medium text-emerald-900 underline-offset-4 hover:underline dark:text-emerald-400"
-            >
-              주문 조회
-            </router-link>
-          </p>
-        </div>
-        <div
-          class="mt-10 hidden md:block md:mt-0 md:max-w-sm md:shrink-0"
-          aria-hidden="true"
-        >
-          <div
-            class="rounded-2xl border border-slate-200/80 bg-white/75 p-5 shadow-[0_18px_40px_-22px_rgba(15,23,42,0.35)] dark:border-slate-700/50 dark:bg-slate-900/50"
-          >
-            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              안내
-            </p>
-            <p class="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
-              배송·교환·반품 조건은 상품마다 다를 수 있습니다. 상품 상세와 하단 고객센터 안내를 확인해 주세요.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
+      <div class="home-grid-bg pointer-events-none absolute inset-0" aria-hidden="true" />
 
-    <section class="max-w-7xl mx-auto px-6 py-10">
-      <div class="rounded-2xl border border-emerald-200/70 dark:border-emerald-700/35 bg-white/80 dark:bg-[#14202b]/75 p-5 sm:p-6">
-        <div class="flex items-start justify-between gap-3 flex-wrap">
+      <div class="relative mx-auto max-w-7xl px-4 sm:px-6 pt-6 pb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 class="shop-section-title">AI 맞춤 추천</h2>
-            <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              원하는 조건을 자연어로 입력하면 맞는 상품을 추천해드려요.
+            <p class="text-[10px] font-bold uppercase tracking-[0.32em] text-indigo-600 dark:text-indigo-400">
+              Portfolio Demo
+            </p>
+            <h1 class="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              AI가 골라주는 쇼핑 경험
+            </h1>
+            <p v-if="!loading" class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              등록 상품 <span class="font-semibold tabular-nums text-indigo-700 dark:text-indigo-400">{{ catalogTotal }}</span>개
             </p>
           </div>
-        </div>
-        <div class="mt-4 flex flex-col sm:flex-row gap-2">
-          <input
-            v-model.trim="aiRecommendPrompt"
-            type="text"
-            placeholder="예) 영상 편집용 노트북, 200만원 이하, 가벼운 모델"
-            class="flex-1 rounded-xl border border-neutral-200 dark:border-slate-600 bg-white/90 dark:bg-slate-900/60 px-4 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/45"
-            @keyup.enter="requestAiRecommendation"
-          />
-          <button
-            type="button"
-            class="shop-btn-ai px-5 py-3 rounded-xl text-sm font-semibold disabled:opacity-60"
-            :disabled="aiRecommendLoading"
-            @click="requestAiRecommendation"
+          <div
+            class="inline-flex self-start rounded-xl border border-slate-200/80 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/60 p-1 shadow-sm"
+            role="tablist"
+            aria-label="홈 화면 섹션"
           >
-            {{ aiRecommendLoading ? "추천 중..." : "AI 추천 받기" }}
-          </button>
-        </div>
-        <p v-if="aiRecommendError" class="mt-3 text-sm text-red-500">{{ aiRecommendError }}</p>
-
-        <div v-if="aiRecommendIntentText" class="mt-4 text-xs text-neutral-500 dark:text-neutral-400">
-          해석된 조건: {{ aiRecommendIntentText }}
-        </div>
-
-        <div v-if="aiRecommendedProducts.length > 0" class="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <article
-            v-for="p in aiRecommendedProducts"
-            :key="`ai-rec-${p.id}`"
-            class="rounded-xl border border-neutral-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-900/45 p-4"
-          >
-            <button type="button" class="w-full text-left" @click="openAiRecommendedProduct(p)">
-              <div class="h-36 bg-neutral-100 dark:bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden">
-                <img :src="imgSrc(p)" :alt="p.name" class="w-full h-full object-contain" @error="onImgError" />
-              </div>
-              <h3 class="mt-3 font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1">{{ p.name }}</h3>
-              <p class="mt-1 text-sm font-bold text-emerald-700 dark:text-emerald-400">{{ formatPrice(p.price) }}원</p>
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="homeSection === 'curate'"
+              class="home-mode-tab"
+              :class="homeSection === 'curate' ? 'home-mode-tab--active' : ''"
+              @click="scrollToCurator"
+            >
+              큐레이션
             </button>
-            <ul class="mt-2 text-xs text-neutral-500 dark:text-neutral-400 space-y-1">
-              <li v-for="(reason, idx) in p.reasons || []" :key="`reason-${p.id}-${idx}`">- {{ reason }}</li>
-            </ul>
-            <button type="button" class="mt-3 shop-btn-cart py-2 text-sm" @click="addAiRecommendedToCart(p)">장바구니 담기</button>
-          </article>
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="homeSection === 'catalog'"
+              class="home-mode-tab"
+              :class="homeSection === 'catalog' ? 'home-mode-tab--active' : ''"
+              @click="scrollToCatalog"
+            >
+              카탈로그
+            </button>
+          </div>
         </div>
       </div>
-    </section>
 
-    
-    <section
-      v-if="!loading && carouselSlides.length > 0"
-      id="featured-carousel"
-      class="relative rounded-lg px-4 pb-12 pt-0 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-[#080a12] sm:px-6 sm:pb-14 border-b border-slate-200/75 dark:border-slate-800/55 scroll-mt-24"
-      role="region"
-      aria-label="추천 상품 슬라이드. 좌우 화살표 키로 넘길 수 있습니다."
-      tabindex="0"
-      @keydown="onHeroCarouselKeydown"
-    >
-      <p class="sr-only" aria-live="polite" aria-atomic="true">{{ heroCarouselLiveText }}</p>
-      <div
-        class="hero-carousel-frame relative mx-auto max-w-[min(1120px,92vw)] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_20px_50px_-14px_rgba(30,41,59,0.16)] dark:border-slate-700/45 dark:bg-slate-900 dark:shadow-[0_24px_60px_-12px_rgba(0,0,0,0.45)]"
-        @mouseenter="heroPaused = true"
-        @mouseleave="heroPaused = false"
+      <!-- AI 큐레이터 -->
+      <section
+        id="home-curator"
+        class="relative mx-auto max-w-7xl px-4 sm:px-6 pb-10 scroll-mt-24"
+        aria-labelledby="curator-heading"
       >
-        
-        <div
-          class="relative aspect-[16/10] sm:aspect-[2/1] min-h-[200px] sm:min-h-[240px] max-h-[min(52vh,440px)] bg-neutral-100 dark:bg-neutral-950 px-3 py-3 sm:px-6 sm:py-5"
-        >
-          <div
-            v-for="(slide, idx) in carouselSlides"
-            :key="'hero-' + slide.id"
-            class="absolute inset-0 overflow-hidden transition-opacity duration-700 ease-out cursor-pointer"
-            :class="
-              idx === heroSlideIndex
-                ? 'z-[1] opacity-100'
-                : 'z-0 opacity-0 pointer-events-none'
-            "
-            role="tabpanel"
-            :aria-hidden="idx !== heroSlideIndex"
-            @click="goDetail(slide.id)"
-          >
-            <div
-              class="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_80%_70%_at_50%_50%,rgba(0,0,0,0.035),transparent_72%)] dark:bg-[radial-gradient(ellipse_75%_65%_at_50%_50%,rgba(255,255,255,0.04),transparent_70%)]"
-              aria-hidden="true"
-            />
-            
-            <div
-              class="absolute inset-0 z-[1] box-border grid place-items-center px-[2.75rem] py-2 sm:px-[3.25rem] sm:py-3"
-            >
-              <img
-                :src="imgSrc(slide)"
-                :alt="slide.name"
-                :loading="idx === 0 ? 'eager' : 'lazy'"
-                :fetchpriority="idx === 0 ? 'high' : 'low'"
-                :style="heroImageStyle(slide)"
-                decoding="async"
-                class="hero-feature-img absolute left-1/2 top-1/2 block max-h-full max-w-full h-auto w-auto -translate-x-1/2 -translate-y-1/2 object-contain"
-                @error="onImgError"
-              />
-            </div>
-            <div
-              class="absolute top-3 right-3 z-20 sm:top-4 sm:right-4"
-              @click.stop
-            >
-              <WishlistButton :product-id="slide.id" size="sm" />
-            </div>
-          </div>
-
-          <template v-if="carouselSlides.length > 1">
-            <button
-              type="button"
-              class="absolute left-2 sm:left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg border border-white/40 bg-white/90 text-slate-800 shadow-md transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/55 dark:border-slate-600 dark:bg-slate-800/92 dark:text-slate-100 dark:hover:bg-slate-800"
-              aria-label="이전 슬라이드"
-              @click.stop="prevHeroSlide"
-            >
-              <span class="sr-only">이전</span>
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="absolute right-2 sm:right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg border border-white/40 bg-white/90 text-slate-800 shadow-md transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/55 dark:border-slate-600 dark:bg-slate-800/92 dark:text-slate-100 dark:hover:bg-slate-800"
-              aria-label="다음 슬라이드"
-              @click.stop="nextHeroSlide"
-            >
-              <span class="sr-only">다음</span>
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </button>
-            <div
-              class="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 gap-2 rounded-full bg-black/30 px-3 py-1.5 dark:bg-black/45"
-              role="tablist"
-              aria-label="슬라이드 선택"
-            >
-              <button
-                v-for="(slide, i) in carouselSlides"
-                :key="'dot-' + slide.id"
-                type="button"
-                role="tab"
-                :aria-selected="i === heroSlideIndex"
-                :aria-label="`슬라이드 ${i + 1}`"
-                class="h-1.5 rounded-md transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
-                :class="
-                  i === heroSlideIndex
-                    ? 'w-7 bg-white shadow-sm'
-                    : 'w-1.5 bg-white/45 hover:bg-white/70'
-                "
-                @click.stop="heroSlideIndex = i"
-              />
-            </div>
-          </template>
-        </div>
-
-        
-        <div
-          class="border-t border-slate-200/90 dark:border-slate-700/80 px-5 py-4 sm:px-7 sm:py-5"
-        >
-          <template v-for="(slide, idx) in carouselSlides" :key="'cap-' + slide.id">
-            <div v-show="idx === heroSlideIndex">
-              <p class="text-xs font-semibold text-emerald-900 dark:text-emerald-400">
-                오늘의 상품
-              </p>
-              <h3
-                class="mt-1 text-lg font-bold leading-snug tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-2xl md:text-[1.65rem] line-clamp-2"
-              >
-                {{ slide.name }}
-              </h3>
-              <div class="mt-2 flex flex-wrap items-center gap-2">
-                <span class="hero-trust-pill">{{ freeShippingBadge }}</span>
-                <span class="hero-trust-pill">교환·반품 조건 상세 확인</span>
-                <span class="hero-trust-pill">고객센터·카카오 문의</span>
+        <h2 id="curator-heading" class="sr-only">AI 큐레이터</h2>
+        <div class="curate-split">
+          <aside class="curator-panel">
+            <div class="curator-panel-head">
+              <div class="curator-avatar" aria-hidden="true">AI</div>
+              <div>
+                <p class="text-sm font-semibold text-slate-900 dark:text-white">Curator</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">등록 상품만 · 이유와 함께 추천</p>
               </div>
-              <p
-                class="mt-3 text-sm leading-relaxed text-neutral-600 line-clamp-2 dark:text-neutral-400"
-              >
-                {{ slide.description }}
-              </p>
-              <div
-                class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-neutral-200/80 pt-4 dark:border-neutral-700/60"
+              <span
+                class="ml-auto inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                :class="aiRecommendLoading ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200'"
               >
                 <span
-                  class="text-lg font-bold tabular-nums text-neutral-900 dark:text-neutral-100 sm:text-xl"
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="aiRecommendLoading ? 'bg-amber-500 animate-pulse' : 'bg-indigo-500'"
+                />
+                {{ aiRecommendLoading ? "분석 중" : "대기" }}
+              </span>
+            </div>
+
+            <ol class="curator-flow-mini">
+              <li>조건 입력</li>
+              <li aria-hidden="true">→</li>
+              <li>AI 해석</li>
+              <li aria-hidden="true">→</li>
+              <li>추천 · 구매</li>
+            </ol>
+
+            <label for="ai-curator-prompt" class="text-xs font-medium text-slate-600 dark:text-slate-400">
+              무엇을 찾고 계세요?
+            </label>
+            <textarea
+              id="ai-curator-prompt"
+              v-model.trim="aiRecommendPrompt"
+              rows="3"
+              :placeholder="rotatingPlaceholder"
+              class="curator-input mt-1.5"
+              @keydown.enter.exact.prevent="requestAiRecommendation"
+            />
+            <button
+              type="button"
+              class="shop-btn-ai mt-3 w-full py-3 rounded-xl text-sm font-semibold disabled:opacity-60"
+              :disabled="aiRecommendLoading || !aiRecommendPrompt"
+              @click="requestAiRecommendation"
+            >
+              {{ aiRecommendLoading ? aiLoadingLabel : "추천 받기" }}
+            </button>
+
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <button
+                v-for="suggestion in aiPromptSuggestions"
+                :key="suggestion"
+                type="button"
+                class="curator-chip"
+                :disabled="aiRecommendLoading"
+                @click="applyAiSuggestion(suggestion)"
+              >
+                {{ suggestion }}
+              </button>
+            </div>
+
+            <div v-if="intentTags.length > 0" class="mt-4 pt-4 border-t border-slate-200/70 dark:border-slate-700/50">
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                해석된 조건
+              </p>
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="(tag, i) in intentTags"
+                  :key="`tag-${i}`"
+                  class="intent-tag"
+                  :class="`intent-tag--${tag.type}`"
                 >
-                  {{ formatPrice(slide.price) }}
-                  <span class="text-base font-semibold text-neutral-500 dark:text-neutral-400">원</span>
+                  {{ tag.label }}
                 </span>
-                <button
-                  type="button"
-                  class="shop-btn-cart w-auto px-5 text-sm font-semibold"
-                  @click="goDetail(slide.id)"
+              </div>
+            </div>
+
+            <p v-if="aiRecommendError" class="mt-3 text-sm text-red-500">{{ aiRecommendError }}</p>
+
+            <p class="mt-6 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              전체 상품은 아래
+              <button type="button" class="text-indigo-700 dark:text-indigo-400 underline underline-offset-2" @click="scrollToCatalog">
+                카탈로그
+              </button>
+              에서 바로 확인할 수 있어요.
+            </p>
+          </aside>
+
+          <div class="curator-canvas">
+            <!-- 로딩 -->
+            <div v-if="aiRecommendLoading" class="curator-canvas-inner">
+              <div class="curator-loading">
+                <div class="curator-loading-bar" />
+                <p class="mt-4 text-sm font-medium text-slate-700 dark:text-slate-200">{{ aiLoadingLabel }}</p>
+                <ul class="mt-3 space-y-2 text-xs text-slate-500 dark:text-slate-400">
+                  <li
+                    v-for="(phase, idx) in aiLoadingPhases"
+                    :key="phase"
+                    :class="idx <= aiLoadingPhase ? 'text-indigo-700 dark:text-indigo-300 font-medium' : ''"
+                  >
+                    {{ idx <= aiLoadingPhase ? "✓" : "○" }} {{ phase }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 결과 -->
+            <div v-else-if="aiRecommendedProducts.length > 0" class="curator-canvas-inner">
+              <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                    추천 결과
+                  </p>
+                  <p v-if="aiRecommendSummary" class="mt-2 text-sm text-slate-700 dark:text-slate-300 leading-relaxed max-w-xl">
+                    {{ aiRecommendSummary }}
+                  </p>
+                </div>
+                <span class="text-xs tabular-nums text-slate-500 dark:text-slate-400 shrink-0">
+                  {{ aiRecommendedProducts.length }}건
+                </span>
+              </div>
+              <div class="curator-results">
+                <article
+                  v-for="(p, rank) in aiRecommendedProducts"
+                  :key="`ai-rec-${p.id}`"
+                  class="curator-result-card"
                 >
-                  상세 보기
+                  <span class="curator-rank" aria-label="추천 순위">{{ rank + 1 }}</span>
+                  <button type="button" class="flex-1 min-w-0 text-left" @click="openAiRecommendedProduct(p)">
+                    <div class="curator-result-media">
+                      <img :src="imgSrc(p)" :alt="p.name" class="h-full w-full object-contain" @error="onImgError" />
+                    </div>
+                    <h3 class="mt-3 font-semibold text-sm text-slate-900 dark:text-white line-clamp-2 leading-snug">
+                      {{ p.name }}
+                    </h3>
+                    <p class="mt-1 text-base font-bold tabular-nums text-indigo-700 dark:text-indigo-400">
+                      {{ formatPrice(p.price) }}원
+                    </p>
+                  </button>
+                  <ul v-if="p.reasons?.length" class="mt-2 space-y-1">
+                    <li
+                      v-for="(reason, idx) in p.reasons"
+                      :key="`reason-${p.id}-${idx}`"
+                      class="curator-reason"
+                    >
+                      {{ reason }}
+                    </li>
+                  </ul>
+                  <button type="button" class="mt-3 shop-btn-cart py-2 text-sm w-full" @click="addAiRecommendedToCart(p)">
+                    장바구니
+                  </button>
+                </article>
+              </div>
+            </div>
+
+            <!-- idle: 예시 대화 -->
+            <div v-else class="curator-canvas-inner">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+                이렇게 사용해 보세요
+              </p>
+              <div class="curator-demo-thread space-y-4">
+                <div v-for="(demo, i) in demoThreads" :key="`demo-${i}`" class="curator-demo-block">
+                  <div class="curator-bubble curator-bubble--user">{{ demo.prompt }}</div>
+                  <div class="curator-bubble curator-bubble--ai">{{ demo.reply }}</div>
+                </div>
+              </div>
+              <p class="mt-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                왼쪽에 조건을 입력하면 이 영역에 맞춤 추천이 표시됩니다
+              </p>
+            </div>
+
+            <div
+              v-if="personalizedProducts.length > 0 && !aiRecommendLoading && aiRecommendedProducts.length === 0"
+              class="mt-8 pt-6 border-t border-slate-200/60 dark:border-slate-700/50"
+            >
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">맞춤 추천</p>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500 mb-3">{{ personalizedSummary }}</p>
+              <div class="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  v-for="p in personalizedProducts"
+                  :key="`personal-${p.id}`"
+                  type="button"
+                  class="recent-mini-card shrink-0 w-28"
+                  @click="goDetail(p.id)"
+                >
+                  <img :src="imgSrc(p)" :alt="p.name" class="h-12 w-12 object-contain mx-auto" @error="onImgError" />
+                  <span class="text-[11px] font-medium line-clamp-2 text-left">{{ p.name }}</span>
+                  <span class="text-[10px] text-indigo-600 dark:text-indigo-400">{{ p.reason }}</span>
                 </button>
               </div>
             </div>
-          </template>
-        </div>
-      </div>
-    </section>
 
-    
-    <section v-if="!loading && quickCategories.length > 0" class="max-w-7xl mx-auto px-6 pt-4 pb-8">
+            <div
+              v-if="recentlyViewed.length > 0 && !aiRecommendLoading && aiRecommendedProducts.length === 0"
+              class="mt-8 pt-6 border-t border-slate-200/60 dark:border-slate-700/50"
+            >
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3">최근 본 상품</p>
+              <div class="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  v-for="p in recentlyViewed.slice(0, 5)"
+                  :key="`recent-${p.id}`"
+                  type="button"
+                  class="recent-mini-card shrink-0"
+                  @click="goDetail(p.id)"
+                >
+                  <img :src="imgSrc(p)" :alt="p.name" class="h-12 w-12 object-contain" @error="onImgError" />
+                  <span class="text-[11px] font-medium line-clamp-2 text-left">{{ p.name }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+          <router-link to="/notice" class="hover:text-indigo-700 dark:hover:text-indigo-400 underline-offset-4 hover:underline">
+            공지사항
+          </router-link>
+          <span class="mx-2 text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+          <router-link to="/order-lookup" class="hover:text-indigo-700 dark:hover:text-indigo-400 underline-offset-4 hover:underline">
+            주문 조회
+          </router-link>
+        </p>
+      </section>
+
+      <!-- 전체 카탈로그 (항상 표시) -->
+    <section v-if="!loading && quickCategories.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-4 border-t border-slate-200/70 dark:border-slate-800/55">
       <div class="flex items-end justify-between gap-4">
         <div>
-          <h2 class="shop-section-title">빠른 탐색</h2>
-          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">관심 있는 카테고리를 바로 찾아보세요.</p>
+          <h2 class="text-lg font-bold tracking-tight text-slate-900 dark:text-zinc-50">카테고리</h2>
+          <p class="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">필터 없이 빠르게 이동</p>
         </div>
-        <button type="button" class="shop-link-muted" @click="goCategory('전체')">
-          전체보기 →
+        <button type="button" class="shop-link-muted" @click="scrollToCatalog">
+          목록으로 ↓
         </button>
       </div>
-      <div class="mt-5 flex flex-wrap gap-2.5">
+      <div class="mt-3 flex flex-wrap gap-2">
         <button
           v-for="cat in quickCategories"
           :key="`qc-${cat}`"
@@ -339,227 +309,16 @@
         </button>
       </div>
     </section>
-
-    
-    <section v-if="!loading && trendingTop.length > 0" class="max-w-7xl mx-auto px-6 py-10">
-      <div class="flex items-end justify-between gap-4">
-        <div>
-          <h2 class="shop-section-title">인기 상품</h2>
-          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">고객님께서 많이 찾는 인기 상품입니다.</p>
-        </div>
-      </div>
-      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-        <button
-          v-for="(p, i) in trendingTop"
-          :key="`trend-${p.id}`"
-          type="button"
-          class="trend-row focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 dark:focus-visible:ring-offset-zinc-950"
-          @click="goDetail(p.id)"
-        >
-          <span class="trend-rank tabular-nums">{{ i + 1 }}</span>
-          <span class="trend-thumb">
-            <img :src="imgSrc(p)" :alt="p.name" loading="lazy" decoding="async" class="h-full w-full object-contain" @error="onImgError" />
-          </span>
-          <span class="min-w-0 flex-1 self-center text-left">
-            <span class="block truncate font-semibold leading-snug text-neutral-900 dark:text-neutral-100">{{ p.name }}</span>
-            <span class="mt-0.5 block text-sm leading-normal text-neutral-500 dark:text-neutral-400 truncate">{{ p.category || "전체" }}</span>
-          </span>
-          <span class="trend-price tabular-nums">{{ formatPrice(p.price) }}원</span>
-        </button>
-      </div>
-    </section>
-
-    
-    <section v-if="!loading && products.length > 0" class="max-w-7xl mx-auto px-6 py-16">
-      <div class="shop-section-head !items-start">
-        <div>
-          <h2 class="shop-section-title">베스트셀러</h2>
-          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 max-w-xl">
-            꾸준히 사랑받는 베스트 상품을 만나보세요.
-          </p>
-        </div>
-        <button type="button" class="shop-link-muted" @click="goCategory('전체')">
-          전체보기 →
-        </button>
-      </div>
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div
-          v-for="p in bestSellers"
-          :key="`best-${p.id}`"
-          @click="goDetail(p.id)"
-          class="group shop-card-product transform hover:-translate-y-2"
-        >
-          <div class="absolute top-3 right-3 z-10" @click.stop>
-            <WishlistButton :product-id="p.id" size="sm" />
-          </div>
-          <div class="absolute top-3 left-3 z-10 bg-red-500 text-white px-3 py-1 rounded-md text-xs font-bold">
-            BEST
-          </div>
-          <div class="shop-card-product-media h-64">
-            <img
-              :src="imgSrc(p)"
-              :alt="p.name"
-              loading="lazy"
-              decoding="async"
-              class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-              @error="onImgError"
-            />
-          </div>
-          <div class="p-5">
-            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-1 line-clamp-1">
-              {{ p.name }}
-            </h3>
-            <p class="text-neutral-900 dark:text-neutral-100 font-bold text-xl mb-3">
-              {{ formatPrice(p.price) }}원
-            </p>
-            <button type="button" class="shop-btn-cart group" @click.stop="addToCart(p)">
-              장바구니 담기
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    
-    <section v-if="!loading && newProducts.length > 0" class="max-w-7xl mx-auto px-6 py-16 rounded-3xl bg-white/88 dark:bg-[#111a2a]/86 border border-slate-200/70 dark:border-slate-700/45">
-      <div class="shop-section-head !items-start">
-        <div>
-          <h2 class="shop-section-title">신상품</h2>
-          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 max-w-xl">
-            지금 막 올라온 따끈따끈한 신상입니다.
-          </p>
-        </div>
-        <button type="button" class="shop-link-muted" @click="goCategory('전체')">
-          전체보기 →
-        </button>
-      </div>
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div
-          v-for="p in newProducts"
-          :key="`new-${p.id}`"
-          @click="goDetail(p.id)"
-          class="group shop-card-product transform hover:-translate-y-2"
-        >
-          <div class="absolute top-3 right-3 z-10" @click.stop>
-            <WishlistButton :product-id="p.id" size="sm" />
-          </div>
-          <div class="absolute top-3 left-3 z-10 bg-green-500 text-white px-3 py-1 rounded-md text-xs font-bold">
-            NEW
-          </div>
-          <div class="shop-card-product-media h-64">
-            <img
-              :src="imgSrc(p)"
-              :alt="p.name"
-              loading="lazy"
-              decoding="async"
-              class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-              @error="onImgError"
-            />
-          </div>
-          <div class="p-5">
-            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-1 line-clamp-1">
-              {{ p.name }}
-            </h3>
-            <p class="text-neutral-900 dark:text-neutral-100 font-bold text-xl mb-3">
-              {{ formatPrice(p.price) }}원
-            </p>
-            <button type="button" class="shop-btn-cart group" @click.stop="addToCart(p)">
-              장바구니 담기
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    
-    <section v-if="recentlyViewed.length > 0" class="max-w-7xl mx-auto px-6 py-16 rounded-3xl bg-white/88 dark:bg-[#111a2a]/86 border border-slate-200/70 dark:border-slate-700/45">
-      <div class="mb-10">
-        <h2 class="shop-section-title">최근 본 상품</h2>
-        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">최근에 둘러보신 상품입니다.</p>
-      </div>
-      <div class="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-        <div
-          v-for="p in recentlyViewed"
-          :key="`recent-${p.id}`"
-          @click="goDetail(p.id)"
-          class="group shrink-0 w-44 sm:w-52 shop-card-product rounded-2xl"
-        >
-          <div class="shop-card-product-media h-36 sm:h-44">
-            <img
-              :src="imgSrc(p)"
-              :alt="p.name"
-              loading="lazy"
-              decoding="async"
-              class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-              @error="onImgError"
-            />
-          </div>
-          <div class="p-3">
-            <h3 class="font-semibold text-sm text-neutral-900 dark:text-neutral-100 line-clamp-2 mb-1">
-              {{ p.name }}
-            </h3>
-            <p class="text-neutral-900 dark:text-neutral-100 font-bold text-sm">
-              {{ formatPrice(p.price || 0) }}원
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    
-    <section v-if="!loading && recommendedProducts.length > 0" class="max-w-7xl mx-auto px-6 py-16">
-      <div class="shop-section-head !items-start">
-        <div>
-          <h2 class="shop-section-title">추천 상품</h2>
-          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400 max-w-xl">
-            이런 상품은 어떠세요? 함께 보면 좋은 추천 상품입니다.
-          </p>
-        </div>
-        <button type="button" class="shop-link-muted" @click="goCategory('전체')">
-          전체보기 →
-        </button>
-      </div>
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div
-          v-for="p in recommendedProducts"
-          :key="`rec-${p.id}`"
-          @click="goDetail(p.id)"
-          class="group shop-card-product transform hover:-translate-y-2"
-        >
-          <div class="shop-card-product-media h-64">
-            <img
-              :src="imgSrc(p)"
-              :alt="p.name"
-              loading="lazy"
-              decoding="async"
-              class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-              @error="onImgError"
-            />
-          </div>
-          <div class="p-5">
-            <h3 class="font-semibold text-lg text-neutral-900 dark:text-neutral-100 mb-1 line-clamp-1">
-              {{ p.name }}
-            </h3>
-            <p class="text-neutral-900 dark:text-neutral-100 font-bold text-xl mb-3">
-              {{ formatPrice(p.price) }}원
-            </p>
-            <button type="button" class="shop-btn-cart group" @click.stop="addToCart(p)">
-              장바구니 담기
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    
-    <div id="home-catalog" class="max-w-7xl mx-auto px-6 py-10 scroll-mt-24">
+    <div id="home-catalog" class="max-w-7xl mx-auto px-6 py-10 scroll-mt-24 border-t border-slate-200/70 dark:border-slate-800/55">
       <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h2 class="shop-page-title">
-          {{ selectedCategory === '전체' ? '전체 상품' : selectedCategory }}
-          <span class="text-sm font-normal text-neutral-500 dark:text-neutral-400 ml-2">
-            ({{ paginatedProducts.length }}개)
-          </span>
-        </h2>
+        <div>
+          <h2 class="shop-page-title">
+            {{ selectedCategory === '전체' ? '전체 카탈로그' : selectedCategory }}
+          </h2>
+          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            {{ catalogTotal }}개 상품 · 필터·정렬로 직접 고를 수 있어요
+          </p>
+        </div>
         
         
         <div class="flex gap-3 flex-wrap items-center">
@@ -604,7 +363,7 @@
       </div>
 
       <div
-        v-else-if="filteredProducts.length === 0"
+        v-else-if="products.length === 0"
         class="text-center text-neutral-400 mt-10"
       >
         {{ searchQuery ? "검색 결과가 없습니다." : "등록된 상품이 없습니다." }}
@@ -615,7 +374,7 @@
         class="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8"
       >
         <div
-          v-for="p in paginatedProducts"
+          v-for="p in products"
           :key="p.id"
           @click="goDetail(p.id)"           
           class="group shop-card-product" 
@@ -658,7 +417,7 @@
 
       
       <div
-        v-if="!loading && filteredProducts.length > 0"
+        v-if="!loading && totalPages > 1"
         class="flex justify-center items-center gap-2 mt-12"
       >
         <button
@@ -751,35 +510,36 @@ import api from "../../lib/api";
 import { useRouter, useRoute } from "vue-router";
 import { useCartStore } from "../../store/cart";
 import { useToastStore } from "../../store/toast";
+import { useAuthStore } from "../../store/auth";
 import ChatButton from "@/components/chat/ChatButton.vue";
 import Footer from "@/app/layout/Footer.vue";
 import SkeletonLoader from "@/components/ui/SkeletonLoader.vue";
 import { getRecentlyViewed } from "../../composables/useRecentlyViewed";
 import { formatPrice, normalizeImageUrl } from "../../lib/format";
-import { formatFreeShippingBadge } from "@/lib/shopPolicy.js";
 import WishlistButton from "@/components/product/WishlistButton.vue";
 
 const router = useRouter();
 const route = useRoute();
 
-const freeShippingBadge = computed(() => formatFreeShippingBadge());
-
 const goDetail = (id) => {
   router.push(`/product/${id}`);
 };
 
-const goProducts = () => {
-  router.push("/products");
+const scrollToSection = (id, section) => {
+  homeSection.value = section;
+  if (typeof window === "undefined") return;
+  requestAnimationFrame(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(id)?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  });
 };
 
-const scrollToFeatured = () => {
-  if (typeof window === "undefined") return;
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const featured = document.getElementById("featured-carousel");
-  const catalog = document.getElementById("home-catalog");
-  const target = featured || catalog;
-  target?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-};
+const scrollToCurator = () => scrollToSection("home-curator", "curate");
+
+const scrollToCatalog = () => scrollToSection("home-catalog", "catalog");
 
 const goCategory = (catName) => {
   router.push({
@@ -793,7 +553,12 @@ const goCategory = (catName) => {
 
 const cart = useCartStore();
 const toast = useToastStore();
+const auth = useAuthStore();
 const products = ref([]);
+const catalogTotal = ref(0);
+const categoryList = ref([]);
+const personalizedProducts = ref([]);
+const personalizedSummary = ref("");
 
 const placeholderImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect fill='%23e5e7eb' width='200' height='200'/%3E%3Ctext fill='%239ca3af' x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14'%3E이미지%3C/text%3E%3C/svg%3E";
 const normalizeSearchText = (value) =>
@@ -810,12 +575,6 @@ const imgSrc = (p) => {
   const url = normalizeImageUrl(raw);
   return url || placeholderImg;
 };
-const heroImageStyle = (p) => {
-  const raw = (p?.image_url || p?.image || "").toString().toLowerCase();
-  if (raw.includes("macbookpro")) return { marginLeft: "-1.5%" };
-  if (raw.includes("airpodspro")) return { marginLeft: "-1%" };
-  return null;
-};
 const onImgError = (e) => { e.target.src = placeholderImg; };
 const loading = ref(true);
 const error = ref(null);
@@ -826,6 +585,60 @@ const priceRange = ref("");
 const currentPage = ref(1);
 const itemsPerPage = ref(9);
 const recentlyViewed = ref([]);
+const homeSection = ref("curate");
+const aiLoadingPhase = ref(0);
+let aiLoadingTimer = null;
+const aiLoadingPhases = ["요청 문장 이해", "예산·카테고리 필터", "후보 비교 · 순위"];
+const placeholderExamples = [
+  "출퇴근용 백팩, 5만 원대",
+  "데님·캐주얼 코디, 10만 원 이하",
+  "선물용 액세서리, 3만 원대",
+];
+const rotatingPlaceholderIndex = ref(0);
+let placeholderTimer = null;
+const demoThreads = [
+  {
+    prompt: "출퇴근용 백팩, 5만 원대",
+    reply: "백팩 카테고리 · 예산 50,000원 이하로 좁혀 3건을 골랐어요.",
+  },
+  {
+    prompt: "가벼운 태블릿, 150만 원 이하",
+    reply: "태블릿 후보 중 예산 안에서 성능·휴대성을 고려해 순위를 매겼어요.",
+  },
+];
+
+const rotatingPlaceholder = computed(
+  () => `예) ${placeholderExamples[rotatingPlaceholderIndex.value]}`
+);
+
+const aiLoadingLabel = computed(() => aiLoadingPhases[aiLoadingPhase.value] || aiLoadingPhases[0]);
+
+const intentTags = computed(() => {
+  const intent = aiRecommendIntent.value;
+  if (!intent) return [];
+  const tags = [];
+  if (intent.category) tags.push({ label: intent.category, type: "category" });
+  if (intent.budgetMax) tags.push({ label: `≤ ${formatPrice(intent.budgetMax)}원`, type: "budget" });
+  if (Array.isArray(intent.keywords)) {
+    intent.keywords.slice(0, 3).forEach((k) => tags.push({ label: k, type: "keyword" }));
+  }
+  return tags;
+});
+
+const startAiLoadingAnimation = () => {
+  aiLoadingPhase.value = 0;
+  clearInterval(aiLoadingTimer);
+  aiLoadingTimer = setInterval(() => {
+    if (aiLoadingPhase.value < aiLoadingPhases.length - 1) aiLoadingPhase.value += 1;
+  }, 700);
+};
+
+const stopAiLoadingAnimation = () => {
+  clearInterval(aiLoadingTimer);
+  aiLoadingTimer = null;
+  aiLoadingPhase.value = 0;
+};
+
 const aiRecommendPrompt = ref("");
 const aiRecommendLoading = ref(false);
 const aiRecommendError = ref("");
@@ -834,71 +647,98 @@ const aiRecommendIntent = ref(null);
 const aiRecommendSessionId = ref(
   `ai-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 );
+const aiRecommendSummary = ref("");
+const aiPromptSuggestions = [
+  "출퇴근용 백팩, 5만 원대",
+  "데님·캐주얼 코디, 10만 원 이하",
+  "선물용 액세서리, 3만 원대",
+  "가벼운 태블릿, 150만 원 이하",
+];
 
-const aiRecommendIntentText = computed(() => {
-  const intent = aiRecommendIntent.value;
-  if (!intent) return "";
-  const parts = [];
-  if (intent.category) parts.push(`카테고리 ${intent.category}`);
-  if (intent.budgetMax) parts.push(`예산 ${formatPrice(intent.budgetMax)}원 이하`);
-  if (Array.isArray(intent.keywords) && intent.keywords.length) parts.push(`키워드 ${intent.keywords.join(", ")}`);
-  return parts.join(" / ");
-});
-
-const filteredProducts = computed(() => {
-  let list = [...products.value];
-
-  if (selectedCategory.value !== "전체") {
-    list = list.filter((p) => p.category === selectedCategory.value);
+const buildProductParams = () => {
+  const params = {
+    withMeta: 1,
+    page: currentPage.value,
+    limit: itemsPerPage.value,
+  };
+  const q = searchQuery.value.trim();
+  if (q) params.search = q;
+  if (selectedCategory.value && selectedCategory.value !== "전체") {
+    params.category = selectedCategory.value;
   }
-
-  const normalizedQuery = normalizeSearchText(searchQuery.value);
-  if (normalizedQuery !== "") {
-    list = list.filter(
-      (p) =>
-        normalizeSearchText(p.name).includes(normalizedQuery) ||
-        normalizeSearchText(p.description).includes(normalizedQuery)
-    );
-  }
-
   if (priceRange.value) {
-    const [min, max] = priceRange.value.split("-").map(Number);
-    if (max) {
-      list = list.filter((p) => p.price >= min && p.price <= max);
-    } else {
-      list = list.filter((p) => p.price >= min);
-    }
+    const parts = priceRange.value.split("-");
+    params.minPrice = Number(parts[0]) || 0;
+    if (parts[1]) params.maxPrice = Number(parts[1]);
   }
-
   switch (sortBy.value) {
     case "price-asc":
-      list.sort((a, b) => a.price - b.price);
+      params.sortBy = "price";
+      params.sortOrder = "asc";
       break;
     case "price-desc":
-      list.sort((a, b) => b.price - a.price);
+      params.sortBy = "price";
+      params.sortOrder = "desc";
       break;
     case "name-asc":
-      list.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+      params.sortBy = "name";
+      params.sortOrder = "asc";
       break;
     case "name-desc":
-      list.sort((a, b) => b.name.localeCompare(a.name, "ko"));
+      params.sortBy = "name";
+      params.sortOrder = "desc";
       break;
     case "newest":
-      list.sort((a, b) => {
-        const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
-        const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
-        return dateB - dateA;
-      });
+      params.sortBy = "created_at";
+      params.sortOrder = "desc";
       break;
     default:
+      params.sortBy = "id";
+      params.sortOrder = "desc";
       break;
   }
+  return params;
+};
 
-  return list;
-});
+const trackSearch = async (term) => {
+  const clean = term.trim();
+  if (!clean) return;
+  try {
+    await api.post("/analytics/search-events", {
+      searchTerm: clean,
+      userId: auth.user?.id || null,
+    });
+  } catch (_) {
+    // UX를 막지 않음
+  }
+};
+
+const loadPersonalizedRecommendations = async () => {
+  const recentIds = getRecentlyViewed().map((p) => p.id).filter(Boolean);
+  if (!auth.isLoggedIn && recentIds.length === 0) {
+    personalizedProducts.value = [];
+    personalizedSummary.value = "";
+    return;
+  }
+  try {
+    const res = await api.get("/recommendations/personalized", {
+      params: {
+        recentProductIds: recentIds.join(","),
+        limit: 5,
+      },
+    });
+    personalizedProducts.value = Array.isArray(res.data?.recommendations)
+      ? res.data.recommendations
+      : [];
+    personalizedSummary.value = res.data?.summary || "";
+  } catch (_) {
+    personalizedProducts.value = [];
+    personalizedSummary.value = "";
+  }
+};
 
 const totalPages = computed(() => {
-  return Math.ceil(filteredProducts.value.length / itemsPerPage.value);
+  return Math.max(1, Math.ceil(catalogTotal.value / itemsPerPage.value));
 });
 
 const visiblePages = computed(() => {
@@ -937,166 +777,11 @@ const visiblePages = computed(() => {
   return pages;
 });
 
-const paginatedProducts = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  const end = start + itemsPerPage.value;
-  return filteredProducts.value.slice(start, end);
-});
-
-const bestSellers = computed(() => {
-  if (products.value.length === 0) return [];
-  const sorted = [...products.value].sort((a, b) => b.price - a.price);
-  return sorted.slice(0, 4);
-});
-
 const quickCategories = computed(() => {
-  const list = products.value || [];
-  if (!list.length) return [];
-  const counts = new Map();
-  for (const p of list) {
-    const c = (p.category || "").trim();
-    if (!c) continue;
-    counts.set(c, (counts.get(c) || 0) + 1);
-  }
-  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
-  const unique = ["전체", ...sorted];
-  return unique.slice(0, 11); // 전체 포함 11개
+  const cats = categoryList.value.filter(Boolean);
+  if (!cats.length) return [];
+  return ["전체", ...cats].slice(0, 11);
 });
-
-function stableHash(input) {
-  const s = String(input ?? "");
-  let hash = 0;
-  for (let i = 0; i < s.length; i++) {
-    hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-}
-
-const trendingTop = computed(() => {
-  const list = products.value || [];
-  if (!list.length) return [];
-  const scored = list.map((p) => {
-    const created = p.created_at ? new Date(p.created_at).getTime() : 0;
-    const recency = created ? Math.max(0, 1 - (Date.now() - created) / (1000 * 60 * 60 * 24 * 21)) : 0; // 3주 내 가중
-    // 랜덤 대신 안정적인 hash 기반 가중치를 사용해 새로고침 때 순서가 흔들리지 않게 유지
-    const jitter = (stableHash(`${p.id}:${p.name}`) % 120) / 1000;
-    return { p, score: recency + jitter };
-  });
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, 8).map((x) => x.p);
-});
-
-const newProducts = computed(() => {
-  if (products.value.length === 0) return [];
-  const sorted = [...products.value].sort((a, b) => {
-    const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
-    const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
-    return dateB - dateA;
-  });
-  return sorted.slice(0, 4);
-});
-
-const recommendedProducts = computed(() => {
-  const list = products.value || [];
-  if (!list.length) return [];
-  // 하루 단위로만 바뀌는 안정적인 추천 순서 (동일 세션 내 점프 방지)
-  const dayKey = new Date().toISOString().slice(0, 10);
-  const sorted = [...list].sort((a, b) => {
-    const sa = stableHash(`${dayKey}:${a.id}:${a.name}`);
-    const sb = stableHash(`${dayKey}:${b.id}:${b.name}`);
-    return sa - sb;
-  });
-  return sorted.slice(0, 4);
-});
-
-const carouselSlides = computed(() => {
-  if (products.value.length === 0) return [];
-  const newFirst = [...products.value].sort((a, b) => {
-    const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
-    const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
-    return dateB - dateA;
-  });
-  return newFirst;
-});
-
-const heroSlideIndex = ref(0);
-const heroPaused = ref(false);
-let heroAutoplayId = null;
-
-function clearHeroAutoplay() {
-  if (heroAutoplayId != null) {
-    clearInterval(heroAutoplayId);
-    heroAutoplayId = null;
-  }
-}
-
-function startHeroAutoplay() {
-  clearHeroAutoplay();
-  const slides = carouselSlides.value;
-  if (slides.length <= 1) return;
-  if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    return;
-  }
-  heroAutoplayId = setInterval(() => {
-    if (heroPaused.value || carouselSlides.value.length <= 1) return;
-    heroSlideIndex.value = (heroSlideIndex.value + 1) % carouselSlides.value.length;
-  }, 6500);
-}
-
-function nextHeroSlide() {
-  const n = carouselSlides.value.length;
-  if (n <= 1) return;
-  heroSlideIndex.value = (heroSlideIndex.value + 1) % n;
-}
-
-function prevHeroSlide() {
-  const n = carouselSlides.value.length;
-  if (n <= 1) return;
-  heroSlideIndex.value = (heroSlideIndex.value - 1 + n) % n;
-}
-
-const heroCarouselLiveText = computed(() => {
-  const slides = carouselSlides.value;
-  const i = heroSlideIndex.value;
-  if (!slides.length || i < 0 || i >= slides.length) return "";
-  return `총 ${slides.length}개 중 ${i + 1}번째, ${slides[i].name}`;
-});
-
-function onHeroCarouselKeydown(e) {
-  const n = carouselSlides.value.length;
-  if (n <= 1) return;
-  if (e.key === "ArrowLeft") {
-    e.preventDefault();
-    prevHeroSlide();
-  } else if (e.key === "ArrowRight") {
-    e.preventDefault();
-    nextHeroSlide();
-  } else if (e.key === "Home") {
-    e.preventDefault();
-    heroSlideIndex.value = 0;
-  } else if (e.key === "End") {
-    e.preventDefault();
-    heroSlideIndex.value = n - 1;
-  }
-}
-
-watch(carouselSlides, (slides) => {
-  if (heroSlideIndex.value >= slides.length) heroSlideIndex.value = 0;
-  startHeroAutoplay();
-});
-
-onUnmounted(() => {
-  clearHeroAutoplay();
-});
-
-watch(
-  () => [route.query.q, route.query.category],
-  ([q, category]) => {
-    searchQuery.value = (q || "").toString();
-    selectedCategory.value = category || "전체";
-  },
-  { immediate: true }
-);
 
 const addToCart = (p) => {
   cart.addToCart({
@@ -1139,15 +824,28 @@ const addAiRecommendedToCart = async (p) => {
   addToCart(p);
 };
 
+const applyAiSuggestion = (text) => {
+  aiRecommendPrompt.value = text;
+  requestAiRecommendation();
+};
+
 const requestAiRecommendation = async () => {
   if (!aiRecommendPrompt.value || aiRecommendLoading.value) return;
   aiRecommendLoading.value = true;
   aiRecommendError.value = "";
+  aiRecommendSummary.value = "";
+  aiRecommendedProducts.value = [];
+  aiRecommendIntent.value = null;
+  aiRecommendSessionId.value = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  startAiLoadingAnimation();
+  await sendAiRecommendEvent("ai_recommend_request", {
+    meta: { promptLength: aiRecommendPrompt.value.length },
+  });
   try {
     const res = await api.post("/ai/recommend", { prompt: aiRecommendPrompt.value });
     aiRecommendedProducts.value = Array.isArray(res.data?.recommendations) ? res.data.recommendations : [];
     aiRecommendIntent.value = res.data?.intent || null;
-    aiRecommendSessionId.value = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    aiRecommendSummary.value = res.data?.summary || "";
     if (aiRecommendedProducts.value.length > 0) {
       await sendAiRecommendEvent("ai_recommend_impression", {
         meta: {
@@ -1162,6 +860,7 @@ const requestAiRecommendation = async () => {
   } catch (err) {
     aiRecommendError.value = err.userMessage || "AI 추천을 불러오지 못했습니다.";
   } finally {
+    stopAiLoadingAnimation();
     aiRecommendLoading.value = false;
   }
 };
@@ -1169,16 +868,25 @@ const requestAiRecommendation = async () => {
 const loadProducts = async () => {
   loading.value = true;
   error.value = null;
+  const q = searchQuery.value.trim();
   try {
-    const res = await api.get("/products");
-    products.value = res.data;
-    currentPage.value = 1;
-    
-    products.value.forEach((p) => {
-      if (!p.category || p.category.trim() === "") {
-        p.category = "기타";
-      }
-    });
+    const res = await api.get("/products", { params: buildProductParams() });
+    const payload = res.data?.items != null ? res.data : { items: res.data, pagination: {} };
+    const list = Array.isArray(payload.items) ? payload.items : [];
+    products.value = list.map((p) => ({
+      ...p,
+      category: p.category?.trim() ? p.category : "기타",
+    }));
+    catalogTotal.value = Number(payload.pagination?.total ?? list.length);
+
+    if (
+      selectedCategory.value !== "전체" &&
+      !categoryList.value.includes(selectedCategory.value)
+    ) {
+      selectedCategory.value = "전체";
+    }
+
+    if (q) await trackSearch(q);
   } catch (err) {
     error.value = err.userMessage || "상품을 불러오는 중 오류가 발생했습니다.";
     console.error("상품 불러오기 실패:", err);
@@ -1187,49 +895,374 @@ const loadProducts = async () => {
   }
 };
 
-const resetToFirstPage = () => {
-  currentPage.value = 1;
+const loadCategories = async () => {
+  try {
+    const res = await api.get("/categories");
+    categoryList.value = Array.isArray(res.data) ? res.data.filter(Boolean) : [];
+  } catch (_) {
+    categoryList.value = [];
+  }
 };
 
 watch([selectedCategory, searchQuery, priceRange, sortBy], () => {
-  resetToFirstPage();
+  if (currentPage.value !== 1) {
+    currentPage.value = 1;
+  } else {
+    loadProducts();
+  }
 });
 
-onMounted(() => {
+watch(currentPage, () => {
   loadProducts();
+});
+
+watch(
+  () => [route.query.q, route.query.category],
+  ([q, category]) => {
+    searchQuery.value = (q || "").toString();
+    selectedCategory.value = category || "전체";
+    currentPage.value = 1;
+    loadProducts();
+  }
+);
+
+onMounted(async () => {
+  searchQuery.value = (route.query.q || "").toString();
+  selectedCategory.value = route.query.category || "전체";
   recentlyViewed.value = getRecentlyViewed();
+  await Promise.all([loadCategories(), loadProducts(), loadPersonalizedRecommendations()]);
+  placeholderTimer = setInterval(() => {
+    rotatingPlaceholderIndex.value = (rotatingPlaceholderIndex.value + 1) % placeholderExamples.length;
+  }, 3200);
+});
+
+onUnmounted(() => {
+  stopAiLoadingAnimation();
+  clearInterval(placeholderTimer);
 });
 </script>
 
 <style scoped>
-
-.hero-feature-img {
-  display: block;
-  margin: 0;
-  object-position: center center;
-  transform-origin: center center;
+.home-grid-bg {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.07) 1px, transparent 0);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
+}
+:global(.dark) .home-grid-bg {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(129, 140, 248, 0.08) 1px, transparent 0);
 }
 
-.hero-trust-pill {
+.home-mode-tab {
+  padding: 0.45rem 1rem;
+  border-radius: 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(100 116 139);
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+.home-mode-tab--active {
+  background: white;
+  color: rgb(49 46 129);
+  box-shadow: 0 4px 14px -10px rgba(67, 56, 202, 0.35);
+}
+:global(.dark) .home-mode-tab {
+  color: rgb(148 163 184);
+}
+:global(.dark) .home-mode-tab--active {
+  background: linear-gradient(135deg, rgb(67 56 202), rgb(109 40 217));
+  color: rgb(238 242 255);
+  box-shadow: 0 8px 24px -8px rgba(129, 140, 248, 0.55);
+}
+
+.curate-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .curate-split {
+    grid-template-columns: minmax(280px, 340px) 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.curator-panel {
+  border-radius: 1.25rem;
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1.25rem;
+  box-shadow: 0 24px 60px -40px rgba(67, 56, 202, 0.35);
+}
+@media (min-width: 1024px) {
+  .curator-panel {
+    position: sticky;
+    top: 5.5rem;
+  }
+}
+:global(.dark) .curator-panel {
+  border-color: rgba(129, 140, 248, 0.2);
+  background: rgba(15, 23, 42, 0.75);
+}
+
+.curator-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.curator-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: white;
+  background: linear-gradient(135deg, rgb(79 70 229), rgb(124 58 237));
+}
+
+.curator-flow-mini {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.65rem;
+  background: rgba(238, 242, 255, 0.7);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgb(67 56 202);
+}
+:global(.dark) .curator-flow-mini {
+  background: rgba(49, 46, 129, 0.25);
+  color: rgb(165 180 252);
+}
+
+.curator-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 4.5rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(248, 250, 252, 0.95);
+  padding: 0.75rem 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.curator-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+  border-color: rgba(99, 102, 241, 0.45);
+}
+:global(.dark) .curator-input {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.65);
+  color: rgb(241 245 249);
+}
+
+.curator-chip {
+  border-radius: 9999px;
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  background: rgba(238, 242, 255, 0.8);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.68rem;
+  color: rgb(49 46 129);
+  transition: background-color 140ms ease;
+}
+.curator-chip:hover:not(:disabled) {
+  background: rgba(224, 231, 255, 0.95);
+}
+:global(.dark) .curator-chip {
+  border-color: rgba(129, 140, 248, 0.25);
+  background: rgba(49, 46, 129, 0.35);
+  color: rgb(199 210 254);
+}
+
+.intent-tag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 9px;
-  border-radius: 10px;
-  font-size: 11px;
-  line-height: 1.25;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  max-width: 100%;
-  text-align: center;
-  color: rgba(15, 23, 42, 0.75);
-  background: rgba(15, 23, 42, 0.07);
-  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 9999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
-:global(.dark) .hero-trust-pill {
-  color: rgba(243, 244, 246, 0.82);
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.18);
+.intent-tag--category {
+  background: rgba(224, 231, 255, 0.95);
+  color: rgb(67 56 202);
+}
+.intent-tag--budget {
+  background: rgba(237, 233, 254, 0.95);
+  color: rgb(109 40 217);
+}
+.intent-tag--keyword {
+  background: rgba(241, 245, 249, 0.95);
+  color: rgb(51 65 85);
+}
+:global(.dark) .intent-tag--category {
+  background: rgba(49, 46, 129, 0.55);
+  color: rgb(199 210 254);
+}
+:global(.dark) .intent-tag--budget {
+  background: rgba(76, 29, 149, 0.45);
+  color: rgb(221 214 254);
+}
+:global(.dark) .intent-tag--keyword {
+  background: rgba(30, 41, 59, 0.65);
+  color: rgb(203 213 225);
+}
+
+.curator-canvas {
+  min-height: 420px;
+  border-radius: 1.25rem;
+  border: 1px dashed rgba(99, 102, 241, 0.22);
+  background: rgba(255, 255, 255, 0.55);
+}
+:global(.dark) .curator-canvas {
+  border-color: rgba(129, 140, 248, 0.18);
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.curator-canvas-inner {
+  padding: 1.25rem;
+}
+
+.curator-loading-bar {
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgb(99 102 241), rgb(139 92 246), rgb(99 102 241));
+  background-size: 200% 100%;
+  animation: curator-shimmer 1.2s ease-in-out infinite;
+}
+@keyframes curator-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.curator-results {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .curator-results {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .curator-results {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.curator-result-card {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1rem;
+}
+:global(.dark) .curator-result-card {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.curator-rank {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, rgb(79 70 229), rgb(124 58 237));
+}
+
+.curator-result-media {
+  height: 8.5rem;
+  border-radius: 0.75rem;
+  background: rgb(248 250 252);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+:global(.dark) .curator-result-media {
+  background: rgb(24 24 27);
+}
+
+.curator-reason {
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: rgb(100 116 139);
+  padding-left: 0.55rem;
+  border-left: 2px solid rgba(99, 102, 241, 0.35);
+}
+:global(.dark) .curator-reason {
+  color: rgb(148 163 184);
+}
+
+.curator-bubble {
+  max-width: 92%;
+  border-radius: 0.85rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+.curator-bubble--user {
+  margin-left: auto;
+  background: rgb(238 242 255);
+  color: rgb(49 46 129);
+  border-bottom-right-radius: 0.2rem;
+}
+.curator-bubble--ai {
+  margin-right: auto;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  color: rgb(51 65 85);
+  border-bottom-left-radius: 0.2rem;
+}
+:global(.dark) .curator-bubble--user {
+  background: rgba(49, 46, 129, 0.55);
+  color: rgb(224 231 255);
+}
+:global(.dark) .curator-bubble--ai {
+  background: rgba(15, 23, 42, 0.65);
+  border-color: rgba(129, 140, 248, 0.2);
+  color: rgb(226 232 240);
+}
+
+.recent-mini-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 5.5rem;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  transition: border-color 140ms ease;
+}
+.recent-mini-card:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+}
+:global(.dark) .recent-mini-card {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.5);
 }
 
 .quick-cat-chip {
@@ -1256,78 +1289,6 @@ onMounted(() => {
 :global(.dark) .quick-cat-chip {
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(15, 23, 42, 0.55);
-  color: rgba(243, 244, 246, 0.88);
-}
-
-.trend-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 3.25rem;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  background: rgba(255, 255, 255, 0.92);
-  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
-}
-.trend-row:hover {
-  transform: translateY(-1px);
-  border-color: rgba(15, 23, 42, 0.16);
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 12px 28px -20px rgba(15, 23, 42, 0.32);
-}
-:global(.dark) .trend-row {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(15, 23, 42, 0.55);
-}
-
-.trend-rank {
-  min-width: 1.75rem;
-  height: 1.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  font-weight: 800;
-  font-size: 12px;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  color: rgba(15, 23, 42, 0.78);
-  background: rgba(15, 23, 42, 0.055);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  flex: 0 0 auto;
-}
-:global(.dark) .trend-rank {
-  color: rgba(243, 244, 246, 0.85);
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.trend-thumb {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: linear-gradient(180deg, #fafafa 0%, #f4f4f5 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  flex: 0 0 auto;
-}
-:global(.dark) .trend-thumb {
-  border-color: rgba(148, 163, 184, 0.14);
-  background: linear-gradient(180deg, rgba(24, 24, 27, 0.55) 0%, rgba(9, 9, 11, 0.45) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.trend-price {
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  color: rgba(15, 23, 42, 0.88);
-  flex: 0 0 auto;
-}
-:global(.dark) .trend-price {
   color: rgba(243, 244, 246, 0.88);
 }
 

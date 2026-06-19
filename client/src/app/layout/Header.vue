@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useCartStore } from "../../store/cart";
@@ -25,6 +25,7 @@ const recentSearches = ref([]);
 const recentSearchesKey = "myshop_recent_searches";
 const popularSearchesKey = "myshop_popular_searches";
 const popularSearchMap = ref({});
+const serverPopularSearches = ref([]);
 const highlightedIndex = ref(-1);
 
 const toggleDarkMode = () => {
@@ -49,6 +50,7 @@ const onSearch = () => {
   if (term) {
     saveRecentSearch(term);
     trackPopularSearch(term);
+    trackSearchOnServer(term);
   }
   searchDropdownOpen.value = false;
   router.push({
@@ -77,20 +79,24 @@ const searchSuggestions = computed(() => {
 });
 
 const popularSearches = computed(() => {
-  const fallback = ["에어팟", "맥북", "아이폰", "애플워치", "아이패드"];
+  const fallback = ["백팩", "데님", "스니커즈", "티셔츠", "에어팟"];
+  const fromServer = serverPopularSearches.value.filter(Boolean).slice(0, 5);
+  if (fromServer.length >= 5) return fromServer;
   const tracked = Object.entries(popularSearchMap.value || {})
     .filter(([term]) => Boolean(term))
     .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
     .map(([term]) => term)
-    .slice(0, 5);
-  if (tracked.length >= 5) return tracked;
+    .filter((term) => !fromServer.includes(term))
+    .slice(0, 5 - fromServer.length);
+  const merged = [...fromServer, ...tracked];
+  if (merged.length >= 5) return merged.slice(0, 5);
   const fromProducts = [...new Set(productSearchPool.value)]
-    .filter((name) => !tracked.includes(name))
-    .slice(0, 5 - tracked.length);
+    .filter((name) => !merged.includes(name))
+    .slice(0, 5 - merged.length);
   const fromFallback = fallback
-    .filter((name) => !tracked.includes(name) && !fromProducts.includes(name))
-    .slice(0, 5 - tracked.length - fromProducts.length);
-  return [...tracked, ...fromProducts, ...fromFallback].slice(0, 5);
+    .filter((name) => !merged.includes(name) && !fromProducts.includes(name))
+    .slice(0, 5 - merged.length - fromProducts.length);
+  return [...merged, ...fromProducts, ...fromFallback].slice(0, 5);
 });
 
 const dropdownItems = computed(() => {
@@ -128,6 +134,29 @@ const trackPopularSearch = (term) => {
     [clean]: current + 1,
   };
   savePopularSearchMap();
+};
+
+const trackSearchOnServer = async (term) => {
+  const clean = term.trim();
+  if (!clean) return;
+  try {
+    await api.post("/analytics/search-events", {
+      searchTerm: clean,
+      userId: auth.user?.id || null,
+    });
+  } catch (_) {
+    // UX를 막지 않음
+  }
+};
+
+const loadServerPopularSearches = async () => {
+  try {
+    const res = await api.get("/search/popular", { params: { limit: 8 } });
+    const terms = Array.isArray(res.data?.terms) ? res.data.terms : [];
+    serverPopularSearches.value = terms.map((item) => item.term).filter(Boolean);
+  } catch (_) {
+    serverPopularSearches.value = [];
+  }
 };
 
 const removeRecentSearch = (term) => {
@@ -262,6 +291,7 @@ onMounted(async () => {
   }
   if (auth.isLoggedIn) wishlist.fetchIds();
   loadNoticeBanner();
+  loadServerPopularSearches();
   try {
     const res = await api.get("/categories");
     categoryList.value = Array.isArray(res.data) ? res.data : [];
@@ -325,8 +355,8 @@ const secondaryNavItems = computed(() => {
     <div
       v-if="bannerNotice && !bannerClosed"
       class="flex items-center gap-2 px-3 py-2 text-sm
-             bg-emerald-50/95 dark:bg-emerald-950/75 text-emerald-950 dark:text-emerald-100
-             border-b border-emerald-200/70 dark:border-emerald-800/45"
+             bg-indigo-50/95 dark:bg-indigo-950/75 text-indigo-950 dark:text-indigo-100
+             border-b border-indigo-200/70 dark:border-indigo-800/45"
     >
       <Megaphone class="w-4 h-4 shrink-0 opacity-80" aria-hidden="true" />
       <router-link
@@ -337,8 +367,8 @@ const secondaryNavItems = computed(() => {
       </router-link>
       <button
         type="button"
-        class="shrink-0 p-1 rounded-md hover:bg-emerald-200/55 dark:hover:bg-emerald-900/45
-               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        class="shrink-0 p-1 rounded-md hover:bg-indigo-200/55 dark:hover:bg-indigo-900/45
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         aria-label="공지 배너 닫기"
         @click="dismissNoticeBanner"
       >
@@ -381,7 +411,7 @@ const secondaryNavItems = computed(() => {
       <router-link
         to="/home"
         aria-label="My Shop 홈으로 이동"
-        class="order-1 flex items-center justify-start hover:opacity-90 transition shrink-0 overflow-visible h-14 sm:h-[4.25rem] md:h-[4.7rem] w-[min(48vw,16rem)] sm:w-[19rem] md:w-[21rem] rounded-md focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(16,185,129,0.38)]"
+        class="order-1 flex items-center justify-start hover:opacity-90 transition shrink-0 overflow-visible h-14 sm:h-[4.25rem] md:h-[4.7rem] w-[min(48vw,16rem)] sm:w-[19rem] md:w-[21rem] rounded-md focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(99, 102, 241,0.38)]"
       >
         <img
           src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
@@ -484,8 +514,8 @@ const secondaryNavItems = computed(() => {
                 :class="[
                   'rounded-full px-3 py-1.5 text-xs transition',
                   highlightedIndex === searchSuggestions.length + recentSearches.length + popIdx
-                    ? 'bg-emerald-200 text-emerald-950 dark:bg-emerald-400/30 dark:text-emerald-50'
-                    : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:bg-emerald-500/12 dark:text-emerald-200 dark:hover:bg-emerald-500/22'
+                    ? 'bg-indigo-200 text-indigo-950 dark:bg-indigo-400/30 dark:text-indigo-50'
+                    : 'bg-indigo-50 text-indigo-900 hover:bg-indigo-100 dark:bg-indigo-500/12 dark:text-indigo-200 dark:hover:bg-indigo-500/22'
                 ]"
                 @mousedown.prevent="pickSuggestion(item)"
                 @mouseenter="highlightedIndex = searchSuggestions.length + recentSearches.length + popIdx"
@@ -561,7 +591,7 @@ const secondaryNavItems = computed(() => {
           <router-link
             v-if="auth.user?.role === 'admin'"
             to="/admin"
-            class="text-sm bg-gradient-to-r from-green-500 to-emerald-400 text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+            class="shop-btn-accent text-sm px-3 py-1.5 rounded-lg"
           >
             관리자
           </router-link>
@@ -615,9 +645,9 @@ const secondaryNavItems = computed(() => {
         :aria-label="`${item.name} 카테고리 보기`"
         @click="goCategory(item.category)"
         :class="[
-          'relative z-10 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
+          'relative z-10 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
           isCategoryActive(item)
-            ? 'shop-btn-primary text-white dark:text-white border-emerald-900/25'
+            ? 'shop-btn-primary text-white dark:text-white border-indigo-900/25'
             : 'shop-btn-secondary'
         ]"
       >

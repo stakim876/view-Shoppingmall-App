@@ -6,9 +6,25 @@ import axios from "axios";
 import mysql from "mysql2/promise";
 import cors from "cors";
 import dotenv from "dotenv";
-import { hashPassword, verifyPassword, generateToken, authenticateToken } from "./lib/auth.js";
+import { hashPassword, verifyPassword, generateToken, authenticateToken, optionalAuthenticate } from "./lib/auth.js";
 import { validateCoupon } from "./lib/coupon.js";
 import { buildProductListQuery } from "./lib/productQuery.js";
+import { recordSearchEvent, getPopularSearchTerms } from "./lib/searchAnalytics.js";
+import { getPersonalizedRecommendations, parseRecentProductIds } from "./lib/personalizedRecommend.js";
+import { getSearchEngineMode } from "./lib/searchEngine.js";
+import {
+  isElasticsearchEnabled,
+  searchProductsInElasticsearch,
+  syncAllProductsToElasticsearch,
+  syncProductToElasticsearch,
+  removeProductFromElasticsearch,
+} from "./lib/elasticsearch.js";
+import {
+  getCrmSummary,
+  listCustomers,
+  exportAllCustomers,
+  CRM_SEGMENT_LABELS,
+} from "./lib/adminCrm.js";
 import { buildLoginAttemptKey, createLoginAttemptStore } from "./lib/loginSecurity.js";
 import { verifyCaptchaToken } from "./lib/captcha.js";
 import { sendPasswordResetEmail, sendRestockAlertEmail } from "./lib/mailer.js";
@@ -391,13 +407,124 @@ function shoppingHelpFallback(userMessage) {
   ].join("\n");
 }
 
+/** DB products.category 에 실제로 쓰는 값 (시드·관리자 등록 기준) */
+const DB_PRODUCT_CATEGORIES = ["디지털/가전", "악세서리", "패션잡화", "의류", "기타"];
+
+/** 자연어·OpenAI 응답 → DB 카테고리 별칭 (소문자 키) */
+const CATEGORY_ALIAS_TO_DB = {
+  노트북: "디지털/가전",
+  맥북: "디지털/가전",
+  laptop: "디지털/가전",
+  notebook: "디지털/가전",
+  태블릿: "디지털/가전",
+  아이패드: "디지털/가전",
+  tablet: "디지털/가전",
+  ipad: "디지털/가전",
+  이어폰: "악세서리",
+  에어팟: "악세서리",
+  헤드폰: "악세서리",
+  audio: "악세서리",
+  백팩: "악세서리",
+  배낭: "악세서리",
+  가방: "악세서리",
+  backpack: "악세서리",
+  액세서리: "악세서리",
+  악세사리: "악세서리",
+  accessory: "악세서리",
+  accessories: "악세서리",
+  시계: "디지털/가전",
+  워치: "디지털/가전",
+  watch: "디지털/가전",
+  폰: "디지털/가전",
+  아이폰: "디지털/가전",
+  스마트폰: "디지털/가전",
+  phone: "디지털/가전",
+  iphone: "디지털/가전",
+  디지털: "디지털/가전",
+  가전: "디지털/가전",
+  "디지털/가전": "디지털/가전",
+  데님: "의류",
+  denim: "의류",
+  자켓: "의류",
+  jacket: "의류",
+  코트: "의류",
+  티셔츠: "의류",
+  셔츠: "의류",
+  니트: "의류",
+  비니: "의류",
+  의류: "의류",
+  옷: "의류",
+  패션: "의류",
+  코디: "의류",
+  캐주얼: "의류",
+  스니커즈: "패션잡화",
+  운동화: "패션잡화",
+  신발: "패션잡화",
+  sneaker: "패션잡화",
+  shoes: "패션잡화",
+  패션잡화: "패션잡화",
+  잡화: "패션잡화",
+  기타: "기타",
+};
+
+/** 문장 패턴 → DB 카테고리 (앞쪽 규칙이 우선) */
+const CATEGORY_INFER_RULES = [
+  { category: "악세서리", pattern: /백팩|배낭|가방|backpack/i },
+  { category: "악세서리", pattern: /이어폰|에어팟|헤드폰|earphone|buds/i },
+  { category: "악세서리", pattern: /액세서리|악세사리|accessory/i },
+  { category: "악세서리", pattern: /선물용|선물/i },
+  { category: "의류", pattern: /데님|denim|자켓|jacket|코트|티셔츠|t-?shirt|니트|비니|의류|캐주얼\s*코디|코디/i },
+  { category: "패션잡화", pattern: /스니커즈|운동화|신발|sneaker|shoes/i },
+  { category: "디지털/가전", pattern: /노트북|맥북|laptop|notebook/i },
+  { category: "디지털/가전", pattern: /태블릿|아이패드|tablet|ipad/i },
+  { category: "디지털/가전", pattern: /아이폰|스마트폰|iphone|smartphone|phone/i },
+  { category: "디지털/가전", pattern: /애플워치|워치|watch|시계/i },
+  { category: "디지털/가전", pattern: /디지털|가전|전자/i },
+];
+
+/** name/description LIKE 검색용 핵심 키워드 추출 */
+const PRODUCT_KEYWORD_HINTS = [
+  [/백팩|배낭|backpack/i, "백팩"],
+  [/데님|denim/i, "데님"],
+  [/자켓|jacket/i, "자켓"],
+  [/니트|비니/i, "니트"],
+  [/스니커즈|운동화|sneaker/i, "스니커즈"],
+  [/티셔츠|t-?shirt/i, "티셔츠"],
+  [/에어팟|이어폰|헤드폰/i, "에어팟"],
+  [/아이패드|태블릿|tablet/i, "아이패드"],
+  [/맥북|노트북|laptop/i, "맥북"],
+  [/아이폰|iphone/i, "아이폰"],
+  [/애플워치|watch/i, "워치"],
+  [/선물/i, "선물"],
+  [/출퇴근|commute/i, "출퇴근"],
+  [/미니멀|minimal/i, "미니멀"],
+];
+
+function resolveCategoryAlias(raw) {
+  const c = String(raw || "").trim();
+  if (!c) return null;
+  if (DB_PRODUCT_CATEGORIES.includes(c)) return c;
+  const fromMap = CATEGORY_ALIAS_TO_DB[c] || CATEGORY_ALIAS_TO_DB[c.toLowerCase()];
+  if (fromMap) return fromMap;
+  return c;
+}
+
+function extractProductKeywords(text) {
+  const t = String(text || "");
+  const hits = [];
+  for (const [pattern, keyword] of PRODUCT_KEYWORD_HINTS) {
+    if (pattern.test(t)) hits.push(keyword);
+  }
+  return hits;
+}
+
 function parseBudgetFromText(text) {
   const t = String(text || "").replace(/,/g, "");
-  const wonMatch = t.match(/(\d+(?:\.\d+)?)\s*만\s*원/);
-  if (wonMatch) {
-    return Math.round(Number(wonMatch[1]) * 10000);
+  const manWonMatch = t.match(/(\d+(?:\.\d+)?)\s*만\s*(?:원)?(?:\s*대|이하|이내|까지)?/);
+  if (manWonMatch) {
+    return Math.round(Number(manWonMatch[1]) * 10000);
   }
-  const rawMatch = t.match(/(\d{5,})\s*원?/);
+  const rawMatch = t.match(/(\d{4,})\s*원?(?:\s*대|이하|이내|까지)?/);
   if (rawMatch) {
     return Number(rawMatch[1]);
   }
@@ -406,43 +533,147 @@ function parseBudgetFromText(text) {
 
 function inferCategoryFromText(text) {
   const t = String(text || "");
-  // DB 실제 카테고리 값(디지털/가전, 악세서리 등)에 맞춰 매핑
-  if (/노트북|맥북|laptop/i.test(t)) return "디지털/가전";
-  if (/태블릿|아이패드|tablet/i.test(t)) return "디지털/가전";
-  if (/이어폰|에어팟|헤드폰|audio/i.test(t)) return "악세서리";
-  if (/시계|워치|watch/i.test(t)) return "디지털/가전";
-  if (/폰|아이폰|스마트폰|phone/i.test(t)) return "디지털/가전";
+  for (const rule of CATEGORY_INFER_RULES) {
+    if (rule.pattern.test(t)) return rule.category;
+  }
   return null;
+}
+
+function normalizeDbCategory(category) {
+  if (!category) return null;
+  const resolved = resolveCategoryAlias(category);
+  if (DB_PRODUCT_CATEGORIES.includes(resolved)) return resolved;
+  const inferred = inferCategoryFromText(resolved);
+  if (inferred) return inferred;
+  return null;
+}
+
+function buildRecommendKeywords(prompt, category) {
+  const fromHints = extractProductKeywords(prompt);
+  const split = String(prompt || "")
+    .split(/[\s,./·|]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 2)
+    .filter((s) => !/^\d+(?:\.\d+)?$/.test(s))
+    .filter((s) => !/^(만|원|원대|이하|이상|대|내|까지|용|좀|추천|해줘|주세요|원하|찾|고)$/i.test(s));
+  const merged = [...fromHints, ...split];
+  return [...new Set(merged)].slice(0, 8);
+}
+
+function buildRecommendSummary(prompt, intent, count) {
+  const parts = [];
+  if (intent?.budgetMax) {
+    parts.push(`예산 ${Number(intent.budgetMax).toLocaleString("ko-KR")}원 이하`);
+  }
+  if (intent?.category) {
+    parts.push(`${intent.category} 카테고리`);
+  }
+  if (Array.isArray(intent?.keywords) && intent.keywords.length) {
+    parts.push(`키워드 ${intent.keywords.slice(0, 3).join(", ")}`);
+  }
+  const conditionText = parts.length ? parts.join(" · ") : "입력하신 조건";
+  return `${conditionText}에 맞춰 등록 상품 ${count}개를 골랐습니다. (DB에 없는 상품은 추천하지 않습니다)`;
+}
+
+async function getAiRecommendStatsForAdmin() {
+  const kstDate = getKstDateString();
+  const empty = {
+    todayRequests: 0,
+    todayImpressions: 0,
+    todayClicks: 0,
+    todayCartAdds: 0,
+    clickRate: 0,
+    cartRate: 0,
+    topPrompts: [],
+  };
+
+  try {
+    const [counts] = await db.query(
+      `SELECT event_name, COUNT(*) AS cnt
+       FROM ai_recommend_events
+       WHERE DATE(CONVERT_TZ(created_at, '+00:00', '+09:00')) = ?
+       GROUP BY event_name`,
+      [kstDate]
+    );
+
+    const byName = Object.fromEntries(
+      (counts || []).map((row) => [String(row.event_name), Number(row.cnt) || 0])
+    );
+    const todayRequests = byName.ai_recommend_request || 0;
+    const todayImpressions = byName.ai_recommend_impression || 0;
+    const todayClicks = byName.ai_recommend_click || 0;
+    const todayCartAdds = byName.ai_recommend_add_to_cart || 0;
+    const clickRate =
+      todayImpressions > 0 ? Math.round((todayClicks / todayImpressions) * 1000) / 10 : 0;
+    const cartRate =
+      todayClicks > 0 ? Math.round((todayCartAdds / todayClicks) * 1000) / 10 : 0;
+
+    const [promptRows] = await db.query(
+      `SELECT prompt_text, COUNT(*) AS cnt
+       FROM ai_recommend_events
+       WHERE event_name = 'ai_recommend_request'
+         AND prompt_text IS NOT NULL
+         AND prompt_text <> ''
+         AND DATE(CONVERT_TZ(created_at, '+00:00', '+09:00')) = ?
+       GROUP BY prompt_text
+       ORDER BY cnt DESC, prompt_text ASC
+       LIMIT 5`,
+      [kstDate]
+    );
+
+    return {
+      todayRequests,
+      todayImpressions,
+      todayClicks,
+      todayCartAdds,
+      clickRate,
+      cartRate,
+      topPrompts: (promptRows || []).map((row) => ({
+        prompt: String(row.prompt_text),
+        count: Number(row.cnt) || 0,
+      })),
+    };
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") return empty;
+    throw err;
+  }
 }
 
 async function extractRecommendIntent(prompt, apiKey) {
   const budget = parseBudgetFromText(prompt);
   const category = inferCategoryFromText(prompt);
-  const keywords = String(prompt || "")
-    .split(/[\s,./]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length >= 2)
-    .slice(0, 8);
+  const keywords = buildRecommendKeywords(prompt, category);
 
   if (!apiKey) {
     return { budget, category, keywords };
   }
 
+  const categoryList = DB_PRODUCT_CATEGORIES.join(", ");
   const intentPrompt = [
     "사용자 쇼핑 요청을 JSON으로 구조화하세요.",
     "반드시 JSON만 출력: {\"budgetMax\": number|null, \"category\": string|null, \"keywords\": string[]}",
-    "category는 가능하면 쇼핑 카테고리(예: 노트북, 태블릿, 디지털/가전, 악세서리)로 추론하세요.",
+    `category는 반드시 다음 DB 카테고리 중 하나 또는 null: ${categoryList}`,
+    "예: 백팩·가방·에어팟 → 악세서리, 데님·자켓·코디 → 의류, 스니커즈·신발 → 패션잡화, 태블릿·노트북·아이폰 → 디지털/가전",
+    "keywords에는 상품명 검색에 쓸 핵심 단어(백팩, 데님, 태블릿 등)를 넣으세요.",
     `사용자 입력: ${String(prompt || "").trim()}`,
   ].join("\n");
 
   try {
     const data = await openAiChatCompletion(intentPrompt, apiKey);
     const content = data?.choices?.[0]?.message?.content?.trim() || "";
-    const parsed = JSON.parse(content);
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+    const parsedCategory = normalizeDbCategory(parsed?.category) || category;
+    const parsedKeywords = Array.isArray(parsed?.keywords)
+      ? parsed.keywords.map((k) => String(k).trim()).filter(Boolean)
+      : keywords;
     return {
       budget: Number.isFinite(Number(parsed?.budgetMax)) ? Number(parsed.budgetMax) : budget,
-      category: parsed?.category ? String(parsed.category).trim() : category,
-      keywords: Array.isArray(parsed?.keywords) ? parsed.keywords.map((k) => String(k).trim()).filter(Boolean) : keywords,
+      category: parsedCategory,
+      keywords: buildRecommendKeywords(
+        [prompt, ...parsedKeywords].join(" "),
+        parsedCategory
+      ),
     };
   } catch {
     return { budget, category, keywords };
@@ -451,18 +682,23 @@ async function extractRecommendIntent(prompt, apiKey) {
 
 function normalizeRecommendKeywords(keywords, category) {
   const base = Array.isArray(keywords) ? keywords : [];
-  const categoryIntentWords = new Set([
-    "노트북", "맥북", "laptop",
-    "태블릿", "아이패드", "tablet",
+  const categoryOnlyWords = new Set([
+    "노트북", "맥북", "laptop", "notebook",
+    "태블릿", "아이패드", "tablet", "ipad",
     "이어폰", "에어팟", "헤드폰", "audio",
     "시계", "워치", "watch",
-    "폰", "아이폰", "스마트폰", "phone",
+    "폰", "아이폰", "스마트폰", "phone", "iphone",
+    "디지털", "가전", "의류", "패션", "잡화", "패션잡화", "액세서리", "악세사리",
+    "선물", "선물용", "코디", "캐주얼",
   ]);
   const cleaned = base
     .map((k) => String(k || "").trim())
     .filter(Boolean)
-    .filter((k) => !categoryIntentWords.has(k.toLowerCase()));
-  if (!cleaned.length && !category) return base.slice(0, 5);
+    .filter((k) => !categoryOnlyWords.has(k.toLowerCase()));
+  if (!cleaned.length && category) {
+    return extractProductKeywords(base.join(" ")).slice(0, 5);
+  }
+  if (!cleaned.length) return base.slice(0, 5);
   return cleaned.slice(0, 5);
 }
 
@@ -500,7 +736,7 @@ app.post("/api/ai/recommend", async (req, res) => {
     const apiKey = process.env.OPENAI_API_KEY;
     const intent = await extractRecommendIntent(prompt, apiKey);
     const budgetMax = Number.isFinite(intent.budget) ? Number(intent.budget) : null;
-    const category = intent.category || null;
+    const category = normalizeDbCategory(intent.category || null);
     const keywords = normalizeRecommendKeywords(intent.keywords, category);
 
     const where = [];
@@ -550,6 +786,15 @@ app.post("/api/ai/recommend", async (req, res) => {
       if (category && p.category === category) {
         reasons.push(`요청 카테고리(${category}) 일치`);
       }
+      const matchedKw = keywords.find(
+        (kw) =>
+          kw &&
+          (String(p.name || "").includes(kw) ||
+            String(p.description || "").includes(kw))
+      );
+      if (matchedKw) {
+        reasons.push(`「${matchedKw}」 관련 상품`);
+      }
       if (Number(p.stock || 0) > 0) {
         reasons.push("현재 구매 가능");
       }
@@ -560,6 +805,7 @@ app.post("/api/ai/recommend", async (req, res) => {
     return res.json({
       success: true,
       message: "AI 추천 결과입니다.",
+      summary: buildRecommendSummary(prompt, { budgetMax, category, keywords }, recommendations.length),
       intent: {
         budgetMax,
         category,
@@ -670,6 +916,17 @@ async function ensureReviewAndGalleryTables() {
     );
 
     await db.query(
+      `CREATE TABLE IF NOT EXISTS search_events (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        search_term VARCHAR(200) NOT NULL,
+        user_id INT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_search_term_created (search_term, created_at),
+        INDEX idx_search_created (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    );
+
+    await db.query(
       `CREATE TABLE IF NOT EXISTS visitor_daily (
         visit_date DATE NOT NULL PRIMARY KEY,
         view_count INT NOT NULL DEFAULT 0
@@ -725,6 +982,16 @@ async function bootstrapAdminFromEnv() {
     console.log("✅ DB 연결 테스트 OK:", rows[0]);
     await ensureReviewAndGalleryTables();
     await bootstrapAdminFromEnv();
+    if (isElasticsearchEnabled()) {
+      try {
+        const { synced } = await syncAllProductsToElasticsearch(db);
+        console.log(`✅ Elasticsearch 동기화 완료 (${synced}건, ${getSearchEngineMode()})`);
+      } catch (err) {
+        console.warn("⚠️ Elasticsearch 동기화 실패 — MySQL 검색으로 fallback:", err.message);
+      }
+    } else {
+      console.log(`ℹ️ 검색 엔진: MySQL (관련도 순). ES 사용 시 ELASTICSEARCH_URL 설정`);
+    }
   } catch (e) {
     console.error("❌ DB 연결 테스트 실패:", e.message);
   }
@@ -833,9 +1100,136 @@ app.post("/api/analytics/page-views", async (_req, res) => {
   }
 });
 
+app.post("/api/analytics/search-events", async (req, res) => {
+  const searchTerm = String(req.body?.searchTerm || req.body?.term || "").trim();
+  if (!searchTerm) {
+    return fail(res, 400, "INVALID_SEARCH", "검색어를 입력해 주세요.");
+  }
+  const userId = req.body?.userId != null ? Number(req.body.userId) : null;
+  try {
+    await recordSearchEvent(db, searchTerm, Number.isFinite(userId) ? userId : null);
+    return ok(res, {}, "search event recorded");
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(
+        res,
+        503,
+        "SCHEMA_MISSING",
+        "search_events 테이블이 없습니다. 서버를 재시작해 자동 생성을 실행하세요."
+      );
+    }
+    console.error("검색 이벤트 기록 오류:", err);
+    return fail(res, 500, "SEARCH_EVENT_ERROR", "검색 이벤트 기록에 실패했습니다.");
+  }
+});
+
+app.get("/api/search/popular", async (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 10;
+    const terms = await getPopularSearchTerms(db, limit);
+    return ok(res, { terms, engine: getSearchEngineMode() }, "popular search terms");
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return ok(res, { terms: [], engine: getSearchEngineMode() }, "popular search terms");
+    }
+    console.error("인기 검색어 조회 오류:", err);
+    return fail(res, 500, "POPULAR_SEARCH_ERROR", "인기 검색어를 불러오지 못했습니다.");
+  }
+});
+
+async function queryProductList(rawQuery = {}) {
+  if (String(rawQuery.search || "").trim() && isElasticsearchEnabled()) {
+    try {
+      const esResult = await searchProductsInElasticsearch(rawQuery);
+      if (esResult) return esResult;
+    } catch (err) {
+      console.warn("Elasticsearch 검색 실패 — MySQL fallback:", err.message);
+    }
+  }
+
+  const query = buildProductListQuery(rawQuery);
+  const [results] = await db.query(query.listSql, query.listParams);
+  const [countRows] = await db.query(query.countSql, query.countParams);
+  const total = Number(countRows?.[0]?.total || 0);
+  return {
+    items: results,
+    pagination: {
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / query.limit)),
+    },
+    engine: query.engine,
+  };
+}
+
+app.get("/api/search", async (req, res) => {
+  const search = String(req.query.q || req.query.search || "").trim();
+  if (!search) {
+    return fail(res, 400, "INVALID_SEARCH", "검색어를 입력해 주세요.");
+  }
+  try {
+    const result = await queryProductList({
+      ...req.query,
+      search,
+      withMeta: "1",
+    });
+    const [suggestions] = await db.query(
+      `SELECT search_term AS term, COUNT(*) AS count
+       FROM search_events
+       WHERE search_term LIKE ?
+       GROUP BY search_term
+       ORDER BY count DESC
+       LIMIT 5`,
+      [`%${search}%`]
+    ).catch(() => [[]]);
+
+    return ok(res, {
+      ...result,
+      query: search,
+      suggestions: suggestions || [],
+    });
+  } catch (err) {
+    console.error("검색 API 오류:", err);
+    return fail(res, 500, "SEARCH_ERROR", "검색에 실패했습니다.");
+  }
+});
+
+app.get("/api/recommendations/personalized", optionalAuthenticate, async (req, res) => {
+  try {
+    const userId = req.user?.id || null;
+    const recentProductIds = parseRecentProductIds(req.query.recentProductIds);
+    const limit = Number(req.query.limit) || 6;
+
+    if (!userId && recentProductIds.length === 0) {
+      return ok(res, { recommendations: [], summary: "로그인하거나 상품을 둘러보면 맞춤 추천을 제공합니다." });
+    }
+
+    const recommendations = await getPersonalizedRecommendations(db, userId, {
+      recentProductIds,
+      limit,
+    });
+
+    const summary =
+      recommendations.length > 0
+        ? `구매·찜·최근 본 상품을 바탕으로 ${recommendations.length}개를 골랐습니다.`
+        : "추천할 상품이 없습니다.";
+
+    return ok(res, { recommendations, summary });
+  } catch (err) {
+    console.error("개인화 추천 오류:", err);
+    return fail(res, 500, "PERSONALIZED_RECOMMEND_ERROR", "맞춤 추천을 불러오지 못했습니다.");
+  }
+});
+
 app.post("/api/analytics/ai-recommend-events", async (req, res) => {
   const { eventName, promptText, productId, source, sessionId, userId, meta } = req.body || {};
-  const allowed = new Set(["ai_recommend_impression", "ai_recommend_click", "ai_recommend_add_to_cart"]);
+  const allowed = new Set([
+    "ai_recommend_request",
+    "ai_recommend_impression",
+    "ai_recommend_click",
+    "ai_recommend_add_to_cart",
+  ]);
   if (!eventName || !allowed.has(String(eventName))) {
     return fail(res, 400, "INVALID_EVENT", "유효하지 않은 AI 추천 이벤트입니다.");
   }
@@ -1001,25 +1395,17 @@ app.get("/api/products", async (req, res) => {
       return res.json(cached);
     }
 
-    const query = buildProductListQuery(req.query);
-    const [results] = await db.query(query.listSql, query.listParams);
-    const [countRows] = await db.query(query.countSql, query.countParams);
-    const total = Number(countRows?.[0]?.total || 0);
-    const totalPages = Math.max(1, Math.ceil(total / query.limit));
+    const result = await queryProductList(req.query);
 
     if (req.query.withMeta !== "1") {
-      setCache(key, results);
-      return res.json(results);
+      setCache(key, result.items);
+      return res.json(result.items);
     }
 
     const payload = {
-      items: results,
-      pagination: {
-        page: query.page,
-        limit: query.limit,
-        total,
-        totalPages,
-      },
+      items: result.items,
+      pagination: result.pagination,
+      engine: result.engine,
     };
     setCache(key, { success: true, message: "상품 목록 조회 성공", ...payload });
     return ok(res, payload, "상품 목록 조회 성공");
@@ -1118,7 +1504,7 @@ app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) 
         : JSON.stringify(laptop_specs);
 
   try {
-    await db.query(
+    const [result] = await db.query(
       "INSERT INTO products (name, description, price, image_url, category, stock, color_options, laptop_specs) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [
         name,
@@ -1132,6 +1518,12 @@ app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) 
       ]
     );
     clearProductCache();
+    const [rows] = await db.query("SELECT * FROM products WHERE id = ?", [result.insertId]);
+    if (rows[0]) {
+      syncProductToElasticsearch(rows[0]).catch((err) => {
+        console.warn("ES 상품 동기화 실패:", err.message);
+      });
+    }
     res.json({ success: true, message: "상품이 등록되었습니다." });
   } catch (err) {
     console.error("❌ 상품 등록 오류:", err);
@@ -1204,6 +1596,12 @@ app.put("/api/products/:id", authenticateToken, requireAdmin, async (req, res) =
       });
     }
     clearProductCache();
+    const [rows] = await db.query("SELECT * FROM products WHERE id = ?", [id]);
+    if (rows[0]) {
+      syncProductToElasticsearch(rows[0]).catch((err) => {
+        console.warn("ES 상품 동기화 실패:", err.message);
+      });
+    }
     res.json({ success: true, message: "상품이 수정되었습니다." });
   } catch (err) {
     console.error("❌ 상품 수정 오류:", err);
@@ -1268,6 +1666,9 @@ app.delete("/api/products/:id", authenticateToken, requireAdmin, async (req, res
       return res.status(404).json({ success: false, message: "상품을 찾을 수 없습니다." });
     }
     clearProductCache();
+    removeProductFromElasticsearch(id).catch((err) => {
+      console.warn("ES 상품 삭제 실패:", err.message);
+    });
     res.json({ success: true, message: "상품이 삭제되었습니다." });
   } catch (err) {
     console.error("❌ 상품 삭제 오류:", err);
@@ -1605,6 +2006,110 @@ app.get("/api/admin/orders", authenticateToken, requireAdmin, async (req, res) =
   } catch (err) {
     console.error("❌ 관리자 주문 조회 오류:", err);
     res.status(500).json({ success: false, message: "주문 조회 실패" });
+  }
+});
+
+app.get("/api/admin/analytics/ai-recommend-stats", authenticateToken, requireAdmin, async (_req, res) => {
+  try {
+    const stats = await getAiRecommendStatsForAdmin();
+    return ok(res, stats, "ai recommend stats");
+  } catch (err) {
+    console.error("AI 추천 통계 조회 오류:", err);
+    return fail(res, 500, "AI_RECOMMEND_STATS_ERROR", "AI 추천 통계를 불러오지 못했습니다.");
+  }
+});
+
+app.get("/api/admin/crm/summary", authenticateToken, requireAdmin, async (_req, res) => {
+  try {
+    const summary = await getCrmSummary(db);
+    return ok(res, { summary, segmentLabels: CRM_SEGMENT_LABELS });
+  } catch (err) {
+    console.error("CRM 요약 조회 오류:", err);
+    return fail(res, 500, "CRM_SUMMARY_ERROR", "CRM 요약을 불러오지 못했습니다.");
+  }
+});
+
+app.get("/api/admin/users/export", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const csv = await exportAllCustomers(db, {
+      search: req.query.search || req.query.q,
+      segment: req.query.segment,
+    });
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="customers.csv"');
+    return res.send(csv);
+  } catch (err) {
+    console.error("고객 CSV export 오류:", err);
+    return fail(res, 500, "CRM_EXPORT_ERROR", "고객 데이터 내보내기에 실패했습니다.");
+  }
+});
+
+app.get("/api/admin/users", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await listCustomers(db, {
+      search: req.query.search || req.query.q,
+      segment: req.query.segment,
+      page: req.query.page,
+      limit: req.query.limit,
+    });
+    return ok(res, result);
+  } catch (err) {
+    console.error("관리자 고객 목록 조회 오류:", err);
+    return fail(res, 500, "ADMIN_USERS_ERROR", "고객 목록을 불러오지 못했습니다.");
+  }
+});
+
+app.get("/api/admin/users/:id", authenticateToken, requireAdmin, async (req, res) => {
+  const userId = Number(req.params.id);
+  if (!Number.isFinite(userId) || userId <= 0) {
+    return fail(res, 400, "INVALID_USER_ID", "유효하지 않은 고객 ID입니다.");
+  }
+
+  try {
+    const [users] = await db.query(
+      `SELECT id, email, name, gender, role, created_at FROM users WHERE id = ?`,
+      [userId]
+    );
+    if (!users.length) {
+      return fail(res, 404, "USER_NOT_FOUND", "고객을 찾을 수 없습니다.");
+    }
+
+    const [orders] = await db.query(
+      `SELECT
+         o.id,
+         o.total_price,
+         o.status,
+         o.recipient_name,
+         o.created_at,
+         GROUP_CONCAT(p.name SEPARATOR ', ') AS products
+       FROM orders o
+       LEFT JOIN order_items oi ON oi.order_id = o.id
+       LEFT JOIN products p ON p.id = oi.product_id
+       WHERE o.user_id = ?
+       GROUP BY o.id, o.total_price, o.status, o.recipient_name, o.created_at
+       ORDER BY o.created_at DESC
+       LIMIT 20`,
+      [userId]
+    );
+
+    const [statsRows] = await db.query(
+      `SELECT
+         COUNT(*) AS order_count,
+         COALESCE(SUM(CASE WHEN status NOT IN ('cancelled') THEN total_price ELSE 0 END), 0) AS total_spent,
+         MAX(created_at) AS last_order_at
+       FROM orders
+       WHERE user_id = ?`,
+      [userId]
+    );
+
+    return ok(res, {
+      user: users[0],
+      stats: statsRows[0] || { order_count: 0, total_spent: 0, last_order_at: null },
+      orders,
+    });
+  } catch (err) {
+    console.error("관리자 고객 상세 조회 오류:", err);
+    return fail(res, 500, "ADMIN_USER_DETAIL_ERROR", "고객 상세를 불러오지 못했습니다.");
   }
 });
 

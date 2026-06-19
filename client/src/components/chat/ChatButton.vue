@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <button
       type="button"
@@ -8,16 +8,17 @@
       :aria-label="isOpen ? '쇼핑 도움말 닫기' : '쇼핑 도움말 열기'"
       class="group fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center
              rounded-2xl text-white
-             bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-900
-             shadow-[0_12px_40px_-8px_rgba(5,150,105,0.4),0_4px_14px_-6px_rgba(15,23,42,0.25)]
+             bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-900
+             shadow-[0_12px_40px_-8px_rgba(79, 70, 229,0.4),0_4px_14px_-6px_rgba(15,23,42,0.25)]
              ring-1 ring-white/25 ring-inset
              transition-all duration-200 ease-out
-             hover:scale-[1.04] hover:shadow-[0_16px_44px_-8px_rgba(5,150,105,0.48)]
+             hover:scale-[1.04] hover:shadow-[0_16px_44px_-8px_rgba(79, 70, 229,0.48)]
              active:scale-[0.98]
-             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 dark:focus-visible:ring-emerald-500/75
-             dark:from-emerald-900 dark:via-teal-950 dark:to-zinc-950
-             dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.5)]
-             dark:ring-white/15"
+             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-violet-300/80
+             dark:from-violet-400 dark:via-fuchsia-500 dark:to-indigo-500
+             dark:shadow-[0_14px_44px_-8px_rgba(167,139,250,0.55)]
+             dark:hover:shadow-[0_18px_48px_-8px_rgba(232,121,249,0.62)]
+             dark:ring-fuchsia-200/25"
     >
       <span class="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100 dark:from-black/25" />
       <svg

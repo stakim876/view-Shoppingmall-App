@@ -1,3 +1,5 @@
+import { buildSearchRelevanceSql, buildSearchWhereClause } from "./searchEngine.js";
+
 const SORT_FIELDS = {
   id: "id",
   name: "name",
@@ -23,8 +25,9 @@ export function buildProductListQuery(rawQuery = {}) {
   const params = [];
 
   if (search) {
-    where.push("(name LIKE ? OR description LIKE ?)");
-    params.push(`%${search}%`, `%${search}%`);
+    const searchWhere = buildSearchWhereClause(search);
+    where.push(searchWhere.clause);
+    params.push(...searchWhere.params);
   }
   if (category) {
     where.push("category = ?");
@@ -40,7 +43,16 @@ export function buildProductListQuery(rawQuery = {}) {
   }
 
   const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
-  const listSql = `SELECT * FROM products ${whereClause} ORDER BY ${sortField} ${sortOrder} LIMIT ? OFFSET ?`;
+
+  let orderClause = `${sortField} ${sortOrder}`;
+  let relevanceParams = [];
+  if (search && sortField === "id") {
+    const relevance = buildSearchRelevanceSql(search);
+    orderClause = `${relevance.expr} DESC, ${sortField} ${sortOrder}`;
+    relevanceParams = relevance.params;
+  }
+
+  const listSql = `SELECT * FROM products ${whereClause} ORDER BY ${orderClause} LIMIT ? OFFSET ?`;
   const countSql = `SELECT COUNT(*) AS total FROM products ${whereClause}`;
 
   return {
@@ -52,7 +64,9 @@ export function buildProductListQuery(rawQuery = {}) {
     whereClause,
     listSql,
     countSql,
-    listParams: [...params, limit, offset],
+    listParams: [...params, ...relevanceParams, limit, offset],
     countParams: params,
+    search,
+    engine: "mysql",
   };
 }

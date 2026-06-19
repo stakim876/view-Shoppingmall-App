@@ -28,6 +28,6 @@ test("buildProductListQuery 검색/필터/정렬 파라미터를 반영한다", 
   assert.equal(q.sortOrder, "ASC");
   assert.match(q.whereClause, /name LIKE/);
   assert.match(q.whereClause, /category = \?/);
-  assert.equal(q.listParams.length, 5 + 2);
-  assert.equal(q.countParams.length, 5);
+  assert.equal(q.listParams.length, 6 + 2);
+  assert.equal(q.countParams.length, 6);
 });

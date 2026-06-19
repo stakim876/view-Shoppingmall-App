@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <footer
     class="text-sm
-           bg-gradient-to-b from-emerald-50/70 via-slate-100 to-slate-200
-           dark:from-zinc-950 dark:via-emerald-950/20 dark:to-neutral-950
-           border-t border-emerald-200/60 dark:border-emerald-900/35"
+           bg-gradient-to-b from-indigo-50/70 via-slate-100 to-slate-200
+           dark:from-zinc-950 dark:via-indigo-950/20 dark:to-neutral-950
+           border-t border-indigo-200/60 dark:border-indigo-900/35"
   >
     <div class="max-w-6xl mx-auto px-6 py-10">
       <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
@@ -22,7 +22,7 @@
 
         <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           <div>
-            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-emerald-700/35 dark:border-emerald-500/35 inline-block">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-indigo-700/35 dark:border-indigo-500/35 inline-block">
               고객센터
             </h3>
             <ul class="space-y-1.5 text-slate-700 dark:text-white/90">
@@ -33,7 +33,7 @@
                   :href="contact.kakaoUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-slate-700 dark:text-neutral-300 hover:text-emerald-800 dark:hover:text-emerald-400 hover:underline transition-colors"
+                  class="text-slate-700 dark:text-neutral-300 hover:text-indigo-800 dark:hover:text-indigo-400 hover:underline transition-colors"
                 >
                   카카오 문의
                 </a>
@@ -41,7 +41,7 @@
               <li>
                 <router-link
                   to="/order-lookup"
-                  class="text-slate-700 dark:text-neutral-300 hover:text-emerald-800 dark:hover:text-emerald-400 hover:underline transition-colors"
+                  class="text-slate-700 dark:text-neutral-300 hover:text-indigo-800 dark:hover:text-indigo-400 hover:underline transition-colors"
                 >
                   주문/배송 조회
                 </router-link>
@@ -52,7 +52,7 @@
             </ul>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-emerald-700/35 dark:border-emerald-500/35 inline-block">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-indigo-700/35 dark:border-indigo-500/35 inline-block">
               배송/반품지 주소
             </h3>
             <p class="text-slate-700 dark:text-white/90 leading-relaxed">
@@ -61,7 +61,7 @@
             </p>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-emerald-700/35 dark:border-emerald-500/35 inline-block">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-indigo-700/35 dark:border-indigo-500/35 inline-block">
               계좌번호
             </h3>
             <ul class="space-y-1.5 text-slate-700 dark:text-white/90">

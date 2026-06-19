@@ -1,17 +1,17 @@
-<template>
+﻿<template>
   <div class="shop-admin-shell">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-10">
       <header class="mb-8">
-        <p class="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-1">
+        <p class="text-xs font-semibold uppercase tracking-wider text-indigo-800 dark:text-indigo-300 mb-1">
           Admin
         </p>
         <h1 class="shop-page-title">운영 대시보드</h1>
         <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-          상품·주문·공지를 한곳에서 관리합니다. 표가 넓을 때는 가로 스크롤로 전체 열을 확인하세요.
+          상품·주문·공지를 관리합니다. AI 큐레이터 사용량과 전환 지표도 함께 확인하세요.
         </p>
       </header>
 
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
         <div class="shop-admin-kpi">
           <span class="text-xs font-medium text-slate-500 dark:text-slate-400">오늘 주문</span>
           <span class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{
@@ -32,11 +32,63 @@
         </div>
         <div class="shop-admin-kpi">
           <span class="text-xs font-medium text-slate-500 dark:text-slate-400">재고 주의 (≤5)</span>
-          <span class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">{{
+          <span class="text-2xl font-bold text-indigo-700 dark:text-indigo-400 tabular-nums">{{
             adminKpi.lowStock
           }}</span>
         </div>
       </div>
+
+      <section class="mb-8 rounded-2xl border border-indigo-200/70 dark:border-indigo-800/40 bg-indigo-50/40 dark:bg-indigo-950/20 p-4 md:p-5">
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-sm font-semibold text-indigo-900 dark:text-indigo-300">AI 큐레이터 (오늘)</h2>
+            <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">
+              추천 요청 → 결과 노출 → 클릭 → 장바구니 전환을 집계합니다.
+            </p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+          <div class="shop-admin-kpi">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">추천 요청</span>
+            <span class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{
+              aiStats.todayRequests
+            }}</span>
+          </div>
+          <div class="shop-admin-kpi">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">결과 노출</span>
+            <span class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{
+              aiStats.todayImpressions
+            }}</span>
+          </div>
+          <div class="shop-admin-kpi">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">상품 클릭</span>
+            <span class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{
+              aiStats.todayClicks
+            }}</span>
+          </div>
+          <div class="shop-admin-kpi">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">장바구니</span>
+            <span class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{
+              aiStats.todayCartAdds
+            }}</span>
+          </div>
+          <div class="shop-admin-kpi col-span-2 lg:col-span-1">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">클릭률 / 담기률</span>
+            <span class="text-lg md:text-xl font-bold text-indigo-700 dark:text-indigo-400 tabular-nums">
+              {{ aiStats.clickRate }}% · {{ aiStats.cartRate }}%
+            </span>
+          </div>
+        </div>
+        <div v-if="aiStats.topPrompts.length > 0" class="mt-4 pt-4 border-t border-indigo-200/60 dark:border-indigo-800/40">
+          <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">자주 쓰인 추천 문장</p>
+          <ul class="space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
+            <li v-for="item in aiStats.topPrompts" :key="item.prompt" class="flex justify-between gap-3">
+              <span class="truncate">{{ item.prompt }}</span>
+              <span class="shrink-0 tabular-nums text-slate-500 dark:text-slate-400">{{ item.count }}회</span>
+            </li>
+          </ul>
+        </div>
+      </section>
 
       <div class="flex flex-wrap gap-2 mb-6">
         <button
@@ -235,7 +287,7 @@
                 <td class="tabular-nums font-medium">{{ o.id }}</td>
                 <td class="tabular-nums">{{ o.user_id }}</td>
                 <td class="tabular-nums whitespace-nowrap">{{ formatPrice(o.total_price) }}원</td>
-                <td class="text-emerald-800 dark:text-emerald-300 font-medium whitespace-nowrap">
+                <td class="text-indigo-800 dark:text-indigo-300 font-medium whitespace-nowrap">
                   {{ orderStatusLabel(o.status) }}
                 </td>
                 <td class="text-left text-xs text-slate-600 dark:text-slate-400 max-w-[14rem]">{{ o.products }}</td>
@@ -375,6 +427,172 @@
           </table>
         </div>
       </div>
+
+      <div v-show="activeTab === 'customers'" class="space-y-4">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100">고객 CRM</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">세그먼트·LTV·주문 이력을 확인하고 CSV로 내보낼 수 있습니다.</p>
+          </div>
+          <button type="button" class="shop-btn-secondary px-4 py-2 rounded-xl text-sm" @click="exportCustomers">
+            CSV 내보내기
+          </button>
+        </div>
+
+        <div v-if="crmSummary" class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="shop-admin-kpi">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">전체 고객</span>
+            <span class="text-2xl font-bold tabular-nums">{{ crmSummary.totalCustomers }}</span>
+          </div>
+          <div class="shop-admin-kpi">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">VIP</span>
+            <span class="text-2xl font-bold tabular-nums text-indigo-700 dark:text-indigo-400">{{ crmSummary.vipCount }}</span>
+          </div>
+          <div class="shop-admin-kpi">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">평균 LTV</span>
+            <span class="text-lg font-bold tabular-nums">{{ formatPrice(crmSummary.avgLtv) }}원</span>
+          </div>
+          <div class="shop-admin-kpi">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">휴면</span>
+            <span class="text-2xl font-bold tabular-nums">{{ crmSummary.dormantCount }}</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="opt in customerSegmentOptions"
+            :key="opt.id"
+            type="button"
+            @click="selectCustomerSegment(opt.id)"
+            :class="[
+              'px-3 py-1.5 rounded-full text-xs font-medium transition-all',
+              customerSegment === opt.id ? 'shop-btn-primary' : 'shop-btn-secondary',
+            ]"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <span v-if="!customersLoading" class="text-xs text-slate-500 dark:text-slate-400">
+            총 {{ customerPagination.total }}명
+          </span>
+        </div>
+
+        <div class="flex flex-wrap gap-2 max-w-xl">
+          <input
+            v-model="customerSearch"
+            type="search"
+            placeholder="이름 또는 이메일 검색"
+            class="shop-admin-input flex-1 min-w-[200px]"
+            @keyup.enter="fetchCustomers(1)"
+          />
+          <button type="button" class="shop-btn-primary px-4 py-2 rounded-xl text-sm" @click="fetchCustomers(1)">
+            검색
+          </button>
+        </div>
+
+        <div v-if="customersLoading" class="shop-admin-card p-6 space-y-3">
+          <div
+            v-for="n in 5"
+            :key="'cs-' + n"
+            class="h-14 rounded-xl bg-slate-200/70 dark:bg-slate-700/45 animate-pulse"
+          />
+        </div>
+        <div v-else-if="!customers.length" class="shop-admin-card p-12 text-center">
+          <p class="text-slate-600 dark:text-slate-400">등록된 고객이 없습니다.</p>
+        </div>
+        <div v-else class="shop-admin-table-wrap overflow-x-auto rounded-2xl">
+          <table class="shop-admin-table min-w-[920px]">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>이름</th>
+                <th>이메일</th>
+                <th>세그먼트</th>
+                <th>가입일</th>
+                <th>주문</th>
+                <th>누적 구매</th>
+                <th>최근 주문</th>
+                <th class="text-center">상세</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="c in customers" :key="c.id">
+                <td class="tabular-nums">{{ c.id }}</td>
+                <td class="font-medium">{{ c.name || "—" }}</td>
+                <td class="text-left text-sm">{{ c.email }}</td>
+                <td>
+                  <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-semibold" :class="segmentClass(c.segment)">
+                    {{ segmentLabel(c.segment) }}
+                  </span>
+                </td>
+                <td class="text-xs whitespace-nowrap">{{ formatDate(c.created_at) }}</td>
+                <td class="tabular-nums">{{ c.order_count || 0 }}건</td>
+                <td class="tabular-nums whitespace-nowrap">{{ formatPrice(c.total_spent) }}원</td>
+                <td class="text-xs whitespace-nowrap">{{ c.last_order_at ? formatDate(c.last_order_at) : "—" }}</td>
+                <td class="text-center">
+                  <button type="button" class="shop-link-muted text-xs" @click="openCustomerDetail(c.id)">보기</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="selectedCustomer"
+      class="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/50 dark:bg-black/70 p-4"
+      @click.self="selectedCustomer = null"
+    >
+      <div class="flex min-h-[100dvh] min-h-screen items-center justify-center py-8">
+        <div class="shop-admin-card w-full max-w-2xl p-6 bg-white dark:bg-slate-900 my-auto">
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">
+                {{ selectedCustomer.user?.name || "고객" }} 상세
+              </h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400">{{ selectedCustomer.user?.email }}</p>
+            </div>
+            <button type="button" class="shop-btn-secondary px-3 py-1.5 rounded-lg text-xs" @click="selectedCustomer = null">
+              닫기
+            </button>
+          </div>
+          <div class="grid grid-cols-3 gap-3 mb-5">
+            <div class="shop-admin-kpi">
+              <span class="text-xs text-slate-500">주문</span>
+              <span class="text-xl font-bold tabular-nums">{{ selectedCustomer.stats?.order_count || 0 }}건</span>
+            </div>
+            <div class="shop-admin-kpi">
+              <span class="text-xs text-slate-500">누적 구매</span>
+              <span class="text-lg font-bold tabular-nums">{{ formatPrice(selectedCustomer.stats?.total_spent) }}원</span>
+            </div>
+            <div class="shop-admin-kpi">
+              <span class="text-xs text-slate-500">가입일</span>
+              <span class="text-sm font-semibold">{{ formatDate(selectedCustomer.user?.created_at) }}</span>
+            </div>
+          </div>
+          <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">최근 주문</h4>
+          <div v-if="!selectedCustomer.orders?.length" class="text-sm text-slate-500 py-4 text-center">
+            주문 내역이 없습니다.
+          </div>
+          <ul v-else class="space-y-2 max-h-72 overflow-y-auto">
+            <li
+              v-for="o in selectedCustomer.orders"
+              :key="o.id"
+              class="rounded-xl border border-slate-200/80 dark:border-white/[0.08] px-3 py-2 text-sm"
+            >
+              <div class="flex justify-between gap-3">
+                <span class="font-medium">#{{ o.id }}</span>
+                <span class="tabular-nums">{{ formatPrice(o.total_price) }}원</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">{{ o.products || "—" }}</p>
+              <p class="text-xs text-slate-400 mt-0.5">{{ formatDate(o.created_at) }} · {{ getStatusLabel(o.status) }}</p>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <div
@@ -435,6 +653,15 @@ import { useToastStore } from "../../store/toast";
 import { formatPrice } from "../../lib/format";
 
 const toast = useToastStore();
+const aiStats = ref({
+  todayRequests: 0,
+  todayImpressions: 0,
+  todayClicks: 0,
+  todayCartAdds: 0,
+  clickRate: 0,
+  cartRate: 0,
+  topPrompts: [],
+});
 const activeTab = ref("products");
 const productSection = ref("register");
 const productSections = [
@@ -444,6 +671,7 @@ const productSections = [
 const tabItems = [
   { id: "products", label: "상품 관리" },
   { id: "orders", label: "주문 관리" },
+  { id: "customers", label: "고객 관리" },
   { id: "notices", label: "공지사항" },
 ];
 
@@ -532,6 +760,21 @@ const carriers = ref([]);
 const trackingDraft = reactive({});
 const productsLoading = ref(true);
 const ordersLoading = ref(true);
+const customers = ref([]);
+const customersLoading = ref(false);
+const customerSearch = ref("");
+const customerSegment = ref("");
+const crmSummary = ref(null);
+const customerSegmentOptions = [
+  { id: "", label: "전체" },
+  { id: "vip", label: "VIP" },
+  { id: "active", label: "활성" },
+  { id: "new", label: "신규" },
+  { id: "dormant", label: "휴면" },
+  { id: "regular", label: "일반" },
+];
+const customerPagination = ref({ page: 1, limit: 20, total: 0, totalPages: 1 });
+const selectedCustomer = ref(null);
 
 const adminNotices = ref([]);
 const noticesLoading = ref(false);
@@ -572,7 +815,103 @@ const adminKpi = computed(() => {
 function selectTab(id) {
   activeTab.value = id;
   if (id === "notices") fetchNotices();
+  if (id === "customers") {
+    fetchCrmSummary();
+    fetchCustomers(1);
+  }
 }
+
+const segmentLabel = (segment) => {
+  const map = { vip: "VIP", active: "활성", new: "신규", dormant: "휴면", regular: "일반" };
+  return map[segment] || segment || "—";
+};
+
+const segmentClass = (segment) => {
+  const map = {
+    vip: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200",
+    active: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/35 dark:text-emerald-200",
+    new: "bg-sky-100 text-sky-800 dark:bg-sky-900/35 dark:text-sky-200",
+    dormant: "bg-amber-100 text-amber-800 dark:bg-amber-900/35 dark:text-amber-200",
+    regular: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  };
+  return map[segment] || map.regular;
+};
+
+const fetchCrmSummary = async () => {
+  try {
+    const res = await api.get("/admin/crm/summary");
+    crmSummary.value = res.data?.summary || null;
+  } catch (_) {
+    crmSummary.value = null;
+  }
+};
+
+const selectCustomerSegment = (segment) => {
+  customerSegment.value = segment;
+  fetchCustomers(1);
+};
+
+const exportCustomers = async () => {
+  try {
+    const res = await api.get("/admin/users/export", {
+      params: {
+        search: customerSearch.value.trim() || undefined,
+        segment: customerSegment.value || undefined,
+      },
+      responseType: "blob",
+    });
+    const blob = new Blob([res.data], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "customers.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("고객 CSV를 내려받았습니다.");
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.userMessage || "CSV 내보내기에 실패했습니다.");
+  }
+};
+
+const fetchCustomers = async (page = customerPagination.value.page) => {
+  customersLoading.value = true;
+  try {
+    const res = await api.get("/admin/users", {
+      params: {
+        page,
+        limit: customerPagination.value.limit,
+        search: customerSearch.value.trim() || undefined,
+        segment: customerSegment.value || undefined,
+      },
+    });
+    customers.value = Array.isArray(res.data?.users) ? res.data.users : [];
+    customerPagination.value = {
+      ...customerPagination.value,
+      ...(res.data?.pagination || {}),
+      page,
+    };
+  } catch (err) {
+    customers.value = [];
+    toast.error(err.response?.data?.message || err.userMessage || "고객 목록을 불러오지 못했습니다.");
+  } finally {
+    customersLoading.value = false;
+  }
+};
+
+const openCustomerDetail = async (id) => {
+  try {
+    const res = await api.get(`/admin/users/${id}`);
+    if (res.data?.success) {
+      selectedCustomer.value = {
+        user: res.data.user,
+        stats: res.data.stats,
+        orders: res.data.orders || [],
+      };
+    }
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.userMessage || "고객 상세를 불러오지 못했습니다.");
+  }
+};
 
 function toDatetimeLocalValue(v) {
   if (v == null || v === "") return "";
@@ -863,8 +1202,34 @@ const updateOrderStatus = async (id, status) => {
 
 const formatDate = (d) => new Date(d).toLocaleString();
 
+const fetchAiStats = async () => {
+  try {
+    const res = await api.get("/admin/analytics/ai-recommend-stats");
+    const data = res.data || {};
+    aiStats.value = {
+      todayRequests: Number(data.todayRequests) || 0,
+      todayImpressions: Number(data.todayImpressions) || 0,
+      todayClicks: Number(data.todayClicks) || 0,
+      todayCartAdds: Number(data.todayCartAdds) || 0,
+      clickRate: Number(data.clickRate) || 0,
+      cartRate: Number(data.cartRate) || 0,
+      topPrompts: Array.isArray(data.topPrompts) ? data.topPrompts : [],
+    };
+  } catch (_) {
+    aiStats.value = {
+      todayRequests: 0,
+      todayImpressions: 0,
+      todayClicks: 0,
+      todayCartAdds: 0,
+      clickRate: 0,
+      cartRate: 0,
+      topPrompts: [],
+    };
+  }
+};
+
 onMounted(async () => {
   await fetchCarriers();
-  await Promise.all([fetchProducts(), fetchOrders(), fetchNotices()]);
+  await Promise.all([fetchProducts(), fetchOrders(), fetchNotices(), fetchAiStats()]);
 });
 </script>

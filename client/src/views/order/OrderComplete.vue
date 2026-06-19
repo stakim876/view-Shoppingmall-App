@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { useRouter, useRoute } from "vue-router";
 import { CheckCircle2 } from "lucide-vue-next";
 
@@ -13,7 +13,7 @@ const goMyPage = () => router.push("/mypage");
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b ...">
     <div class="bg-white/40 ...">
-      <CheckCircle2 class="w-20 h-20 mx-auto text-green-500 dark:text-emerald-400 drop-shadow-[0_0_10px_rgba(34,197,94,0.4)]" />
+      <CheckCircle2 class="w-20 h-20 mx-auto text-indigo-500 dark:text-indigo-400 drop-shadow-[0_0_10px_rgba(99,102,241,0.4)]" />
 
       <h1 class="mt-6 text-3xl font-extrabold bg-gradient-to-r from-indigo-500 via-sky-400 to-blue-500 bg-clip-text text-transparent">
         결제가 완료되었습니다!

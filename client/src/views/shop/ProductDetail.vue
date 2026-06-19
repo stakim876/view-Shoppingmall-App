@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <div class="min-h-screen bg-[#f9fafb] text-neutral-800 font-sans dark:bg-zinc-950 dark:text-neutral-200">
     
     <div v-if="loading" class="min-h-screen flex items-center justify-center">
       <div class="text-center">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
         <p class="text-neutral-600 dark:text-neutral-300">상품 정보를 불러오는 중...</p>
       </div>
     </div>
@@ -75,9 +75,7 @@
           </div>
 
           <div class="flex flex-col justify-center animate-fadeInDetail">
-            <h1
-              class="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent"
-            >
+            <h1 class="text-3xl sm:text-4xl font-bold mb-4 text-neutral-900 dark:text-neutral-50">
               {{ product?.name }}
             </h1>
 
@@ -112,7 +110,7 @@
               </dl>
             </div>
 
-            <p class="text-3xl font-semibold text-blue-600 mb-2">
+            <p class="text-3xl font-semibold text-indigo-700 dark:text-indigo-400 mb-2">
               {{ formatPrice(product?.price) }}원
             </p>
 
