@@ -42,7 +42,7 @@
           ]"
         />
       </div>
-      <section class="relative py-24 overflow-hidden border-b border-neutral-200 dark:border-zinc-800">
+      <section class="relative py-10 sm:py-16 overflow-hidden border-b border-neutral-200 dark:border-zinc-800">
         <div
           class="absolute inset-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-transparent blur-3xl opacity-70"
         ></div>

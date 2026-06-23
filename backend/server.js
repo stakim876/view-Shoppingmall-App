@@ -732,6 +732,7 @@ app.post("/api/ai/recommend", async (req, res) => {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     const intent = await extractRecommendIntent(prompt, apiKey);
+    // intent = { budget, category, keywords } — OpenAI 또는 규칙 기반
     const budgetMax = Number.isFinite(intent.budget) ? Number(intent.budget) : null;
     const category = normalizeDbCategory(intent.category || null);
     const keywords = normalizeRecommendKeywords(intent.keywords, category);
@@ -752,6 +753,7 @@ app.post("/api/ai/recommend", async (req, res) => {
       params.push(`%${kw}%`, `%${kw}%`, `%${kw}%`);
     }
     if (keywordClauses.length > 0) {
+      // 키워드 여러 개는 OR — AND면 결과가 너무 비어서 fallback 자주 발생
       where.push(`(${keywordClauses.join(" OR ")})`);
     }
 

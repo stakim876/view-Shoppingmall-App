@@ -7,17 +7,13 @@
     <div
       class="bg-white/85 backdrop-blur-xl border border-white/70 
              shadow-[0_6px_24px_rgba(31,38,135,0.12)] rounded-3xl 
-             p-10 w-[380px] text-center transition-all duration-500"
+             p-6 sm:p-10 w-full max-w-[380px] mx-4 text-center transition-all duration-500"
     >
       <div class="flex items-center justify-center mb-5">
-        <img
-          src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
-          alt="My Shop"
-          class="mix-blend-screen h-24 w-auto sm:h-28 sm:w-auto object-contain opacity-90 drop-shadow-[0_4px_10px_rgba(59,130,246,0.12)]"
-        />
+        <BrandLogo size="lg" stacked show-tagline />
       </div>
       <p class="text-sm text-gray-500 mb-8 tracking-[0.01em]">
-        Curated for your style.
+        {{ BRAND_TAGLINE_EN }}
       </p>
 
       <form @submit.prevent="login" class="flex flex-col gap-5">
@@ -147,6 +143,8 @@ import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../../store/auth";
 import { useToastStore } from "../../store/toast";
 import { useWishlistStore } from "../../store/wishlist";
+import BrandLogo from "@/components/brand/BrandLogo.vue";
+import { BRAND_TAGLINE_EN } from "@/lib/brand.js";
 import { trackAuthEvent } from "../../lib/analytics";
 
 const email = ref("");

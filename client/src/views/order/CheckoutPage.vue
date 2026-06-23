@@ -199,7 +199,7 @@ const handlePaymentError = (errorMessage) => {
 
 <template>
   <div
-    class="min-h-screen px-8 py-12 
+    class="min-h-screen px-4 py-8 sm:px-8 sm:py-12 
            bg-gradient-to-b from-slate-100 to-slate-200 
            dark:from-zinc-950 dark:to-neutral-950
            transition-colors duration-300 flex flex-col items-center"
@@ -218,7 +218,7 @@ const handlePaymentError = (errorMessage) => {
     >
       <div
         class="bg-white/50 dark:bg-white/10 backdrop-blur-md 
-               border border-white/40 rounded-2xl p-8
+               border border-white/40 rounded-2xl p-4 sm:p-8
                shadow-[0_8px_32px_rgba(31,38,135,0.15)] 
                hover:shadow-[0_0_12px_rgba(99,102,241,0.2)] transition-all"
       >
@@ -297,7 +297,7 @@ const handlePaymentError = (errorMessage) => {
 
       <div
         class="bg-white/50 dark:bg-white/10 backdrop-blur-md 
-               border border-white/40 rounded-2xl p-8
+               border border-white/40 rounded-2xl p-4 sm:p-8
                shadow-[0_8px_32px_rgba(31,38,135,0.15)] 
                hover:shadow-[0_0_12px_rgba(99,102,241,0.2)] transition-all"
       >

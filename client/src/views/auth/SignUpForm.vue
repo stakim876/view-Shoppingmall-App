@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 flex items-center justify-center">
-    <div class="w-full max-w-xl p-12 bg-white rounded-2xl shadow-2xl">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 flex items-center justify-center px-4">
+    <div class="w-full max-w-xl mx-4 p-6 sm:p-12 bg-white rounded-2xl shadow-2xl">
       <div class="flex items-center justify-center mb-5">
-        <img src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png" alt="Myshop" class="mix-blend-screen h-24 w-auto sm:h-28 sm:w-auto object-contain" />
+        <BrandLogo size="lg" />
       </div>
       <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">회원가입</h2>
 
@@ -56,7 +56,7 @@
 
         <button
           type="submit"
-          class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition"
+          class="w-full shop-btn-primary py-3 rounded-lg text-lg font-semibold"
         >
           회원가입
         </button>
@@ -77,6 +77,7 @@ import api from '../../lib/api';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
 import { useToastStore } from '../../store/toast';
+import BrandLogo from '@/components/brand/BrandLogo.vue';
 
 const email = ref('');
 const password = ref('');

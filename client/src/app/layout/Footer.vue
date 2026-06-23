@@ -1,28 +1,19 @@
 ﻿<template>
   <footer
-    class="text-sm
-           bg-gradient-to-b from-indigo-50/70 via-slate-100 to-slate-200
-           dark:from-zinc-950 dark:via-indigo-950/20 dark:to-neutral-950
-           border-t border-indigo-200/60 dark:border-indigo-900/35"
+    class="text-sm bg-slate-100 dark:bg-zinc-950 border-t border-slate-200/80 dark:border-slate-800/80"
   >
     <div class="max-w-6xl mx-auto px-6 py-10">
       <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
         <div class="flex-shrink-0 flex flex-col items-start gap-2">
-          <router-link to="/home" class="flex items-center hover:opacity-90 transition opacity-95">
-            <img
-              src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
-              alt="Myshop"
-              class="h-16 w-auto sm:h-20 sm:w-auto object-contain drop-shadow-[0_2px_8px_rgba(148,163,184,0.18)]"
-            />
-          </router-link>
-          <p class="text-slate-600 dark:text-white/80 text-xs max-w-[200px]">
-            {{ slogan }}
+          <BrandLogo size="sm" link-to="/home" />
+          <p class="text-slate-600 dark:text-white/80 text-xs max-w-[220px]">
+            {{ BRAND_TAGLINE }}
           </p>
         </div>
 
         <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           <div>
-            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-indigo-700/35 dark:border-indigo-500/35 inline-block">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-slate-300/80 dark:border-slate-600/50 inline-block">
               고객센터
             </h3>
             <ul class="space-y-1.5 text-slate-700 dark:text-white/90">
@@ -52,7 +43,7 @@
             </ul>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-indigo-700/35 dark:border-indigo-500/35 inline-block">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-slate-300/80 dark:border-slate-600/50 inline-block">
               배송/반품지 주소
             </h3>
             <p class="text-slate-700 dark:text-white/90 leading-relaxed">
@@ -61,7 +52,7 @@
             </p>
           </div>
           <div>
-            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-indigo-700/35 dark:border-indigo-500/35 inline-block">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-3 pb-1 border-b border-slate-300/80 dark:border-slate-600/50 inline-block">
               계좌번호
             </h3>
             <ul class="space-y-1.5 text-slate-700 dark:text-white/90">
@@ -96,6 +87,8 @@
 <script setup>
 import { onMounted } from "vue";
 import { fetchVisitorStats } from "../../lib/analytics.js";
+import BrandLogo from "@/components/brand/BrandLogo.vue";
+import { BRAND_TAGLINE, BRAND_NAME } from "@/lib/brand.js";
 import { getKakaoChatUrl } from "../../lib/kakaoChat.js";
 import { visitorStats } from "../../lib/visitorStats.js";
 
@@ -111,8 +104,6 @@ onMounted(async () => {
     visitorStats.value = null;
   }
 });
-
-const slogan = "세련된 선택";
 
 const contact = {
   phone: "010-5599-8710",
@@ -134,7 +125,7 @@ const bank = {
 };
 
 const company = {
-  name: "My Shop",
+  name: BRAND_NAME,
   representative: "김승태",
   address: "경기도 수원시",
   bizNo: "123-45-67890",

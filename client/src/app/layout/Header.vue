@@ -5,10 +5,11 @@ import { useCartStore } from "../../store/cart";
 import { useWishlistStore } from "../../store/wishlist";
 import { useAuthStore } from "../../store/auth";
 import { storeToRefs } from "pinia";
-import { ShoppingCart, Moon, Sun, Search, Sparkles, Megaphone, X } from "lucide-vue-next";
+import { ShoppingCart, Moon, Sun, Search, Sparkles, Megaphone, X, Menu } from "lucide-vue-next";
 import api from "../../lib/api.js";
 import { getKakaoChatUrl } from "../../lib/kakaoChat.js";
 import { useTheme } from "@/composables/useTheme";
+import BrandLogo from "@/components/brand/BrandLogo.vue";
 const router = useRouter();
 const route = useRoute();
 const cart = useCartStore();
@@ -27,10 +28,26 @@ const popularSearchesKey = "myshop_popular_searches";
 const popularSearchMap = ref({});
 const serverPopularSearches = ref([]);
 const highlightedIndex = ref(-1);
+const mobileMenuOpen = ref(false);
+
+const closeMobileMenu = () => {
+  mobileMenuOpen.value = false;
+};
+
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value;
+};
 
 const toggleDarkMode = () => {
   toggleTheme();
 };
+
+watch(
+  () => route.fullPath,
+  () => {
+    closeMobileMenu();
+  }
+);
 
 watch(
   () => route.query.q,
@@ -254,7 +271,8 @@ const loadNoticeBanner = async () => {
   try {
     const res = await api.get("/notices", { params: { limit: 1 } });
     const list = res.data?.notices || [];
-    bannerNotice.value = list[0] || null;
+    const isDemoNotice = (notice) => /포트폴리오|데모/i.test(String(notice?.title || ""));
+    bannerNotice.value = list.find((notice) => !isDemoNotice(notice)) || null;
     const dismissed = localStorage.getItem("notice_banner_dismissed");
     bannerClosed.value =
       Boolean(bannerNotice.value) && dismissed === String(bannerNotice.value.id);
@@ -376,7 +394,7 @@ const secondaryNavItems = computed(() => {
     </div>
 
     <div
-      class="flex items-center justify-start sm:justify-center gap-4 sm:gap-6 px-4 py-2.5 text-xs sm:text-sm leading-none
+      class="hidden sm:flex items-center justify-center gap-4 sm:gap-6 px-4 py-2.5 text-xs sm:text-sm leading-none
              overflow-x-auto no-scrollbar whitespace-nowrap
              bg-slate-50/95 dark:bg-slate-900
              border-b border-slate-200/70 dark:border-slate-700/55"
@@ -407,18 +425,7 @@ const secondaryNavItems = computed(() => {
              bg-gradient-to-b from-white to-slate-50/95 dark:from-zinc-950/98 dark:to-neutral-950/98
              border-b border-slate-200/80 dark:border-slate-700/55"
     >
-      <router-link
-        to="/home"
-        aria-label="My Shop 홈으로 이동"
-        class="order-1 flex items-center justify-start hover:opacity-90 transition shrink-0 overflow-visible h-14 sm:h-[4.25rem] md:h-[4.7rem] w-[min(48vw,16rem)] sm:w-[19rem] md:w-[21rem] rounded-md focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(99, 102, 241,0.38)]"
-      >
-        <img
-          src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
-          alt=""
-          role="presentation"
-          class="block h-full w-full max-h-full object-contain object-left shrink-0 origin-left scale-[1.48] sm:scale-[1.42] md:scale-[1.5] opacity-95 drop-shadow-[0_2px_10px_rgba(148,163,184,0.18)]"
-        />
-      </router-link>
+      <BrandLogo size="md" link-to="/home" class="order-1 shrink-0 hover:opacity-95 transition" />
 
       <div class="relative order-3 basis-full sm:order-2 sm:basis-auto flex-1 max-w-xl mx-0 sm:mx-4 mt-1 sm:mt-0">
         <div
@@ -583,6 +590,17 @@ const secondaryNavItems = computed(() => {
           />
         </button>
 
+        <button
+          type="button"
+          @click="toggleMobileMenu"
+          class="header-icon-btn sm:hidden"
+          :aria-expanded="mobileMenuOpen"
+          aria-controls="mobile-header-menu"
+          aria-label="메뉴 열기"
+        >
+          <Menu class="w-5 h-5" />
+        </button>
+
         <div v-if="auth.isLoggedIn" class="hidden sm:flex items-center gap-2">
           <span class="header-user-text hidden sm:inline">
             {{ auth.user?.name }}님
@@ -628,7 +646,7 @@ const secondaryNavItems = computed(() => {
 
     <div class="group/cat w-full">
       <div
-        class="category-glass-bar relative flex items-center gap-2 overflow-x-auto overflow-y-hidden px-4 py-3 no-scrollbar
+        class="category-glass-bar relative flex items-center gap-2 overflow-x-auto overflow-y-hidden px-3 sm:px-4 py-2 sm:py-3 no-scrollbar
                bg-slate-50/95 dark:bg-zinc-950/95
                border-b border-slate-200/80 dark:border-slate-700/55
                shadow-[0_10px_26px_-22px_rgba(15,23,42,0.34)]
@@ -646,7 +664,7 @@ const secondaryNavItems = computed(() => {
         :class="[
           'relative z-10 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
           isCategoryActive(item)
-            ? 'shop-btn-primary text-white dark:text-white border-indigo-900/25'
+            ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900/20'
             : 'shop-btn-secondary'
         ]"
       >
@@ -654,6 +672,88 @@ const secondaryNavItems = computed(() => {
       </button>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="mobileMenuOpen"
+        class="fixed inset-0 z-[60] sm:hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="모바일 메뉴"
+      >
+        <button
+          type="button"
+          class="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+          aria-label="메뉴 닫기"
+          @click="closeMobileMenu"
+        />
+        <div
+          id="mobile-header-menu"
+          class="absolute right-0 top-0 flex h-full w-[min(100%,18rem)] flex-col
+                 border-l border-slate-200/80 bg-white shadow-2xl
+                 dark:border-slate-700/60 dark:bg-zinc-950"
+        >
+          <div class="flex items-center justify-between border-b border-slate-200/80 px-4 py-3 dark:border-slate-700/60">
+            <span class="text-sm font-semibold text-slate-800 dark:text-slate-100">메뉴</span>
+            <button
+              type="button"
+              class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              aria-label="메뉴 닫기"
+              @click="closeMobileMenu"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="border-b border-slate-200/80 px-4 py-4 dark:border-slate-700/60">
+            <template v-if="auth.isLoggedIn">
+              <p class="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">{{ auth.user?.name }}님</p>
+              <div class="flex flex-col gap-2">
+                <router-link to="/mypage" class="mobile-menu-link" @click="closeMobileMenu">마이페이지</router-link>
+                <router-link
+                  v-if="auth.user?.role === 'admin'"
+                  to="/admin"
+                  class="mobile-menu-link"
+                  @click="closeMobileMenu"
+                >
+                  관리자
+                </router-link>
+                <button type="button" class="mobile-menu-link text-left" @click="logout">로그아웃</button>
+              </div>
+            </template>
+            <template v-else>
+              <div class="flex flex-col gap-2">
+                <router-link to="/login" class="shop-btn-primary rounded-xl px-4 py-2.5 text-center text-sm" @click="closeMobileMenu">
+                  로그인
+                </router-link>
+                <router-link to="/signup" class="mobile-menu-link text-center" @click="closeMobileMenu">회원가입</router-link>
+              </div>
+            </template>
+          </div>
+
+          <nav class="flex-1 overflow-y-auto px-2 py-3" aria-label="바로가기">
+            <template v-for="link in topLinks" :key="'mobile-' + link.label">
+              <router-link
+                v-if="!link.external"
+                :to="link.path"
+                class="mobile-menu-link block"
+                @click="closeMobileMenu"
+              >
+                {{ link.label }}
+              </router-link>
+              <button
+                v-else
+                type="button"
+                class="mobile-menu-link block w-full text-left"
+                @click="openExternal(link.url); closeMobileMenu()"
+              >
+                {{ link.label }}
+              </button>
+            </template>
+          </nav>
+        </div>
+      </div>
+    </Teleport>
   </header>
 </template>
 
@@ -701,5 +801,10 @@ const secondaryNavItems = computed(() => {
   .header-wish-shimmer {
     animation: none;
   }
+}
+
+.mobile-menu-link {
+  @apply rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition
+         hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/80;
 }
 </style>

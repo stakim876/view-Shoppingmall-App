@@ -3,7 +3,7 @@
     class="min-h-dvh min-h-screen bg-gray-50 transition-colors duration-300
            dark:bg-[radial-gradient(ellipse_120%_80%_at_50%_-25%,rgba(99, 102, 241,0.055),transparent_48%),#09090b]"
   >
-    <Header v-if="!isAuthPage" />
+    <Header v-if="showShopChrome" />
     <router-view />
     <Toast />
   </div>
@@ -19,7 +19,14 @@ import { useTheme } from "@/composables/useTheme";
 const route = useRoute();
 const { initTheme } = useTheme();
 
-const isAuthPage = computed(() => ["/", "/login", "/signup"].includes(route.path));
+const authOnlyPaths = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin-signup"];
+
+const showShopChrome = computed(() => {
+  if (route.path === "/") return false;
+  if (authOnlyPaths.includes(route.path)) return false;
+  if (route.path.startsWith("/admin")) return false;
+  return true;
+});
 
 onMounted(() => {
   initTheme();

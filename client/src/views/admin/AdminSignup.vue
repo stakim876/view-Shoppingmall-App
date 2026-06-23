@@ -7,16 +7,11 @@
     <div
       class="bg-white/80 backdrop-blur-xl border border-white/50 
              shadow-[0_8px_32px_rgba(31,38,135,0.2)] rounded-3xl 
-             p-10 w-[380px] text-center transition-all duration-500"
+             p-6 sm:p-10 w-full max-w-[380px] mx-4 text-center transition-all duration-500"
     >
       <div class="flex items-center justify-center mb-5">
-        <img
-          src="/images/0232cce0-e560-4609-9b38-37c5e6165205.png"
-          alt="My Shop"
-          class="mix-blend-screen h-32 w-auto sm:h-40 sm:w-auto object-contain"
-        />
+        <BrandLogo size="lg" stacked show-tagline />
       </div>
-      <p class="text-sm text-gray-500 mb-2">당신의 취향을 모은 셀렉트샵</p>
       <h2 class="text-xl font-bold text-gray-800 mb-6">관리자 회원가입</h2>
 
       <form @submit.prevent="handleSignup" class="flex flex-col gap-4 text-left">
@@ -117,7 +112,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import api from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
-import { useToastStore } from "../../store/toast";
+import BrandLogo from "@/components/brand/BrandLogo.vue";
 
 const email = ref("");
 const password = ref("");

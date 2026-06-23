@@ -73,7 +73,7 @@ const checkout = () => {
 
 <template>
   <div
-    class="min-h-screen px-8 py-10 
+    class="min-h-screen px-4 py-8 sm:px-8 sm:py-10 
            bg-gradient-to-b from-slate-100 to-slate-200 
            dark:from-zinc-950 dark:to-neutral-950
            transition-colors duration-300"
@@ -106,21 +106,21 @@ const checkout = () => {
       <div
         v-for="item in cart.items"
         :key="item.id"
-        class="flex items-center justify-between 
+        class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between 
                bg-white/50 dark:bg-white/10 backdrop-blur-md 
                border border-white/40 rounded-2xl 
                shadow-[0_8px_32px_rgba(31,38,135,0.15)] 
                hover:shadow-[0_0_12px_rgba(99,102,241,0.25)] 
-               transition-all duration-300 p-5"
+               transition-all duration-300 p-4 sm:p-5"
       >
-        <div class="flex items-center space-x-5">
+        <div class="flex items-center gap-4 sm:space-x-5 min-w-0">
           <img
             :src="normalizeImageUrl(item.image_url)"
             alt="상품 이미지"
-            class="w-20 h-20 object-contain rounded-lg shadow-sm"
+            class="w-20 h-20 object-contain rounded-lg shadow-sm shrink-0"
           />
-          <div>
-            <h2 class="font-semibold text-gray-800 dark:text-gray-100">
+          <div class="min-w-0">
+            <h2 class="font-semibold text-gray-800 dark:text-gray-100 truncate">
               {{ item.name }}
             </h2>
             <p class="text-gray-500 dark:text-gray-400 text-sm">
@@ -141,7 +141,7 @@ const checkout = () => {
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <button
             @click="cart.decreaseQuantity(item.id)"
             class="px-3 py-1 rounded-lg bg-white/70 dark:bg-white/20 
