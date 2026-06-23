@@ -27,7 +27,9 @@ import {
 } from "./lib/adminCrm.js";
 import { buildLoginAttemptKey, createLoginAttemptStore } from "./lib/loginSecurity.js";
 import { verifyCaptchaToken } from "./lib/captcha.js";
-import { sendPasswordResetEmail, sendRestockAlertEmail } from "./lib/mailer.js";
+import { sendPasswordResetEmail, sendRestockAlertEmail, warmupDevMailer } from "./lib/mailer.js";
+import { ensureDatabaseSchema } from "./lib/schemaBootstrap.js";
+import { verifyPortOnePayment, isPortOneVerificationEnabled } from "./lib/portone.js";
 import { buildTrackingUrl, getCarrierLabel, isValidCarrierCode, listCarriers } from "./lib/tracking.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -326,7 +328,6 @@ async function openAiChatCompletion(prompt, apiKey) {
   throw lastErr;
 }
 
-/** OpenAI 미설정·한도·오류 시에도 쇼핑몰 데모가 끊기지 않도록 고정 안내 문구 */
 function shoppingHelpFallback(userMessage) {
   const t = String(userMessage || "").trim();
   const lower = t.toLowerCase();
@@ -407,10 +408,8 @@ function shoppingHelpFallback(userMessage) {
   ].join("\n");
 }
 
-/** DB products.category 에 실제로 쓰는 값 (시드·관리자 등록 기준) */
 const DB_PRODUCT_CATEGORIES = ["디지털/가전", "악세서리", "패션잡화", "의류", "기타"];
 
-/** 자연어·OpenAI 응답 → DB 카테고리 별칭 (소문자 키) */
 const CATEGORY_ALIAS_TO_DB = {
   노트북: "디지털/가전",
   맥북: "디지털/가전",
@@ -467,7 +466,6 @@ const CATEGORY_ALIAS_TO_DB = {
   기타: "기타",
 };
 
-/** 문장 패턴 → DB 카테고리 (앞쪽 규칙이 우선) */
 const CATEGORY_INFER_RULES = [
   { category: "악세서리", pattern: /백팩|배낭|가방|backpack/i },
   { category: "악세서리", pattern: /이어폰|에어팟|헤드폰|earphone|buds/i },
@@ -482,7 +480,6 @@ const CATEGORY_INFER_RULES = [
   { category: "디지털/가전", pattern: /디지털|가전|전자/i },
 ];
 
-/** name/description LIKE 검색용 핵심 키워드 추출 */
 const PRODUCT_KEYWORD_HINTS = [
   [/백팩|배낭|backpack/i, "백팩"],
   [/데님|denim/i, "데님"],
@@ -755,7 +752,6 @@ app.post("/api/ai/recommend", async (req, res) => {
       params.push(`%${kw}%`, `%${kw}%`, `%${kw}%`);
     }
     if (keywordClauses.length > 0) {
-      // 키워드가 여러 개일 때 전부 AND로 묶으면 결과가 과도하게 비어 fallback이 자주 발생하므로 OR로 완화
       where.push(`(${keywordClauses.join(" OR ")})`);
     }
 
@@ -858,95 +854,9 @@ const db = mysql.createPool(mysqlConfig);
 console.log("✅ MySQL Connection Pool 생성 완료");
 
 async function ensureReviewAndGalleryTables() {
-  try {
-
-     await db.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL,
-        name VARCHAR(100),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    await db.query(
-      `CREATE TABLE IF NOT EXISTS product_images (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        product_id INT NOT NULL,
-        image_url VARCHAR(500) NOT NULL,
-        sort_order INT DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_product_id (product_id),
-        CONSTRAINT fk_product_images_product
-          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
-    );
-
-    await db.query(
-      `CREATE TABLE IF NOT EXISTS reviews (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        product_id INT NOT NULL,
-        user_id INT NOT NULL,
-        rating TINYINT NOT NULL COMMENT '1~5',
-        content TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_reviews_product_id (product_id),
-        INDEX idx_reviews_user_id (user_id),
-        CONSTRAINT fk_reviews_product
-          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-        CONSTRAINT fk_reviews_user
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
-    );
-
-    await db.query(
-      `CREATE TABLE IF NOT EXISTS ai_recommend_events (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        event_name VARCHAR(40) NOT NULL,
-        prompt_text TEXT NULL,
-        product_id INT NULL,
-        source VARCHAR(40) NULL,
-        session_id VARCHAR(100) NULL,
-        user_id INT NULL,
-        meta_json JSON NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_ai_recommend_events_name_created (event_name, created_at),
-        INDEX idx_ai_recommend_events_product_created (product_id, created_at)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
-    );
-
-    await db.query(
-      `CREATE TABLE IF NOT EXISTS search_events (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        search_term VARCHAR(200) NOT NULL,
-        user_id INT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_search_term_created (search_term, created_at),
-        INDEX idx_search_created (created_at)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
-    );
-
-    await db.query(
-      `CREATE TABLE IF NOT EXISTS visitor_daily (
-        visit_date DATE NOT NULL PRIMARY KEY,
-        view_count INT NOT NULL DEFAULT 0
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
-    );
-    await db.query(
-      `CREATE TABLE IF NOT EXISTS visitor_total (
-        id TINYINT NOT NULL PRIMARY KEY DEFAULT 1,
-        view_count BIGINT NOT NULL DEFAULT 0
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
-    );
-    await db.query(`INSERT IGNORE INTO visitor_total (id, view_count) VALUES (1, 0)`);
-
-    console.log("✅ 리뷰/갤러리 테이블 점검 완료");
-  } catch (err) {
-    console.warn("⚠️ 리뷰/갤러리 테이블 자동 생성 실패:", err.message);
-  }
+  return ensureDatabaseSchema(db);
 }
 
-/** Railway 등에서 SQL 붙여넣기가 불안할 때: Variables에 ADMIN_BOOTSTRAP_* 넣고 재배포 후 로그인, 그다음 변수 제거 */
 async function bootstrapAdminFromEnv() {
   const rawEmail = process.env.ADMIN_BOOTSTRAP_EMAIL;
   const plain = process.env.ADMIN_BOOTSTRAP_PASSWORD;
@@ -980,7 +890,22 @@ async function bootstrapAdminFromEnv() {
   try {
     const [rows] = await db.query("SELECT 1 AS ok");
     console.log("✅ DB 연결 테스트 OK:", rows[0]);
-    await ensureReviewAndGalleryTables();
+    const schemaSummary = await ensureReviewAndGalleryTables();
+    if (schemaSummary?.tables?.length) {
+      console.log(`✅ DB 테이블 자동 생성: ${schemaSummary.tables.join(", ")}`);
+    }
+    if (schemaSummary?.seededProducts > 0) {
+      console.log(`✅ 데모 상품 ${schemaSummary.seededProducts}건 시드 완료`);
+    }
+    if (schemaSummary?.seededCoupons > 0) {
+      console.log(`✅ 데모 쿠폰 ${schemaSummary.seededCoupons}건 시드 완료 (WELCOME10, SAVE3000)`);
+    }
+    if (isPortOneVerificationEnabled()) {
+      console.log("✅ 포트원 결제 서버 검증 활성화");
+    } else {
+      console.log("ℹ️ 포트원 API 키 없음 — 결제는 프론트 완료 후 주문만 생성 (PORTONE_API_KEY/SECRET 설정 시 검증)");
+    }
+    warmupDevMailer().catch(() => {});
     await bootstrapAdminFromEnv();
     if (isElasticsearchEnabled()) {
       try {
@@ -1270,11 +1195,11 @@ app.post("/api/coupons/validate", async (req, res) => {
   if (isNaN(subtotalNum) || subtotalNum < 0) {
     return res.status(400).json({ valid: false, message: "주문 금액이 올바르지 않습니다." });
   }
-  const result = await validateCoupon(db, code, subtotalNum); // lib/coupon.js에서 MySQL로 쿠폰 조회
+  const result = await validateCoupon(db, code, subtotalNum);
   if (!result.valid) {
     return res.status(200).json({ valid: false, message: result.message });
   }
-  res.json({ // Vue(체크아웃)로 검증 결과·할인액 전달
+  res.json({
     valid: true,
     message: "쿠폰이 적용되었습니다.",
     discount: result.discount,
@@ -1418,7 +1343,7 @@ app.get("/api/products", async (req, res) => {
 app.get("/api/products/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    const [results] = await db.query("SELECT * FROM products WHERE id = ?", [id]); // MySQL에서 상품 1건 조회
+    const [results] = await db.query("SELECT * FROM products WHERE id = ?", [id]);
     if (results.length === 0) {
       return res.status(404).json({ error: "상품을 찾을 수 없습니다." });
     }
@@ -1432,7 +1357,7 @@ app.get("/api/products/:id", async (req, res) => {
     } catch (_) {
       product.images = [product.image_url];
     }
-    res.json(product); // 조회한 상품 데이터를 Vue로 전달
+    res.json(product);
   } catch (err) {
     console.error("❌ 상품 상세 조회 오류:", err);
     res.status(500).json({ error: "상품 조회 실패", message: err.message });
@@ -1609,6 +1534,63 @@ app.put("/api/products/:id", authenticateToken, requireAdmin, async (req, res) =
   }
 });
 
+app.get("/api/reviews", async (req, res) => {
+  const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
+  try {
+    const [rows] = await db.query(
+      `SELECT r.id, r.product_id, r.user_id, r.rating, r.content, r.created_at,
+              u.name AS user_name, p.name AS product_name
+       FROM reviews r
+       LEFT JOIN users u ON r.user_id = u.id
+       LEFT JOIN products p ON r.product_id = p.id
+       ORDER BY r.created_at DESC
+       LIMIT ?`,
+      [limit]
+    );
+    return ok(res, { reviews: rows });
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return ok(res, { reviews: [] });
+    }
+    console.error("❌ 전체 리뷰 조회 오류:", err);
+    return fail(res, 500, "REVIEWS_LIST_ERROR", "리뷰 목록을 불러오지 못했습니다.");
+  }
+});
+
+app.post("/api/quote-inquiries", async (req, res) => {
+  const name = String(req.body?.name || "").trim();
+  const email = normalizeEmail(req.body?.email);
+  const phone = String(req.body?.phone || "").trim();
+  const message = String(req.body?.message || "").trim();
+
+  if (!name || !email || !message) {
+    return fail(res, 400, "INVALID_INPUT", "이름, 이메일, 문의 내용은 필수입니다.");
+  }
+  if (!isValidEmail(email)) {
+    return fail(res, 400, "INVALID_EMAIL", "올바른 이메일 형식이 아닙니다.");
+  }
+
+  try {
+    await db.query(
+      `INSERT INTO quote_inquiries (name, email, phone, message) VALUES (?, ?, ?, ?)`,
+      [name, email, phone || null, message]
+    );
+    console.log(`📩 견적문의 접수: ${name} <${email}>`);
+    return ok(res, {}, "견적 문의가 접수되었습니다. 확인 후 연락드리겠습니다.");
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(
+        res,
+        500,
+        "QUOTE_TABLE_MISSING",
+        "견적문의 테이블이 없습니다. 서버를 재시작해 주세요."
+      );
+    }
+    console.error("❌ 견적문의 저장 오류:", err);
+    return fail(res, 500, "QUOTE_INQUIRY_ERROR", "문의 접수 중 오류가 발생했습니다.");
+  }
+});
+
 app.get("/api/products/:id/reviews", async (req, res) => {
   const productId = Number(req.params.id);
   if (!productId) {
@@ -1761,7 +1743,29 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
     }
 
     if (imp_uid) {
-      console.log(`✅ 결제 검증: imp_uid=${imp_uid}, merchant_uid=${merchant_uid}`);
+      try {
+        const verification = await verifyPortOnePayment({
+          impUid: imp_uid,
+          expectedAmount: finalTotal,
+        });
+        if (verification.skipped) {
+          console.log(`ℹ️ 결제 검증 생략(포트원 API 미설정): imp_uid=${imp_uid}`);
+        } else if (!verification.verified) {
+          await conn.rollback();
+          return fail(
+            res,
+            400,
+            "PAYMENT_VERIFICATION_FAILED",
+            "결제 검증에 실패했습니다. 결제 상태를 확인한 뒤 다시 시도해주세요."
+          );
+        } else {
+          console.log(`✅ 결제 검증 완료: imp_uid=${imp_uid}, amount=${verification.paidAmount}`);
+        }
+      } catch (verifyErr) {
+        await conn.rollback();
+        console.error("❌ 결제 검증 오류:", verifyErr.message);
+        return fail(res, 502, "PAYMENT_VERIFICATION_ERROR", "결제 검증 중 오류가 발생했습니다.");
+      }
     }
 
     let orderColumns = "user_id, recipient_name, address, phone, total_price, status, created_at";
@@ -2434,7 +2438,7 @@ app.post("/api/auth/login", async (req, res) => {
   }
 
   try {
-    const [users] = await db.query("SELECT * FROM users WHERE email = ?", [ // MySQL에서 유저 조회
+    const [users] = await db.query("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
 
@@ -2469,7 +2473,7 @@ app.post("/api/auth/login", async (req, res) => {
       role,
     });
 
-    res.json({ // Vue에 토큰·유저 정보 전달
+    res.json({
       success: true,
       message: "로그인 성공",
       token: token,
@@ -2505,8 +2509,23 @@ app.post("/api/auth/forgot-password", async (req, res) => {
         toEmail: user.email,
         resetUrl,
       });
+      const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
       if (!mailResult.sent) {
         console.log(`🔐 비밀번호 재설정 링크 (${user.email}): ${resetUrl}`);
+        if (!isProduction) {
+          return res.json({
+            success: true,
+            message: "SMTP가 설정되지 않아 아래 링크로 직접 재설정할 수 있습니다.",
+            devResetUrl: resetUrl,
+          });
+        }
+      } else if (mailResult.previewUrl && !isProduction) {
+        return res.json({
+          success: true,
+          message: "개발용 메일함에 재설정 안내를 보냈습니다. 미리보기 링크를 열어주세요.",
+          devResetUrl: resetUrl,
+          mailPreviewUrl: mailResult.previewUrl,
+        });
       }
     }
 

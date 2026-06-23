@@ -1,30 +1,100 @@
 import nodemailer from "nodemailer";
 
-function buildTransport() {
+const PLACEHOLDER_SMTP_RE = /your-|example\.com|placeholder|xxxx/i;
+
+let etherealAccount = null;
+let etherealTransport = null;
+
+function isSmtpPlaceholder(value) {
+  return PLACEHOLDER_SMTP_RE.test(String(value || ""));
+}
+
+function isEtherealDevEnabled() {
+  const flag = String(process.env.SMTP_DEV_ETHEREAL || "").trim().toLowerCase();
+  if (flag === "false" || flag === "0") return false;
+  if (flag === "true" || flag === "1") return true;
+
+  const host = String(process.env.SMTP_HOST || "").trim();
+  const user = String(process.env.SMTP_USER || "").trim();
+  const pass = String(process.env.SMTP_PASS || "").trim();
+  if (!host || !user || !pass) return true;
+  if (isSmtpPlaceholder(host) || isSmtpPlaceholder(user) || isSmtpPlaceholder(pass)) return true;
+  return false;
+}
+
+async function getEtherealTransport() {
+  if (etherealTransport) return etherealTransport;
+  etherealAccount = await nodemailer.createTestAccount();
+  etherealTransport = nodemailer.createTransport({
+    host: "smtp.ethereal.email",
+    port: 587,
+    secure: false,
+    auth: {
+      user: etherealAccount.user,
+      pass: etherealAccount.pass,
+    },
+  });
+  console.log("📧 개발용 Ethereal SMTP 활성화:", etherealAccount.user);
+  return etherealTransport;
+}
+
+async function resolveTransport() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   const secure = String(process.env.SMTP_SECURE || "false") === "true";
-  if (!host || !user || !pass) return null;
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass },
-  });
+  if (host && user && pass && !isSmtpPlaceholder(host) && !isSmtpPlaceholder(user) && !isSmtpPlaceholder(pass)) {
+    return {
+      transporter: nodemailer.createTransport({
+        host,
+        port,
+        secure,
+        auth: { user, pass },
+      }),
+      fromAddress: process.env.SMTP_FROM || process.env.SMTP_USER,
+      mode: "smtp",
+    };
+  }
+
+  if (!isEtherealDevEnabled()) {
+    return null;
+  }
+
+  const transporter = await getEtherealTransport();
+  return {
+    transporter,
+    fromAddress: `"My Shop Dev" <${etherealAccount.user}>`,
+    mode: "ethereal",
+  };
 }
 
-export async function sendPasswordResetEmail({ toEmail, resetUrl }) {
-  const transporter = buildTransport();
-  if (!transporter) {
+async function sendMail(message) {
+  const resolved = await resolveTransport();
+  if (!resolved) {
     return { sent: false, reason: "smtp_not_configured" };
   }
 
-  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
-  await transporter.sendMail({
-    from: fromAddress,
+  const info = await resolved.transporter.sendMail({
+    from: resolved.fromAddress,
+    ...message,
+  });
+
+  const previewUrl = nodemailer.getTestMessageUrl(info);
+  if (previewUrl) {
+    console.log(`📧 메일 미리보기 (${message.subject}): ${previewUrl}`);
+  }
+
+  return {
+    sent: true,
+    previewUrl: previewUrl || null,
+    mode: resolved.mode,
+  };
+}
+
+export async function sendPasswordResetEmail({ toEmail, resetUrl }) {
+  return sendMail({
     to: toEmail,
     subject: "[My Shop] 비밀번호 재설정 안내",
     html: `
@@ -41,19 +111,10 @@ export async function sendPasswordResetEmail({ toEmail, resetUrl }) {
       </div>
     `,
   });
-
-  return { sent: true };
 }
 
 export async function sendRestockAlertEmail({ toEmail, productName, productUrl }) {
-  const transporter = buildTransport();
-  if (!transporter) {
-    return { sent: false, reason: "smtp_not_configured" };
-  }
-
-  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
-  await transporter.sendMail({
-    from: fromAddress,
+  return sendMail({
     to: toEmail,
     subject: `[My Shop] ${productName} 재입고 알림`,
     html: `
@@ -70,6 +131,15 @@ export async function sendRestockAlertEmail({ toEmail, productName, productUrl }
       </div>
     `,
   });
+}
 
-  return { sent: true };
+export async function warmupDevMailer() {
+  if (!isEtherealDevEnabled()) return null;
+  try {
+    await getEtherealTransport();
+    return { ready: true };
+  } catch (err) {
+    console.warn("⚠️ Ethereal SMTP 준비 실패:", err.message);
+    return { ready: false, error: err.message };
+  }
 }

@@ -23,7 +23,6 @@ const refreshStock = async () => {
     }
     stockMap.value = map;
   } catch (_) {
-    // ignore: 장바구니 자체는 로컬 상태로 유지
   }
 };
 

@@ -10,7 +10,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000, // 10초 타임아웃
+  timeout: 10000,
 });
 
 api.interceptors.request.use(
@@ -42,7 +42,6 @@ api.interceptors.response.use(
       status === 401 ||
       (status === 403 && /유효하지 않은 토큰|인증 토큰/i.test(serverMessage));
 
-    // 비밀번호 틀림 등으로 로그인 API가 401을 줄 때는 "세션 만료" 처리하지 않음
     if (shouldResetAuth && !isAuthLogin) {
       clearAuthState();
       if (window.location.pathname !== "/login") {

@@ -162,7 +162,6 @@ const turnstileEl = ref(null);
 const turnstileWidgetId = ref(null);
 const router = useRouter();
 const route = useRoute();
-/** 이미 /login?redirect=/admin 이면 같은 링크로 이동해도 화면이 안 바뀌어 “안 눌림”처럼 보임 */
 const isAdminLoginFlow = computed(() => {
   const r = route.query.redirect;
   if (r == null) return false;

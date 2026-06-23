@@ -27,6 +27,22 @@
       </form>
 
       <p v-if="message" class="mt-4 text-sm text-green-600">{{ message }}</p>
+      <div
+        v-if="devResetUrl"
+        class="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-900"
+      >
+        <p class="font-medium mb-1">재설정 링크</p>
+        <a :href="devResetUrl" class="text-indigo-600 break-all hover:underline">{{ devResetUrl }}</a>
+      </div>
+      <div
+        v-if="mailPreviewUrl"
+        class="mt-4 p-3 rounded-lg bg-sky-50 border border-sky-200 text-sm text-sky-900"
+      >
+        <p class="font-medium mb-1">개발용 메일 미리보기 (Ethereal)</p>
+        <a :href="mailPreviewUrl" target="_blank" rel="noopener" class="text-indigo-600 break-all hover:underline">
+          {{ mailPreviewUrl }}
+        </a>
+      </div>
       <p v-if="error" class="mt-4 text-sm text-red-500">{{ error }}</p>
 
       <router-link to="/login" class="inline-block mt-6 text-sm text-indigo-600 hover:underline">
@@ -43,6 +59,8 @@ import { useToastStore } from "../../store/toast";
 
 const email = ref("");
 const message = ref("");
+const devResetUrl = ref("");
+const mailPreviewUrl = ref("");
 const error = ref("");
 const submitting = ref(false);
 const toast = useToastStore();
@@ -51,10 +69,14 @@ const submit = async () => {
   if (submitting.value) return;
   submitting.value = true;
   message.value = "";
+  devResetUrl.value = "";
+  mailPreviewUrl.value = "";
   error.value = "";
   try {
     const res = await api.post("/auth/forgot-password", { email: email.value });
     message.value = res.data?.message || "재설정 안내를 전송했습니다.";
+    devResetUrl.value = res.data?.devResetUrl || "";
+    mailPreviewUrl.value = res.data?.mailPreviewUrl || "";
     toast.success(message.value);
   } catch (err) {
     error.value = err.userMessage || "요청 처리 중 오류가 발생했습니다.";

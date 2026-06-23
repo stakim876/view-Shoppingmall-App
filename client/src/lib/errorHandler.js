@@ -18,7 +18,6 @@ export function getErrorMessage(error) {
     case 400:
       return message || "잘못된 요청입니다. 입력 정보를 확인해주세요.";
     case 401:
-      // 로그인 실패(401)도 같은 코드라서, 서버가 준 message(예: 비번 오류)를 우선 표시
       return message || "로그인이 필요합니다.";
     case 403:
       return "접근 권한이 없습니다.";

@@ -11,7 +11,7 @@ export const useToastStore = defineStore("toast", {
       const toast = {
         id,
         message,
-        type, // 'success', 'error', 'warning', 'info'
+        type,
         duration,
       };
 

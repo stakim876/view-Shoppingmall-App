@@ -1,11 +1,3 @@
-/**
- * Workbench 등에 붙여 넣을 SQL을 생성합니다 (bcrypt는 매번 새 salt라 해시 문자열이 달라짐).
- * 사용: npm run gen:admin-sql -- [이메일] [비밀번호] [DB이름]
- * 예: npm run gen:admin-sql -- admin@myshop.com MyShopAdmin1 railway
- *
- * 전체 SQL은 database/_gen_admin_sql_output.sql 에도 저장됩니다.
- * 터미널에서 해시가 줄바꿈·…로 잘리면 이 파일을 Workbench에서 여세요.
- */
 import bcrypt from "bcrypt";
 import { writeFileSync } from "fs";
 import { dirname, join } from "path";

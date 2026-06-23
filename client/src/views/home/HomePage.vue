@@ -55,7 +55,6 @@
         </div>
       </div>
 
-      <!-- AI 큐레이터 -->
       <section
         id="home-curator"
         class="relative mx-auto max-w-7xl px-4 sm:px-6 pb-10 scroll-mt-24"
@@ -151,7 +150,6 @@
           </aside>
 
           <div class="curator-canvas">
-            <!-- 로딩 -->
             <div v-if="aiRecommendLoading" class="curator-canvas-inner">
               <div class="curator-loading">
                 <div class="curator-loading-bar" />
@@ -168,7 +166,6 @@
               </div>
             </div>
 
-            <!-- 결과 -->
             <div v-else-if="aiRecommendedProducts.length > 0" class="curator-canvas-inner">
               <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
                 <div>
@@ -217,7 +214,6 @@
               </div>
             </div>
 
-            <!-- idle: 예시 대화 -->
             <div v-else class="curator-canvas-inner">
               <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
                 이렇게 사용해 보세요
@@ -286,7 +282,6 @@
         </p>
       </section>
 
-      <!-- 전체 카탈로그 (항상 표시) -->
     <section v-if="!loading && quickCategories.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-4 border-t border-slate-200/70 dark:border-slate-800/55">
       <div class="flex items-end justify-between gap-4">
         <div>
@@ -709,7 +704,6 @@ const trackSearch = async (term) => {
       userId: auth.user?.id || null,
     });
   } catch (_) {
-    // UX를 막지 않음
   }
 };
 
@@ -804,7 +798,6 @@ const sendAiRecommendEvent = async (eventName, extra = {}) => {
       meta: extra.meta || null,
     });
   } catch (_) {
-    // UX를 막지 않기 위해 이벤트 전송 실패는 무시
   }
 };
 

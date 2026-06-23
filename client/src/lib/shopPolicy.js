@@ -1,8 +1,3 @@
-/**
- * 클라이언트 .env:
- * - VITE_FREE_SHIPPING_MIN (원 단위, 기본 30000)
- * - VITE_SHIPPING_FEE (원 단위, 기본 3000)
- */
 export function getFreeShippingMinimumWon() {
   const raw = import.meta.env.VITE_FREE_SHIPPING_MIN;
   const fallback = 30000;
@@ -25,7 +20,6 @@ export function calculateShippingFee(subtotalWon, freeMinWon = getFreeShippingMi
   return subtotal >= freeMinWon ? 0 : shippingFeeWon;
 }
 
-/** 예: 30000 -> "3만원 이상 무료배송" */
 export function formatFreeShippingBadge(minWon = getFreeShippingMinimumWon()) {
   if (!minWon || minWon <= 0) return "배송비 안내 상품별 상이";
   if (minWon >= 10000 && minWon % 10000 === 0) {

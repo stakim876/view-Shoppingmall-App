@@ -57,7 +57,6 @@ export async function getPersonalizedRecommendations(db, userId, options = {}) {
         addCategoryWeight(row.category, 2);
       }
     } catch (_) {
-      // wishlist 테이블 없으면 무시
     }
   }
 

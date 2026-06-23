@@ -135,7 +135,6 @@ const trackSearch = async (term) => {
   try {
     await api.post("/analytics/search-events", { searchTerm: clean });
   } catch (_) {
-    // UX를 막지 않음
   }
 };
 

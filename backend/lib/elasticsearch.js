@@ -35,7 +35,6 @@ export async function ensureProductIndex() {
     await esRequest(`/${INDEX_NAME}`, { method: "HEAD" });
     return true;
   } catch {
-    // index missing
   }
   await esRequest(`/${INDEX_NAME}`, {
     method: "PUT",
@@ -81,7 +80,6 @@ export async function removeProductFromElasticsearch(productId) {
   try {
     await esRequest(`/${INDEX_NAME}/_doc/${productId}`, { method: "DELETE" });
   } catch (_) {
-    // already gone
   }
 }
 

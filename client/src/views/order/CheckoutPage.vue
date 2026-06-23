@@ -10,6 +10,7 @@ import api from "../../lib/api";
 import PortOnePayment from "./PortOnePayment.vue";
 import { formatPrice } from "../../lib/format";
 import { calculateShippingFee, getFreeShippingMinimumWon } from "@/lib/shopPolicy.js";
+import { isMockPaymentEnabled } from "@/lib/paymentConfig.js";
 
 const cart = useCartStore();
 const authStore = useAuthStore();
@@ -24,10 +25,11 @@ const phone = ref("");
 const email = ref("");
 const paymentWidgetRef = ref(null);
 const isProcessingPayment = ref(false);
-const paymentMethod = ref("card"); // 'card' | 'naverpay'
+const paymentMethod = ref("card");
+const mockPayment = isMockPaymentEnabled();
 
 const couponCode = ref("");
-const appliedCoupon = ref(null); // { code, discount, finalTotal }
+const appliedCoupon = ref(null);
 const isValidatingCoupon = ref(false);
 
 const userId = computed(() => authStore.user?.id || null);
@@ -407,13 +409,17 @@ const handlePaymentError = (errorMessage) => {
           :disabled="isProcessingPayment || totalItems === 0"
           class="shop-btn-primary mt-6 w-full py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {{ isProcessingPayment ? "결제 처리 중..." : `${formatPrice(finalTotal)}원 결제하기` }}
+          {{
+            isProcessingPayment
+              ? "결제 처리 중..."
+              : mockPayment
+                ? `${formatPrice(finalTotal)}원 테스트 주문하기`
+                : `${formatPrice(finalTotal)}원 결제하기`
+          }}
         </button>
       </div>
 
-      
-      <div class="hidden">
-        <PortOnePayment
+      <PortOnePayment
           ref="paymentWidgetRef"
           :amount="finalTotal"
           :order-name="`${cart.items.map(i => i.name).join(', ')} 외 ${totalItems}개`"
@@ -423,7 +429,6 @@ const handlePaymentError = (errorMessage) => {
           @success="handlePaymentSuccess"
           @error="handlePaymentError"
         />
-      </div>
     </div>
   </div>
 </template>

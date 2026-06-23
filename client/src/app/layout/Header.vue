@@ -145,7 +145,6 @@ const trackSearchOnServer = async (term) => {
       userId: auth.user?.id || null,
     });
   } catch (_) {
-    // UX를 막지 않음
   }
 };
 
@@ -316,7 +315,7 @@ const logout = () => {
   window.location.href = "/login";
 };
 
-const kakaoChatUrl = import.meta.env.VITE_KAKAO_CHAT_URL?.trim() || "";
+const kakaoChatUrl = getKakaoChatUrl(import.meta.env.VITE_KAKAO_CHAT_URL);
 const openExternal = (url) => {
   window.open(getKakaoChatUrl(url), "_blank", "noopener,noreferrer");
 };
@@ -324,10 +323,10 @@ const openExternal = (url) => {
 const topLinks = [
   { label: "찜", path: "/wishlist" },
   { label: "공지사항", path: "/notice" },
-  { label: "견적문의", path: "/home" },
+  { label: "견적문의", path: "/quote" },
   { label: "카카오 문의", external: true, url: kakaoChatUrl },
   { label: "주문/배송 조회", path: "/order-lookup" },
-  { label: "구매후기", path: "/home" },
+  { label: "구매후기", path: "/reviews" },
 ];
 
 const defaultCategories = [

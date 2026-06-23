@@ -1,7 +1,20 @@
 <template>
   <div class="payment-container">
     <div
-      v-if="loading"
+      v-if="mockMode"
+      class="p-4 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 text-sm text-amber-900 dark:text-amber-100"
+    >
+      <p class="font-medium mb-1">개발용 테스트 결제 모드</p>
+      <p class="text-amber-800 dark:text-amber-200/90">
+        PortOne 상점 ID가 없어 실제 PG 없이 주문만 생성합니다.
+        실제 결제 테스트는 <code class="text-xs">client/.env</code>에
+        <code class="text-xs">VITE_PORTONE_STORE_ID</code>를 넣고
+        <code class="text-xs">VITE_DEV_MOCK_PAYMENT=false</code>로 설정하세요.
+      </p>
+    </div>
+
+    <div
+      v-else-if="loading"
       class="flex items-center justify-center py-8"
     >
       <div class="text-center">
@@ -28,12 +41,13 @@
       v-else
       id="portone-payment-widget"
       class="payment-widget"
-    ></div>
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted } from "vue";
+import { getPortOneStoreId, isMockPaymentEnabled } from "../../lib/paymentConfig.js";
 
 const props = defineProps({
   amount: {
@@ -62,9 +76,15 @@ const emit = defineEmits(["success", "error", "retry"]);
 
 const loading = ref(true);
 const error = ref(null);
+const mockMode = ref(isMockPaymentEnabled());
 let portone = null;
 
 onMounted(async () => {
+  if (mockMode.value) {
+    loading.value = false;
+    return;
+  }
+
   try {
     if (typeof window !== "undefined" && !window.IMP) {
       const script = document.createElement("script");
@@ -95,8 +115,7 @@ const initializePayment = () => {
     }
 
     portone = window.IMP;
-
-    const storeId = import.meta.env.VITE_PORTONE_STORE_ID;
+    const storeId = getPortOneStoreId();
     if (!storeId) {
       error.value = "VITE_PORTONE_STORE_ID가 설정되지 않았습니다. client/.env를 확인해주세요.";
       loading.value = false;
@@ -104,7 +123,6 @@ const initializePayment = () => {
     }
 
     portone.init(storeId);
-
     loading.value = false;
   } catch (err) {
     console.error("포트원 초기화 오류:", err);
@@ -114,6 +132,17 @@ const initializePayment = () => {
 };
 
 const requestPayment = (paymentData = {}) => {
+  if (mockMode.value) {
+    const merchantUid = `dev_order_${Date.now()}`;
+    emit("success", {
+      imp_uid: `dev_imp_${Date.now()}`,
+      merchant_uid: merchantUid,
+      amount: props.amount,
+      paymentData: { mock: true, pay_method: paymentData.pay_method || "card" },
+    });
+    return;
+  }
+
   if (!portone) {
     emit("error", "결제 시스템이 초기화되지 않았습니다.");
     return;
@@ -150,9 +179,7 @@ const requestPayment = (paymentData = {}) => {
 
 defineExpose({
   requestPayment,
-});
-
-onUnmounted(() => {
+  mockMode,
 });
 </script>
 

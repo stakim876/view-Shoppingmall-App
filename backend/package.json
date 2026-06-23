@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test",
-    "gen:admin-sql": "node scripts/gen-admin-sql.mjs"
+    "gen:admin-sql": "node scripts/gen-admin-sql.mjs",
+    "setup:local": "node scripts/setup-local.mjs"
   },
   "keywords": [],
   "author": "",

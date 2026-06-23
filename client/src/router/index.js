@@ -15,6 +15,10 @@ import AdminSignup from "@/views/admin/AdminSignup.vue";
 import NoticePage from "@/views/notice/NoticePage.vue";
 import OrderLookup from "@/views/order/OrderLookup.vue";
 import WishlistPage from "@/views/shop/WishlistPage.vue";
+import ReviewsPage from "@/views/shop/ReviewsPage.vue";
+import QuoteInquiryPage from "@/views/support/QuoteInquiryPage.vue";
+import ForgotPassword from "@/views/auth/ForgotPassword.vue";
+import ResetPassword from "@/views/auth/ResetPassword.vue";
 import NotFound from "@/components/ui/NotFound.vue";
 import { getAuthState } from "@/lib/authStorage.js";
 import { trackPageView } from "@/lib/analytics.js";
@@ -22,6 +26,8 @@ import { trackPageView } from "@/lib/analytics.js";
 const routes = [
   { path: "/", redirect: "/home" },
   { path: "/login", component: LoginForm },
+  { path: "/forgot-password", component: ForgotPassword },
+  { path: "/reset-password", component: ResetPassword },
   { path: "/signup", component: SignUpForm },
   { path: "/admin-signup", component: AdminSignup },
   { path: "/home", component: HomePage },
@@ -29,6 +35,8 @@ const routes = [
   { path: "/product/:id", component: ProductDetail, props: true },
   { path: "/cart", component: CartPage },
   { path: "/wishlist", component: WishlistPage },
+  { path: "/reviews", component: ReviewsPage },
+  { path: "/quote", component: QuoteInquiryPage },
   { 
     path: "/checkout", 
     component: CheckoutPage,

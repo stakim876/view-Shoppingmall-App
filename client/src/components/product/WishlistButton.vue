@@ -32,7 +32,7 @@ import { useToastStore } from "../../store/toast";
 
 const props = defineProps({
   productId: { type: [Number, String], required: true },
-  size: { type: String, default: "md" }, // sm, md, lg
+  size: { type: String, default: "md" },
 });
 
 const auth = useAuthStore();

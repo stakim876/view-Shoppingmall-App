@@ -17,7 +17,6 @@ app.config.errorHandler = (err, _instance, info) => {
       "화면 처리 중 문제가 생겼어요. 새로고침 후 다시 시도해 주세요."
     );
   } catch (_) {
-    /* noop */
   }
 };
 
@@ -28,7 +27,6 @@ window.addEventListener("unhandledrejection", (event) => {
       "요청 처리 중 오류가 났어요. 잠시 후 다시 시도해 주세요."
     );
   } catch (_) {
-    /* noop */
   }
 });
 
@@ -39,7 +37,6 @@ router.onError((err) => {
       "페이지를 불러오지 못했어요. 네트워크 확인 후 다시 시도해 주세요."
     );
   } catch (_) {
-    /* noop */
   }
 });
 

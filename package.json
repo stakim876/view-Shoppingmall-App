@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "concurrently -n api,client -c blue,green \"npm run dev:backend\" \"npm run dev:client\"",
     "dev:backend": "cd backend && node server.js",
-    "dev:client": "cd client && npm run dev"
+    "dev:client": "cd client && npm run dev",
+    "setup:local": "cd backend && npm run setup:local"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
