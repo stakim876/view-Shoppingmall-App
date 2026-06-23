@@ -10,6 +10,7 @@
     "start": "node server.js",
     "test": "node --test",
     "gen:admin-sql": "node scripts/gen-admin-sql.mjs",
+    "fix:admin": "node scripts/fix-demo-admin.mjs",
     "setup:local": "node scripts/setup-local.mjs"
   },
   "keywords": [],

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "fs";
 import path from "path";
+import { spawnSync } from "child_process";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -93,6 +94,8 @@ const clientEnv = readEnv(clientEnvPath);
 
 const backendUpdates = {
   SMTP_DEV_ETHEREAL: "true",
+  ADMIN_BOOTSTRAP_EMAIL: backendEnv.ADMIN_BOOTSTRAP_EMAIL || "admin@myshop.com",
+  ADMIN_BOOTSTRAP_PASSWORD: backendEnv.ADMIN_BOOTSTRAP_PASSWORD || "MyShopAdmin1",
 };
 if (!backendEnv.PORTONE_API_KEY) backendUpdates.PORTONE_API_KEY = "";
 if (!backendEnv.PORTONE_API_SECRET) backendUpdates.PORTONE_API_SECRET = "";
@@ -105,7 +108,16 @@ if (isPlaceholderStoreId(clientEnv.VITE_PORTONE_STORE_ID)) {
 upsertEnv(backendEnvPath, backendUpdates);
 upsertEnv(clientEnvPath, clientUpdates);
 
+const fix = spawnSync(process.execPath, ["scripts/fix-demo-admin.mjs"], {
+  cwd: path.join(root, "backend"),
+  stdio: "inherit",
+});
+if (fix.status !== 0) {
+  console.warn("⚠️ fix:admin 실패 — DB 연결·.env 를 확인한 뒤 backend 에서 npm run fix:admin 을 실행하세요.");
+}
+
 console.log("✅ 로컬 개발 설정 반영 완료\n");
+console.log("- backend/.env: ADMIN_BOOTSTRAP_EMAIL/PASSWORD (로컬 데모 관리자)");
 console.log("- backend/.env: SMTP_DEV_ETHEREAL=true (Gmail 미설정 시 Ethereal 테스트 메일)");
 console.log("- client/.env: VITE_DEV_MOCK_PAYMENT=true (PortOne ID 없을 때 테스트 주문)\n");
 

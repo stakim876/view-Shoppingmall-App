@@ -26,7 +26,7 @@ CREATE TABLE users (
 INSERT INTO users (email, password, name, gender, role)
 VALUES
 ('shgy0673@naver.com', '$2b$10$.CZLXSXKm.hZ1bVGmvdVq.tDCDN3v3VK1fRoRG8AM5Fkoq7YwAqqW', '김승태', 'male', 'user'),
-('admin@myshop.com', '$2b$10$FvkvN5FvXJoPMoT57z3T9u8fVvPpK87JFid2Ct35qXyNruqVCp0cG', '관리자', 'male', 'admin');
+('admin@myshop.com', '$2b$10$966x.YwQvJsgIWxEMM3C/uGWOWHNgjOd5wTVu62V1R0BzghA7cVW.', '관리자', 'male', 'admin');
 
 CREATE TABLE products (
   id INT AUTO_INCREMENT PRIMARY KEY,

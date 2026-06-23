@@ -29,6 +29,7 @@ import { buildLoginAttemptKey, createLoginAttemptStore } from "./lib/loginSecuri
 import { verifyCaptchaToken } from "./lib/captcha.js";
 import { sendPasswordResetEmail, sendRestockAlertEmail, warmupDevMailer } from "./lib/mailer.js";
 import { ensureDatabaseSchema } from "./lib/schemaBootstrap.js";
+import { ensureDemoAdmin } from "./lib/demoAdmin.js";
 import { verifyPortOnePayment, isPortOneVerificationEnabled } from "./lib/portone.js";
 import { buildTrackingUrl, getCarrierLabel, isValidCarrierCode, listCarriers } from "./lib/tracking.js";
 
@@ -732,7 +733,6 @@ app.post("/api/ai/recommend", async (req, res) => {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     const intent = await extractRecommendIntent(prompt, apiKey);
-    // intent = { budget, category, keywords } — OpenAI 또는 규칙 기반
     const budgetMax = Number.isFinite(intent.budget) ? Number(intent.budget) : null;
     const category = normalizeDbCategory(intent.category || null);
     const keywords = normalizeRecommendKeywords(intent.keywords, category);
@@ -753,7 +753,6 @@ app.post("/api/ai/recommend", async (req, res) => {
       params.push(`%${kw}%`, `%${kw}%`, `%${kw}%`);
     }
     if (keywordClauses.length > 0) {
-      // 키워드 여러 개는 OR — AND면 결과가 너무 비어서 fallback 자주 발생
       where.push(`(${keywordClauses.join(" OR ")})`);
     }
 
@@ -860,31 +859,15 @@ async function ensureReviewAndGalleryTables() {
 }
 
 async function bootstrapAdminFromEnv() {
-  const rawEmail = process.env.ADMIN_BOOTSTRAP_EMAIL;
-  const plain = process.env.ADMIN_BOOTSTRAP_PASSWORD;
-  if (!rawEmail || !plain) return;
-  const email = normalizeEmail(rawEmail);
-  if (!isValidEmail(email) || String(plain).length < 8) {
-    console.warn("⚠️ ADMIN_BOOTSTRAP_* 가 있으나 이메일 형식 또는 비밀번호(8자+)가 아니어서 건너뜁니다.");
-    return;
-  }
-  const name = process.env.ADMIN_BOOTSTRAP_NAME || "관리자";
   try {
-    const hashed = await hashPassword(plain);
-    const [rows] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
-    if (rows.length > 0) {
-      await db.query("UPDATE users SET password = ?, role = 'admin' WHERE email = ?", [hashed, email]);
-    } else {
-      await db.query(
-        "INSERT INTO users (email, password, name, gender, role) VALUES (?, ?, ?, ?, ?)",
-        [email, hashed, name, "male", "admin"]
-      );
-    }
-    console.log(
-      `✅ ADMIN_BOOTSTRAP 적용: ${email} → 로그인 후 Railway Variables 에서 ADMIN_BOOTSTRAP_EMAIL / ADMIN_BOOTSTRAP_PASSWORD 를 삭제하세요.`
-    );
+    const result = await ensureDemoAdmin(db);
+    if (!result.applied) return;
+    const envHint = process.env.ADMIN_BOOTSTRAP_EMAIL
+      ? " → 배포 환경에서는 로그인 확인 후 ADMIN_BOOTSTRAP_* 변수를 삭제하세요."
+      : "";
+    console.log(`✅ 데모 관리자 준비: ${result.email}${envHint}`);
   } catch (e) {
-    console.warn("⚠️ ADMIN_BOOTSTRAP 적용 실패:", e.message);
+    console.warn("⚠️ 데모 관리자 준비 실패:", e.message);
   }
 }
 

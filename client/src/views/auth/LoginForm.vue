@@ -72,7 +72,7 @@
           </label>
         </div>
 
-        <div v-if="requiresCaptcha" class="text-left text-xs text-gray-600">
+        <div v-if="requiresCaptcha && isTurnstileEnabled" class="text-left text-xs text-gray-600">
           <div v-if="isTurnstileEnabled" ref="turnstileEl" class="min-h-[65px]"></div>
           <label v-else class="flex items-center gap-2">
             <input v-model="captchaChecked" type="checkbox" class="rounded border-gray-300" />
@@ -97,6 +97,16 @@
       </form>
 
       <p v-if="error" class="text-red-500 text-sm mt-3">{{ error }}</p>
+
+      <p
+        v-if="isDev"
+        class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs text-slate-600"
+      >
+        로컬 데모 관리자:
+        <span class="font-mono">admin@myshop.com</span>
+        /
+        <span class="font-mono">MyShopAdmin1</span>
+      </p>
 
       <div class="mt-6 text-sm flex flex-col items-center gap-2">
         <router-link
@@ -170,11 +180,12 @@ const authStore = useAuthStore();
 const toast = useToastStore();
 const wishlist = useWishlistStore();
 const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || "";
+const isDev = import.meta.env.DEV;
 const isTurnstileEnabled = computed(() => Boolean(turnstileSiteKey));
 const canSubmit = computed(() => {
   if (!requiresCaptcha.value) return true;
-  if (isTurnstileEnabled.value) return Boolean(captchaToken.value);
-  return captchaChecked.value;
+  if (!isTurnstileEnabled.value) return true;
+  return Boolean(captchaToken.value);
 });
 
 const mountTurnstile = () => {
@@ -263,8 +274,8 @@ const login = async () => {
   isSubmitting.value = true;
   try {
     const payload = {
-      email: email.value,
-      password: password.value,
+      email: String(email.value || "").trim(),
+      password: String(password.value || "").trim(),
       captchaToken: captchaToken.value || undefined,
     };
     const res = await loginWithRetry(payload);
@@ -287,8 +298,15 @@ const login = async () => {
       router.push(typeof redirect === "string" ? redirect : "/home");
     }
   } catch (err) {
-    error.value = err.userMessage || "이메일 또는 비밀번호가 올바르지 않습니다.";
-    requiresCaptcha.value = Boolean(err.response?.data?.requiresCaptcha);
+    const serverMessage = err.response?.data?.message || "";
+    if (err.response?.status === 400 && /보안 인증/i.test(serverMessage)) {
+      error.value = serverMessage;
+    } else if (err.response?.status === 429) {
+      error.value = serverMessage || "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.";
+    } else {
+      error.value = err.userMessage || "이메일 또는 비밀번호가 올바르지 않습니다.";
+    }
+    requiresCaptcha.value = Boolean(err.response?.data?.requiresCaptcha) && isTurnstileEnabled.value;
     if (!requiresCaptcha.value) {
       captchaChecked.value = false;
       captchaToken.value = "";

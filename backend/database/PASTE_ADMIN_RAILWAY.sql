@@ -3,7 +3,7 @@ USE `railway`;
 INSERT INTO users (email, password, name, gender, role)
 VALUES (
   'admin@myshop.com',
-  '$2b$10$FvkvN5FvXJoPMoT57z3T9u8fVvPpK87JFid2Ct35qXyNruqVCp0cG',
+  '$2b$10$966x.YwQvJsgIWxEMM3C/uGWOWHNgjOd5wTVu62V1R0BzghA7cVW.',
   '관리자',
   'male',
   'admin'
