@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref, computed } from "vue";
 import { ShoppingCart } from "lucide-vue-next";
 import { useCartStore } from "../../store/cart";
@@ -11,6 +11,7 @@ import PortOnePayment from "./PortOnePayment.vue";
 import { formatPrice } from "../../lib/format";
 import { calculateShippingFee, getFreeShippingMinimumWon } from "@/lib/shopPolicy.js";
 import { isMockPaymentEnabled } from "@/lib/paymentConfig.js";
+import { saveSeniorLastOrder } from "@/lib/seniorEasyShop.js";
 
 const cart = useCartStore();
 const authStore = useAuthStore();
@@ -172,6 +173,7 @@ const handlePaymentSuccess = async (paymentResult) => {
 
     if (res.status === 200 && res.data?.success) {
       toast.success("결제가 완료되었습니다!");
+      saveSeniorLastOrder(cart.items);
       cart.clearCart();
 
       router.push({

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     class="relative min-h-screen bg-slate-50 dark:bg-[#0c0f16]
            text-slate-700 dark:text-slate-200
@@ -12,32 +12,54 @@
 
     <div class="relative z-10">
 
-      <div class="relative mx-auto max-w-7xl px-4 sm:px-6 pt-6 pb-1">
-        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+      <div class="relative mx-auto max-w-7xl px-4 sm:px-6 pt-5 pb-1">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="home-ai-badge">
+            <Sparkles class="w-3.5 h-3.5" aria-hidden="true" />
+            AI 쇼핑
+          </span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
           말로 고르는 쇼핑
         </h1>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          <template v-if="!loading">지금 살 수 있는 상품 {{ catalogTotal }}개 · </template>
-          조건을 말하면 맞는 상품을 골라 드려요
+          <template v-if="!loading">상품 {{ catalogTotal }}개 · </template>
+          말하듯 입력하면 AI가 조건에 맞는 상품을 골라 드려요
         </p>
       </div>
 
       <section
         id="home-curator"
-        class="max-w-7xl mx-auto px-4 sm:px-6 py-3 scroll-mt-24"
+        class="max-w-7xl mx-auto px-4 sm:px-6 py-2 scroll-mt-24"
         aria-label="말로 상품 찾기"
       >
         <div class="home-ai-strip">
+          <p class="home-ai-strip__label">무엇을 찾고 계세요?</p>
           <div class="home-ai-strip__row">
-            <label for="ai-curator-prompt" class="sr-only">상품 검색 조건</label>
-            <input
-              id="ai-curator-prompt"
-              v-model.trim="aiRecommendPrompt"
-              type="text"
-              :placeholder="rotatingPlaceholder"
-              class="home-ai-strip__input"
-              @keydown.enter.prevent="requestAiRecommendation"
-            />
+            <div class="home-ai-strip__input-wrap">
+              <label for="ai-curator-prompt" class="sr-only">상품 검색 조건</label>
+              <input
+                id="ai-curator-prompt"
+                v-model.trim="aiRecommendPrompt"
+                type="text"
+                :placeholder="rotatingPlaceholder"
+                class="home-ai-strip__input"
+                @keydown.enter.prevent="requestAiRecommendation"
+              />
+              <button
+                v-if="speechSupported"
+                type="button"
+                class="home-ai-mic-btn"
+                :class="{ 'home-ai-mic-btn--active': isListening }"
+                :aria-pressed="isListening"
+                :aria-label="isListening ? '음성 입력 중지' : '음성으로 입력'"
+                :disabled="aiRecommendLoading"
+                @click="toggleVoiceInput"
+              >
+                <Mic v-if="!isListening" class="w-4 h-4" aria-hidden="true" />
+                <Square v-else class="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
             <button
               type="button"
               class="shop-btn-ai home-ai-strip__btn shrink-0"
@@ -49,7 +71,7 @@
           </div>
           <div class="mt-2 flex flex-wrap gap-1.5">
             <button
-              v-for="suggestion in aiPromptSuggestions.slice(0, 3)"
+              v-for="suggestion in aiPromptSuggestions.slice(0, 4)"
               :key="suggestion"
               type="button"
               class="home-ai-chip"
@@ -59,6 +81,36 @@
               {{ suggestion }}
             </button>
           </div>
+          <p v-if="speechSupported && !speechError" class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            🎤 음성 입력: 마이크 버튼 → 브라우저 「허용」 클릭 (최초 1회)
+          </p>
+          <div
+            v-if="speechError === 'mic-denied'"
+            class="home-mic-help"
+            role="alert"
+          >
+            <p class="font-semibold text-slate-800 dark:text-slate-100">마이크 사용을 허용해 주세요</p>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              음성으로 검색하려면 브라우저에서 마이크 권한이 필요합니다.
+            </p>
+            <ol class="mt-2 text-sm text-slate-600 dark:text-slate-300 list-decimal list-inside space-y-1">
+              <li>주소창 왼쪽 <strong>자물쇠(ⓘ)</strong> 아이콘 클릭</li>
+              <li><strong>마이크</strong> → 「허용」 선택</li>
+              <li>페이지 <strong>새로고침(F5)</strong> 후 마이크 버튼 다시 누르기</li>
+            </ol>
+            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              팝업이 안 보이면 Windows 설정 → 개인 정보 → 마이크에서 Chrome 사용을 켜 주세요.
+            </p>
+          </div>
+          <p
+            v-else-if="speechError"
+            class="mt-2 text-sm text-amber-600 dark:text-amber-400"
+          >
+            {{ speechError }}
+          </p>
+          <p v-if="isListening" class="mt-2 text-sm text-indigo-600 dark:text-indigo-300">
+            말씀해 주세요… (예: 「출퇴근용 가방 5만 원대」)
+          </p>
           <p v-if="aiRecommendError" class="mt-2 text-sm text-red-500">{{ aiRecommendError }}</p>
         </div>
 
@@ -88,7 +140,7 @@
                   <p class="mt-1 text-sm font-bold tabular-nums text-slate-900 dark:text-white">
                     {{ formatPrice(p.price) }}원
                   </p>
-                  <p v-if="p.reasons?.[0]" class="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                  <p v-if="p.reasons?.[0]" class="mt-1 text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
                     {{ p.reasons[0] }}
                   </p>
                 </button>
@@ -101,7 +153,15 @@
         </div>
       </section>
 
-    <div id="home-catalog" class="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-8 sm:pb-10 scroll-mt-24 border-t border-slate-200/60 dark:border-slate-800/50">
+      <HomeAiForYou />
+
+      <div class="home-section-divider" aria-hidden="true" />
+
+      <SeniorEasyShopPanel :all-products="seniorCatalogProducts" />
+
+      <div class="home-section-divider" aria-hidden="true" />
+
+    <div id="home-catalog" class="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-8 sm:pb-10 scroll-mt-24">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h2 class="shop-page-title">
@@ -159,7 +219,7 @@
 
       <div
         v-else
-        class="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8"
+        class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5"
       >
         <div
           v-for="p in products"
@@ -171,7 +231,7 @@
             <WishlistButton :product-id="p.id" size="sm" />
           </div>
           <div
-            class="shop-card-product-media h-52 sm:h-80"
+            class="shop-card-product-media h-36 sm:h-48"
           >
             <img
               :src="imgSrc(p)"
@@ -183,17 +243,17 @@
             />
           </div>
 
-          <div class="p-3 sm:p-6">
-            <h3 class="font-semibold text-sm sm:text-lg text-neutral-900 dark:text-neutral-100 mb-1 line-clamp-1">
+          <div class="p-3 sm:p-4">
+            <h3 class="font-semibold text-sm text-neutral-900 dark:text-neutral-100 mb-1 line-clamp-1">
               {{ p.name }}
             </h3>
-            <p class="hidden sm:block text-neutral-500 dark:text-neutral-400 text-sm mb-3 line-clamp-2">
+            <p class="hidden sm:block text-neutral-500 dark:text-neutral-400 text-xs mb-2 line-clamp-2">
               {{ p.description }}
             </p>
-            <p class="text-neutral-900 dark:text-neutral-100 font-semibold text-sm sm:text-lg mb-3 sm:mb-6">
+            <p class="text-neutral-900 dark:text-neutral-100 font-semibold text-sm mb-2 sm:mb-3">
               {{ formatPrice(p.price) }}원
             </p>
-            <button type="button" class="shop-btn-cart group py-1.5 sm:py-2 text-xs sm:text-sm" @click.stop="addToCart(p)">
+            <button type="button" class="shop-btn-cart py-2 text-xs sm:text-sm" @click.stop="addToCart(p)">
               장바구니 담기
             </button>
           </div>
@@ -296,12 +356,16 @@ import { useRouter, useRoute } from "vue-router";
 import { useCartStore } from "../../store/cart";
 import { useToastStore } from "../../store/toast";
 import { useAuthStore } from "../../store/auth";
+import { Sparkles, Mic, Square } from "lucide-vue-next";
 import ChatButton from "@/components/chat/ChatButton.vue";
 import Footer from "@/app/layout/Footer.vue";
 import SkeletonLoader from "@/components/ui/SkeletonLoader.vue";
+import HomeAiForYou from "@/components/home/HomeAiForYou.vue";
+import { useSpeechRecognition } from "@/composables/useSpeechRecognition";
 import { getRecentlyViewed } from "../../composables/useRecentlyViewed";
 import { formatPrice, normalizeImageUrl } from "../../lib/format";
 import WishlistButton from "@/components/product/WishlistButton.vue";
+import SeniorEasyShopPanel from "@/components/senior/SeniorEasyShopPanel.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -324,6 +388,7 @@ const cart = useCartStore();
 const toast = useToastStore();
 const auth = useAuthStore();
 const products = ref([]);
+const seniorCatalogProducts = ref([]);
 const catalogTotal = ref(0);
 const categoryList = ref([]);
 
@@ -374,11 +439,29 @@ const aiRecommendSessionId = ref(
   `ai-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 );
 const aiRecommendSummary = ref("");
+const speechError = ref("");
+
+const {
+  isSupported: speechSupported,
+  isListening,
+  toggle: toggleVoiceInput,
+} = useSpeechRecognition({
+  onResult: (text) => {
+    speechError.value = "";
+    aiRecommendPrompt.value = text;
+    requestAiRecommendation();
+  },
+  onError: (msg) => {
+    speechError.value = msg;
+  },
+});
+
 const aiPromptSuggestions = [
   "출퇴근용 백팩, 5만 원대",
   "데님·캐주얼 코디, 10만 원 이하",
   "선물용 액세서리, 3만 원대",
-  "가벼운 태블릿, 150만 원 이하",
+  "가벼운 가방, 3만 원 이하",
+  "실용적인 생활용품, 2만 원대",
 ];
 
 const buildProductParams = () => {
@@ -560,6 +643,18 @@ const requestAiRecommendation = async () => {
   }
 };
 
+const loadSeniorCatalog = async () => {
+  try {
+    const res = await api.get("/products", {
+      params: { page: 1, limit: 50, sortBy: "id", sortOrder: "desc" },
+    });
+    const payload = res.data?.items != null ? res.data : { items: res.data };
+    seniorCatalogProducts.value = Array.isArray(payload.items) ? payload.items : [];
+  } catch (_) {
+    seniorCatalogProducts.value = [];
+  }
+};
+
 const loadProducts = async () => {
   loading.value = true;
   error.value = null;
@@ -625,10 +720,15 @@ onMounted(async () => {
   searchQuery.value = (route.query.q || "").toString();
   selectedCategory.value = route.query.category || "전체";
   recentlyViewed.value = getRecentlyViewed();
-  await Promise.all([loadCategories(), loadProducts()]);
+  await Promise.all([loadCategories(), loadProducts(), loadSeniorCatalog()]);
   placeholderTimer = setInterval(() => {
     rotatingPlaceholderIndex.value = (rotatingPlaceholderIndex.value + 1) % placeholderExamples.length;
   }, 3200);
+  if (route.hash === "#senior-easy-shop") {
+    requestAnimationFrame(() => {
+      document.getElementById("senior-easy-shop")?.scrollIntoView({ behavior: "smooth" });
+    });
+  }
 });
 
 onUnmounted(() => {
@@ -637,6 +737,37 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.home-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgb(67 56 202);
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.95), rgba(224, 231, 255, 0.85));
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+:global(.dark) .home-ai-badge {
+  color: rgb(199 210 254);
+  background: linear-gradient(135deg, rgba(49, 46, 129, 0.55), rgba(30, 27, 75, 0.45));
+  border-color: rgba(129, 140, 248, 0.35);
+}
+
+.home-ai-strip__label {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgb(67 56 202);
+}
+
+:global(.dark) .home-ai-strip__label {
+  color: rgb(199 210 254);
+}
+
 .home-ai-strip {
   border-radius: 1rem;
   border: 1px solid rgba(99, 102, 241, 0.2);
@@ -660,15 +791,87 @@ onUnmounted(() => {
   }
 }
 
+.home-ai-strip__input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
 .home-ai-strip__input {
   flex: 1;
   min-width: 0;
+  width: 100%;
   border-radius: 0.75rem;
   border: 1px solid rgba(15, 23, 42, 0.1);
   background: white;
-  padding: 0.65rem 0.85rem;
+  padding: 0.6rem 2.75rem 0.6rem 0.85rem;
   font-size: 0.875rem;
 }
+
+.home-ai-mic-btn {
+  position: absolute;
+  right: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(238, 242, 255, 0.9);
+  color: rgb(67 56 202);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.home-ai-mic-btn:hover:not(:disabled) {
+  background: white;
+  border-color: rgba(99, 102, 241, 0.45);
+}
+
+.home-ai-mic-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.home-ai-mic-btn--active {
+  background: linear-gradient(135deg, rgb(79 70 229), rgb(124 58 237));
+  border-color: transparent;
+  color: white;
+  animation: home-mic-pulse 1.2s ease-in-out infinite;
+}
+
+:global(.dark) .home-ai-mic-btn {
+  background: rgba(30, 27, 75, 0.65);
+  border-color: rgba(129, 140, 248, 0.35);
+  color: rgb(199 210 254);
+}
+
+:global(.dark) .home-ai-mic-btn--active {
+  background: linear-gradient(135deg, rgb(99 102 241), rgb(167 139 250));
+  color: white;
+}
+
+@keyframes home-mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+}
+
+.home-mic-help {
+  margin-top: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(255, 251, 235, 0.9);
+}
+
+:global(.dark) .home-mic-help {
+  border-color: rgba(245, 158, 11, 0.25);
+  background: rgba(69, 26, 3, 0.35);
+}
+
 .home-ai-strip__input:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
@@ -684,12 +887,36 @@ onUnmounted(() => {
   @apply rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-60;
 }
 
+.home-section-divider {
+  max-width: 80rem;
+  margin: 0.75rem auto 0;
+  padding: 0 1rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(99, 102, 241, 0.2) 20%,
+    rgba(99, 102, 241, 0.2) 80%,
+    transparent
+  );
+}
+
+:global(.dark) .home-section-divider {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(129, 140, 248, 0.22) 20%,
+    rgba(129, 140, 248, 0.22) 80%,
+    transparent
+  );
+}
+
 .home-ai-chip {
   border-radius: 9999px;
   border: 1px solid rgba(99, 102, 241, 0.2);
   background: rgba(255, 255, 255, 0.85);
-  padding: 0.2rem 0.6rem;
-  font-size: 0.68rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
   color: rgb(67 56 202);
 }
 .home-ai-chip:hover:not(:disabled) {
@@ -724,7 +951,7 @@ onUnmounted(() => {
 }
 
 .home-ai-result__media {
-  height: 6.5rem;
+  height: 5.5rem;
   border-radius: 0.65rem;
   background: rgb(248 250 252);
   display: flex;

@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useCartStore } from "../../store/cart";
@@ -339,6 +339,7 @@ const openExternal = (url) => {
 };
 
 const topLinks = [
+  { label: "쉬운 장보기", path: "/home", hash: "#senior-easy-shop" },
   { label: "찜", path: "/wishlist" },
   { label: "공지사항", path: "/notice" },
   { label: "견적문의", path: "/quote" },
@@ -402,7 +403,7 @@ const secondaryNavItems = computed(() => {
       <template v-for="(link, idx) in topLinks" :key="link.label">
         <router-link
           v-if="!link.external"
-          :to="link.path"
+          :to="link.hash ? { path: link.path, hash: link.hash } : link.path"
           class="header-utility-link"
           :class="idx >= 4 ? 'hidden sm:inline-flex' : 'inline-flex'"
         >
@@ -735,7 +736,7 @@ const secondaryNavItems = computed(() => {
             <template v-for="link in topLinks" :key="'mobile-' + link.label">
               <router-link
                 v-if="!link.external"
-                :to="link.path"
+                :to="link.hash ? { path: link.path, hash: link.hash } : link.path"
                 class="mobile-menu-link block"
                 @click="closeMobileMenu"
               >
