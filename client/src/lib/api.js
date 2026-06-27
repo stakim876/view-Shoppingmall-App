@@ -1,3 +1,8 @@
+/*
+ * [면접] axios 공통 설정
+ * Q. 토큰은 어떻게 붙나? → 요청 인터셉터가 localStorage 토큰을 Authorization 헤더에 자동 첨부
+ * Q. 401이면? → 로그인 만료로 보고 저장된 인증 정보 삭제 후 /login 이동
+ */
 import axios from "axios";
 import { getErrorMessage } from "./errorHandler.js";
 import { clearAuthState, getAuthState } from "./authStorage.js";

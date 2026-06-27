@@ -1,8 +1,5 @@
 ﻿<template>
-  <div
-    class="min-h-dvh min-h-screen bg-gray-50 transition-colors duration-300
-           dark:bg-[radial-gradient(ellipse_120%_80%_at_50%_-25%,rgba(99, 102, 241,0.055),transparent_48%),#09090b]"
-  >
+  <div class="min-h-dvh min-h-screen bg-surface-base text-primary">
     <Header v-if="showShopChrome" />
     <router-view />
     <Toast />

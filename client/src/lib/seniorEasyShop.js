@@ -1,6 +1,7 @@
 const FAVORITE_IDS_KEY = "myshop_senior_favorite_ids";
 const LAST_ORDER_KEY = "myshop_senior_last_order";
 
+// [면접] 쉬운 장보기 데이터는 localStorage — 서버 DB 없이 단골·재주문 (면접: 실서비스면 계정 연동 고려)
 const safeParse = (raw, fallback) => {
   if (!raw) return fallback;
   try {

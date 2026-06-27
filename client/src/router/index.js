@@ -15,8 +15,6 @@ import AdminSignup from "@/views/admin/AdminSignup.vue";
 import NoticePage from "@/views/notice/NoticePage.vue";
 import OrderLookup from "@/views/order/OrderLookup.vue";
 import WishlistPage from "@/views/shop/WishlistPage.vue";
-import ReviewsPage from "@/views/shop/ReviewsPage.vue";
-import QuoteInquiryPage from "@/views/support/QuoteInquiryPage.vue";
 import ForgotPassword from "@/views/auth/ForgotPassword.vue";
 import ResetPassword from "@/views/auth/ResetPassword.vue";
 import NotFound from "@/components/ui/NotFound.vue";
@@ -35,8 +33,6 @@ const routes = [
   { path: "/product/:id", component: ProductDetail, props: true },
   { path: "/cart", component: CartPage },
   { path: "/wishlist", component: WishlistPage },
-  { path: "/reviews", component: ReviewsPage },
-  { path: "/quote", component: QuoteInquiryPage },
   { 
     path: "/checkout", 
     component: CheckoutPage,
@@ -69,6 +65,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
+  // [면접] 라우트 가드 — meta.requiresAuth면 로그인 없을 때 /login?redirect=... 로 보냄
   const { token, user } = getAuthState();
   const isLoggedIn = !!(token && user);
   
@@ -78,6 +75,7 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.requiresAdmin && user?.role !== "admin") {
+    // [면접] RBAC — requiresAdmin 라우트는 role이 admin일 때만 통과
     next({ path: "/home" });
     return;
   }

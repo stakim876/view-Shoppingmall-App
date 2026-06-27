@@ -35,6 +35,19 @@ async function ensureColumn(db, tableName, columnName, definition) {
   }
 }
 
+async function ensureIndex(db, tableName, indexName, columns, unique = false) {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS cnt FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?`,
+    [tableName, indexName]
+  );
+  if (Number(rows[0]?.cnt) === 0) {
+    const kind = unique ? "UNIQUE INDEX" : "INDEX";
+    const columnList = columns.map((c) => `\`${c}\``).join(", ");
+    await db.query(`ALTER TABLE \`${tableName}\` ADD ${kind} \`${indexName}\` (${columnList})`);
+  }
+}
+
 async function seedProductsIfEmpty(db) {
   const [rows] = await db.query("SELECT COUNT(*) AS cnt FROM products");
   if (Number(rows[0]?.cnt) > 0) return 0;
@@ -122,6 +135,8 @@ export async function ensureDatabaseSchema(db) {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_user_id (user_id),
         INDEX idx_created_at (created_at),
+        UNIQUE INDEX uk_imp_uid (imp_uid),
+        UNIQUE INDEX uk_merchant_uid (merchant_uid),
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
@@ -133,6 +148,8 @@ export async function ensureDatabaseSchema(db) {
     await ensureColumn(db, "orders", "discount_amount", "DECIMAL(12,2) NOT NULL DEFAULT 0");
     await ensureColumn(db, "orders", "carrier_code", "VARCHAR(32) DEFAULT NULL COMMENT '택배사 키'");
     await ensureColumn(db, "orders", "tracking_number", "VARCHAR(100) DEFAULT NULL COMMENT '송장번호'");
+    await ensureIndex(db, "orders", "uk_imp_uid", ["imp_uid"], true);
+    await ensureIndex(db, "orders", "uk_merchant_uid", ["merchant_uid"], true);
   }
 
   if (!(await tableExists(db, "order_items"))) {

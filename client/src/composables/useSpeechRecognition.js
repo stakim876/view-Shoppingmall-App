@@ -1,5 +1,6 @@
-import { ref, onUnmounted } from "vue";
+﻿import { ref, onUnmounted } from "vue";
 
+// [면접] Web Speech API — Chrome/Edge의 SpeechRecognition, 별도 API 키 없음 (브라우저 마이크 권한 필요)
 function getSpeechRecognition() {
   if (typeof window === "undefined") return null;
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
@@ -59,6 +60,7 @@ export function useSpeechRecognition(options = {}) {
       } else if (code === "no-speech") {
         errorMessage.value = "음성이 들리지 않았습니다. 다시 말씀해 주세요.";
       } else if (code === "not-allowed") {
+        // [면접] 마이크 거부 시 UI에서 mic-denied로 안내 (브라우저 사이트 설정에서 허용 필요)
         errorMessage.value = "mic-denied";
       } else {
         errorMessage.value = "음성 인식에 실패했습니다. 다시 시도해 주세요.";

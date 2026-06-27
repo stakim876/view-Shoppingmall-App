@@ -39,10 +39,13 @@ const markSize = computed(() => {
 <style scoped>
 .brand-logo {
   @apply inline-flex items-center gap-2.5 select-none rounded-md
-         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/35
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50
          focus-visible:ring-offset-2 focus-visible:ring-offset-white
-         dark:focus-visible:ring-offset-zinc-950
-         transition-opacity duration-200;
+         dark:focus-visible:ring-offset-surface-base;
+}
+
+.brand-logo__mark {
+  @apply shrink-0;
 }
 
 .brand-logo--stacked {
@@ -59,15 +62,15 @@ const markSize = computed(() => {
 
 .brand-logo__wordmark {
   @apply inline-flex items-baseline leading-none whitespace-nowrap;
-  font-family: "Plus Jakarta Sans", "Noto Sans KR", sans-serif;
+  font-family: "Inter", "Noto Sans KR", sans-serif;
 }
 
 .brand-logo__my {
-  @apply font-semibold tracking-[-0.04em] text-slate-700 dark:text-slate-200;
+  @apply font-semibold tracking-[-0.04em] text-slate-600 dark:text-slate-300;
 }
 
 .brand-logo__shop {
-  @apply font-bold tracking-[-0.03em] bg-gradient-to-r from-indigo-600 via-violet-500 to-sky-500 bg-clip-text text-transparent;
+  @apply font-bold tracking-[-0.03em] text-slate-900 dark:text-white;
 }
 
 .brand-logo--sm .brand-logo__my {
@@ -91,13 +94,5 @@ const markSize = computed(() => {
 .brand-logo__tagline {
   @apply text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400;
   font-family: "Noto Sans KR", sans-serif;
-}
-
-.brand-logo__mark {
-  @apply transition-transform duration-500 ease-out;
-}
-
-.brand-logo:hover .brand-logo__mark {
-  @apply scale-[1.04];
 }
 </style>

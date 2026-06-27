@@ -10,6 +10,13 @@ test("buildProductListQuery 기본값이 안전하게 설정된다", () => {
   assert.equal(q.sortOrder, "DESC");
 });
 
+test("buildProductListQuery ids 파라미터를 반영한다", () => {
+  const q = buildProductListQuery({ ids: "3,1,9" });
+  assert.match(q.whereClause, /id IN \(\?, \?, \?\)/);
+  assert.deepEqual(q.requestedIds, [3, 1, 9]);
+  assert.equal(q.countParams.length, 3);
+});
+
 test("buildProductListQuery 검색/필터/정렬 파라미터를 반영한다", () => {
   const q = buildProductListQuery({
     page: "2",

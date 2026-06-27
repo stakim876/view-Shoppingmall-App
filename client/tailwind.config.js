@@ -7,6 +7,23 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        surface: {
+          base: 'var(--color-surface-base)',
+          raised: 'var(--color-surface-raised)',
+          sunken: 'var(--color-surface-sunken)',
+          overlay: 'var(--color-surface-overlay)',
+        },
+      },
+      textColor: {
+        primary: 'var(--color-text-primary)',
+        secondary: 'var(--color-text-secondary)',
+        muted: 'var(--color-text-muted)',
+      },
+      borderColor: {
+        default: 'var(--color-border-default)',
+        strong: 'var(--color-border-strong)',
+      },
       fontFamily: {
         sans: [
           'Inter',

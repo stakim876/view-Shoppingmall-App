@@ -1,12 +1,11 @@
 <template>
   <div
-    class="min-h-screen flex items-center justify-center 
-           bg-gradient-to-br from-[#f4f6fb] via-[#f6f7fb] to-[#eceff7] 
-           dark:from-[#0d0f1a] dark:to-[#1b1e2f] transition-all duration-700"
+    class="shop-page-ambient flex items-center justify-center transition-all duration-700"
   >
     <div
       class="bg-white/85 backdrop-blur-xl border border-white/70 
              shadow-[0_6px_24px_rgba(31,38,135,0.12)] rounded-3xl 
+             dark:bg-surface-raised/90 dark:border-default dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]
              p-6 sm:p-10 w-full max-w-[380px] mx-4 text-center transition-all duration-500"
     >
       <div class="flex items-center justify-center mb-5">
@@ -147,6 +146,10 @@
 </template>
 
 <script setup>
+/*
+ * [면접] 로그인 화면
+ * 흐름: login() → POST /auth/login → token/user 저장 → redirect 또는 /home
+ */
 import api from "../../lib/api";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
@@ -263,6 +266,7 @@ const loginWithRetry = async (payload) => {
 };
 
 const login = async () => {
+  // [면접] ① 이메일·비번·캡차 → ② 서버 검증 → ③ token 저장 → ④ 페이지 이동
   if (isSubmitting.value) return;
   if (!canSubmit.value) {
     error.value = "본인 확인 체크 후 다시 시도해주세요.";

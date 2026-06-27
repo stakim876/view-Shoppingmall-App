@@ -144,6 +144,10 @@
 </template>
 
 <script setup>
+/*
+ * [면접] 쉬운 장보기 — 포용 UX
+ * 단골 상품(localStorage) + 지난 주문 재담기, 기본 접힘으로 홈 밸런스 유지
+ */
 import { ref, computed, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
@@ -159,6 +163,7 @@ import {
 
 const props = defineProps({
   allProducts: { type: Array, default: () => [] },
+  startExpanded: { type: Boolean, default: false },
 });
 
 const router = useRouter();
@@ -168,7 +173,7 @@ const toast = useToastStore();
 const auth = useAuthStore();
 const { totalItems: cartCount } = storeToRefs(cart);
 
-const expanded = ref(route.hash === "#senior-easy-shop");
+const expanded = ref(props.startExpanded || route.hash === "#senior-easy-shop");
 const editMode = ref(false);
 const favoriteIds = ref(getSeniorFavoriteIds());
 const justAddedId = ref(null);
@@ -246,6 +251,7 @@ const addProduct = (p) => {
 
 const reorderLast = () => {
   const lastOrder = getSeniorLastOrder();
+  // [면접] CheckoutPage에서 saveSeniorLastOrder로 저장한 스냅샷을 장바구니에 다시 담음
   if (!lastOrder.length) {
     toast.info("지난 주문이 없습니다. 먼저 한 번 주문해 주세요.");
     return;
@@ -289,6 +295,6 @@ const goCart = () => router.push("/cart");
 
 .senior-added {
   @apply ring-2 ring-violet-500/60 ring-offset-1
-         dark:ring-violet-400/55 dark:ring-offset-zinc-950;
+         dark:ring-violet-400/55 dark:ring-offset-surface-base;
 }
 </style>

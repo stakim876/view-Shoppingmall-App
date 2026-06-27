@@ -73,10 +73,7 @@ const checkout = () => {
 
 <template>
   <div
-    class="min-h-screen px-4 py-8 sm:px-8 sm:py-10 
-           bg-gradient-to-b from-slate-100 to-slate-200 
-           dark:from-zinc-950 dark:to-neutral-950
-           transition-colors duration-300"
+    class="shop-page-ambient px-4 py-8 sm:px-8 sm:py-10 transition-colors duration-300"
   >
     <h1
       class="text-2xl font-bold mb-8 flex items-center gap-2 

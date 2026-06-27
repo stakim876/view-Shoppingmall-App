@@ -1,13 +1,12 @@
-<script setup>
+﻿<script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useCartStore } from "../../store/cart";
 import { useWishlistStore } from "../../store/wishlist";
 import { useAuthStore } from "../../store/auth";
 import { storeToRefs } from "pinia";
-import { ShoppingCart, Moon, Sun, Search, Sparkles, Megaphone, X, Menu } from "lucide-vue-next";
+import { ShoppingCart, Moon, Sun, Search, Heart, Megaphone, X, Menu } from "lucide-vue-next";
 import api from "../../lib/api.js";
-import { getKakaoChatUrl } from "../../lib/kakaoChat.js";
 import { useTheme } from "@/composables/useTheme";
 import BrandLogo from "@/components/brand/BrandLogo.vue";
 const router = useRouter();
@@ -58,12 +57,7 @@ watch(
 );
 
 const onSearch = () => {
-  const targetPath = route.path === "/products" ? "/products" : "/home";
   const term = (headerSearch.value || "").toString().trim();
-  const q = term || undefined;
-  const nextQuery = targetPath === "/home"
-    ? { q, category: undefined }
-    : { ...route.query, q };
   if (term) {
     saveRecentSearch(term);
     trackPopularSearch(term);
@@ -71,8 +65,8 @@ const onSearch = () => {
   }
   searchDropdownOpen.value = false;
   router.push({
-    path: targetPath,
-    query: nextQuery,
+    path: "/products",
+    query: term ? { q: term } : {},
   });
 };
 
@@ -241,19 +235,24 @@ watch([searchSuggestions, recentSearches, () => headerSearch.value], () => {
   }
 });
 
-const goCategory = (category) => {
+const goNavItem = (item) => {
+  if (item.tab) {
+    router.push({ path: "/products", query: { tab: item.tab } });
+    return;
+  }
   router.push({
-    path: "/home",
-    query: { ...route.query, category: category === "전체" ? undefined : category },
+    path: "/products",
+    query: item.category === "전체" ? {} : { category: item.category },
   });
 };
 
-const currentCategory = () => route.query.category || "전체";
-const isCategoryActive = (item) => {
-  const cur = currentCategory();
-  if (cur !== item.category) return false;
-  if (cur === "전체") return item.name === "전체";
-  return true;
+const isNavActive = (item) => {
+  if (route.path !== "/products") return false;
+  if (item.tab) return route.query.tab === item.tab;
+  if (item.category === "전체") {
+    return !route.query.category && !route.query.tab;
+  }
+  return route.query.category === item.category;
 };
 
 const categoryList = ref([]);
@@ -333,19 +332,10 @@ const logout = () => {
   window.location.href = "/login";
 };
 
-const kakaoChatUrl = getKakaoChatUrl(import.meta.env.VITE_KAKAO_CHAT_URL);
-const openExternal = (url) => {
-  window.open(getKakaoChatUrl(url), "_blank", "noopener,noreferrer");
-};
-
 const topLinks = [
-  { label: "쉬운 장보기", path: "/home", hash: "#senior-easy-shop" },
   { label: "찜", path: "/wishlist" },
   { label: "공지사항", path: "/notice" },
-  { label: "견적문의", path: "/quote" },
-  { label: "카카오 문의", external: true, url: kakaoChatUrl },
   { label: "주문/배송 조회", path: "/order-lookup" },
-  { label: "구매후기", path: "/reviews" },
 ];
 
 const defaultCategories = [
@@ -355,9 +345,8 @@ const defaultCategories = [
 
 const secondaryNavItems = computed(() => {
   const fixed = [
-    { name: "신상품", emoji: "✨", category: "전체" },
-    { name: "베스트", emoji: "🏆", category: "전체" },
-    { name: "상시할인", category: "전체" },
+    { name: "베스트", tab: "best" },
+    { name: "신상품", tab: "new" },
   ];
   const fromApi = categoryList.value && categoryList.value.length > 0
     ? categoryList.value
@@ -369,12 +358,11 @@ const secondaryNavItems = computed(() => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 flex flex-col shadow-[0_8px_32px_rgba(31,38,135,0.12)]">
+  <header class="sticky top-0 z-50 flex flex-col border-b border-default bg-surface-raised/90 backdrop-blur-md supports-[backdrop-filter]:bg-surface-raised/75">
     <div
       v-if="bannerNotice && !bannerClosed"
       class="flex items-center gap-2 px-3 py-2 text-sm
-             bg-indigo-50/95 dark:bg-indigo-950/75 text-indigo-950 dark:text-indigo-100
-             border-b border-indigo-200/70 dark:border-indigo-800/45"
+             bg-surface-sunken text-primary border-b border-default"
     >
       <Megaphone class="w-4 h-4 shrink-0 opacity-80" aria-hidden="true" />
       <router-link
@@ -385,8 +373,8 @@ const secondaryNavItems = computed(() => {
       </router-link>
       <button
         type="button"
-        class="shrink-0 p-1 rounded-md hover:bg-indigo-200/55 dark:hover:bg-indigo-900/45
-               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+        class="shrink-0 p-1 rounded-md hover:bg-surface-sunken
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50"
         aria-label="공지 배너 닫기"
         @click="dismissNoticeBanner"
       >
@@ -395,51 +383,36 @@ const secondaryNavItems = computed(() => {
     </div>
 
     <div
-      class="hidden sm:flex items-center justify-center gap-4 sm:gap-6 px-4 py-2.5 text-xs sm:text-sm leading-none
+      class="hidden sm:flex items-center justify-center gap-4 sm:gap-6 px-4 py-2 text-xs sm:text-sm leading-none
              overflow-x-auto no-scrollbar whitespace-nowrap
-             bg-slate-50/95 dark:bg-slate-900
-             border-b border-slate-200/70 dark:border-slate-700/55"
+             bg-surface-base border-b border-default"
     >
-      <template v-for="(link, idx) in topLinks" :key="link.label">
+      <template v-for="link in topLinks" :key="link.label">
         <router-link
-          v-if="!link.external"
-          :to="link.hash ? { path: link.path, hash: link.hash } : link.path"
-          class="header-utility-link"
-          :class="idx >= 4 ? 'hidden sm:inline-flex' : 'inline-flex'"
+          :to="link.path"
+          class="header-utility-link inline-flex"
         >
           {{ link.label }}
         </router-link>
-        <a
-          v-else
-          href="#"
-          @click.prevent="openExternal(link.url)"
-          class="header-utility-link"
-          :class="idx >= 4 ? 'hidden sm:inline-flex' : 'inline-flex'"
-        >
-          {{ link.label }}
-        </a>
       </template>
     </div>
 
     <div
-      class="flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5
-             bg-gradient-to-b from-white to-slate-50/95 dark:from-zinc-950/98 dark:to-neutral-950/98
-             border-b border-slate-200/80 dark:border-slate-700/55"
+      class="flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3
+             bg-surface-raised border-b border-default"
     >
       <BrandLogo size="md" link-to="/home" class="order-1 shrink-0 hover:opacity-95 transition" />
 
       <div class="relative order-3 basis-full sm:order-2 sm:basis-auto flex-1 max-w-xl mx-0 sm:mx-4 mt-1 sm:mt-0">
         <div
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl
-                 bg-white dark:bg-zinc-950
-                 border border-slate-200/80 dark:border-slate-700/55
-                 shadow-[0_8px_20px_-16px_rgba(15,23,42,0.28)]"
+          class="flex items-center gap-2 px-3 py-2 rounded-md
+                 bg-surface-base border border-default"
         >
           <Search class="w-4 h-4 text-neutral-500 dark:text-neutral-300 shrink-0" />
           <input
             v-model="headerSearch"
             type="search"
-            placeholder="상품 검색"
+            placeholder="상품 검색 (예: 백팩, 데님)"
             aria-label="상품 검색"
             class="flex-1 bg-transparent text-neutral-800 dark:text-neutral-100
                    placeholder-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/70 rounded-md text-sm"
@@ -459,7 +432,7 @@ const secondaryNavItems = computed(() => {
 
         <div
           v-if="showSearchDropdown"
-          class="absolute z-50 mt-2 w-full rounded-2xl border border-slate-200/85 dark:border-white/10 bg-white dark:bg-zinc-950 shadow-[0_16px_40px_-26px_rgba(15,23,42,0.38)] dark:shadow-[0_16px_40px_-26px_rgba(0,0,0,0.45)] p-3"
+          class="absolute z-50 mt-2 w-full rounded-md border border-default bg-surface-raised p-3 shadow-sm"
         >
           <div v-if="searchSuggestions.length > 0" class="mb-2">
             <p class="px-1 text-[11px] font-semibold tracking-wide text-neutral-500 dark:text-neutral-400">추천 검색어</p>
@@ -521,8 +494,8 @@ const secondaryNavItems = computed(() => {
                 :class="[
                   'rounded-full px-3 py-1.5 text-xs transition',
                   highlightedIndex === searchSuggestions.length + recentSearches.length + popIdx
-                    ? 'bg-indigo-200 text-indigo-950 dark:bg-indigo-400/30 dark:text-indigo-50'
-                    : 'bg-indigo-50 text-indigo-900 hover:bg-indigo-100 dark:bg-indigo-500/12 dark:text-indigo-200 dark:hover:bg-indigo-500/22'
+                    ? 'bg-slate-200 text-slate-900 dark:bg-slate-600 dark:text-slate-50'
+                    : 'bg-surface-sunken text-secondary hover:bg-slate-200/80 dark:hover:bg-slate-700/60'
                 ]"
                 @mousedown.prevent="pickSuggestion(item)"
                 @mouseenter="highlightedIndex = searchSuggestions.length + recentSearches.length + popIdx"
@@ -541,15 +514,12 @@ const secondaryNavItems = computed(() => {
           title="찜 목록"
           aria-label="찜 목록"
         >
-          <Sparkles
-            class="w-4.5 h-4.5"
-            :class="{ 'header-wish-shimmer': wishlistCount > 0 }"
-          />
+          <Heart class="w-4.5 h-4.5" />
           <span
             v-if="wishlistCount > 0"
-            class="absolute -top-2 -right-2 bg-gradient-to-r from-neutral-700 to-neutral-500
+            class="absolute -top-2 -right-2 bg-slate-700 dark:bg-slate-200
                    text-white text-xs font-semibold rounded-full min-w-[1.25rem] h-5 flex items-center justify-center
-                   shadow-[0_0_6px_rgba(0,0,0,0.25)]"
+                   dark:text-slate-900"
           >
             {{ wishlistCount }}
           </span>
@@ -565,9 +535,9 @@ const secondaryNavItems = computed(() => {
           />
           <span
             v-if="totalItems > 0"
-            class="absolute -top-2 -right-2 bg-gradient-to-r from-slate-700 to-slate-500 dark:from-slate-100 dark:to-white
+            class="absolute -top-2 -right-2 bg-slate-700 dark:bg-slate-200
                    text-white text-[11px] font-semibold rounded-full min-w-[1.25rem] h-5 flex items-center justify-center
-                   dark:text-slate-900 shadow-[0_0_6px_rgba(0,0,0,0.25)]"
+                   dark:text-slate-900"
           >
             {{ totalItems }}
           </span>
@@ -647,29 +617,24 @@ const secondaryNavItems = computed(() => {
 
     <div class="group/cat w-full">
       <div
-        class="category-glass-bar relative flex items-center gap-2 overflow-x-auto overflow-y-hidden px-3 sm:px-4 py-2 sm:py-3 no-scrollbar
-               bg-slate-50/95 dark:bg-zinc-950/95
-               border-b border-slate-200/80 dark:border-slate-700/55
-               shadow-[0_10px_26px_-22px_rgba(15,23,42,0.34)]
-               transition-all duration-300 ease-out
-               group-hover/cat:bg-white dark:group-hover/cat:bg-zinc-900
-               group-hover/cat:border-slate-300/80 dark:group-hover/cat:border-slate-600/55"
+        class="category-glass-bar relative flex items-center gap-2 overflow-x-auto overflow-y-hidden px-3 sm:px-4 py-2
+               bg-surface-base border-b border-default"
       >
       <button
         v-for="item in secondaryNavItems"
-        :key="item.name + (item.emoji || '')"
+        :key="item.name + (item.tab || item.category || '')"
         type="button"
-        :aria-pressed="isCategoryActive(item)"
-        :aria-label="`${item.name} 카테고리 보기`"
-        @click="goCategory(item.category)"
+        :aria-pressed="isNavActive(item)"
+        :aria-label="`${item.name} 보기`"
+        @click="goNavItem(item)"
         :class="[
-          'relative z-10 shrink-0 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
-          isCategoryActive(item)
+          'relative z-10 shrink-0 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 focus-visible:ring-offset-2',
+          isNavActive(item)
             ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900/20'
             : 'shop-btn-secondary'
         ]"
       >
-        {{ item.name }}{{ item.emoji ? ` ${item.emoji}` : "" }}
+        {{ item.name }}
       </button>
       </div>
     </div>
@@ -692,7 +657,7 @@ const secondaryNavItems = computed(() => {
           id="mobile-header-menu"
           class="absolute right-0 top-0 flex h-full w-[min(100%,18rem)] flex-col
                  border-l border-slate-200/80 bg-white shadow-2xl
-                 dark:border-slate-700/60 dark:bg-zinc-950"
+                 dark:border-default dark:bg-surface-overlay"
         >
           <div class="flex items-center justify-between border-b border-slate-200/80 px-4 py-3 dark:border-slate-700/60">
             <span class="text-sm font-semibold text-slate-800 dark:text-slate-100">메뉴</span>
@@ -733,24 +698,15 @@ const secondaryNavItems = computed(() => {
           </div>
 
           <nav class="flex-1 overflow-y-auto px-2 py-3" aria-label="바로가기">
-            <template v-for="link in topLinks" :key="'mobile-' + link.label">
-              <router-link
-                v-if="!link.external"
-                :to="link.hash ? { path: link.path, hash: link.hash } : link.path"
-                class="mobile-menu-link block"
-                @click="closeMobileMenu"
-              >
-                {{ link.label }}
-              </router-link>
-              <button
-                v-else
-                type="button"
-                class="mobile-menu-link block w-full text-left"
-                @click="openExternal(link.url); closeMobileMenu()"
-              >
-                {{ link.label }}
-              </button>
-            </template>
+            <router-link
+              v-for="link in topLinks"
+              :key="'mobile-' + link.label"
+              :to="link.path"
+              class="mobile-menu-link block"
+              @click="closeMobileMenu"
+            >
+              {{ link.label }}
+            </router-link>
           </nav>
         </div>
       </div>
@@ -767,45 +723,8 @@ const secondaryNavItems = computed(() => {
   scrollbar-width: none;
 }
 
-@keyframes header-wish-shimmer {
-  0%, 100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(148, 163, 184, 0));
-  }
-  50% {
-    transform: scale(1.06);
-    filter: drop-shadow(0 0 5px rgba(148, 163, 184, 0.22));
-  }
-}
-
-.header-wish-shimmer {
-  animation: header-wish-shimmer 2.2s ease-in-out infinite;
-}
-
-:global(.dark) .header-wish-shimmer {
-  animation-name: header-wish-shimmer-dark;
-  animation-duration: 2.8s;
-}
-
-@keyframes header-wish-shimmer-dark {
-  0%, 100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(148, 163, 184, 0));
-  }
-  50% {
-    transform: scale(1.05);
-    filter: drop-shadow(0 0 4px rgba(148, 163, 184, 0.18));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .header-wish-shimmer {
-    animation: none;
-  }
-}
-
 .mobile-menu-link {
-  @apply rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition
-         hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/80;
+  @apply rounded-md px-3 py-2.5 text-sm font-medium text-secondary transition
+         hover:bg-surface-sunken hover:text-primary;
 }
 </style>

@@ -1,4 +1,8 @@
-<script setup>
+﻿<script setup>
+/*
+ * [면접] 주문·결제 화면
+ * 흐름: PortOne(또는 mock) 결제 → POST /orders → 서버 금액·재고 재검증
+ */
 import { ref, computed } from "vue";
 import { ShoppingCart } from "lucide-vue-next";
 import { useCartStore } from "../../store/cart";
@@ -140,54 +144,85 @@ const requestPayment = () => {
   }
 };
 
+const buildOrderPayload = (paymentResult) => {
+  const fullAddress = addressDetail.value
+    ? `${address.value} ${addressDetail.value}`
+    : address.value;
+
+  const payload = {
+    userId: userId.value,
+    recipient_name: name.value,
+    address: fullAddress,
+    phone: phone.value,
+    total_price: Number(finalTotal.value),
+    imp_uid: paymentResult.imp_uid,
+    merchant_uid: paymentResult.merchant_uid,
+    items: cart.items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity ?? 1,
+      price: Number(item.price),
+    })),
+  };
+  if (appliedCoupon.value?.code) {
+    payload.coupon_code = appliedCoupon.value.code;
+  }
+  return payload;
+};
+
+const completeOrderSuccess = (orderId) => {
+  toast.success("결제가 완료되었습니다!");
+  saveSeniorLastOrder(cart.items);
+  cart.clearCart();
+  router.push({
+    path: "/order-complete",
+    query: { orderId },
+  });
+};
+
+const submitOrder = async (paymentResult) => {
+  const payload = buildOrderPayload(paymentResult);
+  const res = await api.post("/orders", payload);
+  if (res.status === 200 && res.data?.success && res.data.orderId != null) {
+    return res.data;
+  }
+  const err = new Error(res.data?.message || "주문 처리 중 문제가 발생했습니다.");
+  err.response = { data: res.data };
+  throw err;
+};
+
 const handlePaymentSuccess = async (paymentResult) => {
   try {
-    const fullAddress = addressDetail.value 
-      ? `${address.value} ${addressDetail.value}`
-      : address.value;
+    let data;
+    try {
+      data = await submitOrder(paymentResult);
+    } catch (firstError) {
+      const canRetry =
+        paymentResult?.imp_uid &&
+        (!firstError.response || firstError.response.status >= 500);
 
-    const payload = {
-      userId: userId.value,
-      recipient_name: name.value,
-      address: fullAddress,
-      phone: phone.value,
-      total_price: Number(finalTotal.value),
-      imp_uid: paymentResult.imp_uid,
-      merchant_uid: paymentResult.merchant_uid,
-      items: cart.items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity ?? 1,
-        price: Number(item.price),
-      })),
-    };
-    if (appliedCoupon.value?.code) {
-      payload.coupon_code = appliedCoupon.value.code;
+      if (canRetry) {
+        data = await submitOrder(paymentResult);
+      } else {
+        throw firstError;
+      }
     }
 
-    console.log("📦 주문 요청 데이터:", payload);
-
-    const res = await api.post("/orders", payload);
-
-    console.log("✅ 서버 응답:", res.data);
-
-    if (res.status === 200 && res.data?.success) {
-      toast.success("결제가 완료되었습니다!");
-      saveSeniorLastOrder(cart.items);
-      cart.clearCart();
-
-      router.push({
-        path: "/order-complete",
-        query: { orderId: res.data.orderId },
-      });
-    } else {
-      console.warn("⚠️ 서버 응답이 예상과 다름:", res.data);
-      toast.error(res.data?.message || "주문 처리 중 문제가 발생했습니다.");
-    }
+    completeOrderSuccess(data.orderId);
   } catch (error) {
     console.error("❌ 주문 처리 오류:", error);
-    const errorMessage = error.userMessage || error.response?.data?.message || "주문 처리 중 오류가 발생했습니다.";
-    toast.error(`주문 처리 실패: ${errorMessage}`);
+    const serverMessage = error.response?.data?.message || error.userMessage || "";
+    const paymentRef = paymentResult?.imp_uid || paymentResult?.merchant_uid;
+
+    if (paymentRef && (!error.response || error.response.status >= 500)) {
+      toast.error(
+        `주문 저장에 실패했습니다. 결제는 완료되었을 수 있습니다. 고객센터에 결제번호(${paymentRef})를 알려주세요.`
+      );
+    } else if (error.response?.data?.code === "PRICE_MISMATCH") {
+      toast.error(serverMessage || "상품 가격이 변경되었습니다. 장바구니를 확인한 뒤 다시 결제해 주세요.");
+    } else {
+      toast.error(serverMessage || "주문 처리 중 오류가 발생했습니다.");
+    }
   } finally {
     isProcessingPayment.value = false;
   }
@@ -201,10 +236,7 @@ const handlePaymentError = (errorMessage) => {
 
 <template>
   <div
-    class="min-h-screen px-4 py-8 sm:px-8 sm:py-12 
-           bg-gradient-to-b from-slate-100 to-slate-200 
-           dark:from-zinc-950 dark:to-neutral-950
-           transition-colors duration-300 flex flex-col items-center"
+    class="shop-page-ambient px-4 py-8 sm:px-8 sm:py-12 transition-colors duration-300 flex flex-col items-center"
   >
     <h1
       class="flex items-center gap-2 text-3xl font-extrabold mb-10 

@@ -1,3 +1,8 @@
+/*
+ * [면접] 맞춤 추천 (홈 AI 맞춤 섹션)
+ * Q. AI 추천(/ai/recommend)과 뭐가 달라? → AI=자연어 입력, 맞춤=구매·찜·최근본 행동 기반
+ * Q. 가중치? → 구매 3점 > 찜 2점 > 최근 본 1점 → 비슷한 카테고리 상품 추천
+ */
 function parseRecentProductIds(raw) {
   if (Array.isArray(raw)) {
     return raw.map((v) => Number(v)).filter((n) => Number.isFinite(n) && n > 0).slice(0, 10);

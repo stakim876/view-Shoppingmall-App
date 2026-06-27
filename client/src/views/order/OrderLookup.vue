@@ -1,9 +1,6 @@
 <template>
   <div
-    class="min-h-screen py-16 px-6
-           bg-gradient-to-b from-slate-100 to-slate-200
-           dark:from-zinc-950 dark:to-neutral-950
-           text-neutral-800 dark:text-gray-100 font-['Inter']"
+    class="shop-page-ambient py-16 px-6 text-primary font-['Inter']"
   >
     <div class="max-w-xl mx-auto">
       <h1 class="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mb-2">

@@ -5,6 +5,7 @@ const SORT_FIELDS = {
   name: "name",
   price: "price",
   created_at: "created_at",
+  popular: "popular",
 };
 
 export function buildProductListQuery(rawQuery = {}) {
@@ -16,6 +17,14 @@ export function buildProductListQuery(rawQuery = {}) {
   const category = (rawQuery.category || "").toString().trim();
   const minPrice = rawQuery.minPrice != null ? Number(rawQuery.minPrice) : null;
   const maxPrice = rawQuery.maxPrice != null ? Number(rawQuery.maxPrice) : null;
+  const rawIds = (rawQuery.ids || "").toString().trim();
+  const requestedIds = rawIds
+    ? rawIds
+        .split(",")
+        .map((value) => Number.parseInt(value, 10))
+        .filter((id) => Number.isFinite(id) && id > 0)
+        .slice(0, 50)
+    : [];
 
   const requestedSortField = (rawQuery.sortBy || "id").toString().trim();
   const sortField = SORT_FIELDS[requestedSortField] || "id";
@@ -41,8 +50,17 @@ export function buildProductListQuery(rawQuery = {}) {
     where.push("price <= ?");
     params.push(maxPrice);
   }
+  if (requestedIds.length > 0) {
+    where.push(`id IN (${requestedIds.map(() => "?").join(", ")})`);
+    params.push(...requestedIds);
+  }
 
   const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+  const prefixProductColumns = (clause) =>
+    clause.replace(/\b(name|description|category|price|id|created_at)\b/g, "p.$1");
+  const whereWithAlias = where.length > 0
+    ? `WHERE ${where.map(prefixProductColumns).join(" AND ")}`
+    : "";
 
   let orderClause = `${sortField} ${sortOrder}`;
   let relevanceParams = [];
@@ -52,7 +70,24 @@ export function buildProductListQuery(rawQuery = {}) {
     relevanceParams = relevance.params;
   }
 
-  const listSql = `SELECT * FROM products ${whereClause} ORDER BY ${orderClause} LIMIT ? OFFSET ?`;
+  let listSql;
+  if (sortField === "popular") {
+    listSql = `
+      SELECT p.*
+      FROM products p
+      LEFT JOIN (
+        SELECT product_id, COALESCE(SUM(quantity), 0) AS order_qty
+        FROM order_items
+        GROUP BY product_id
+      ) pop ON pop.product_id = p.id
+      ${whereWithAlias}
+      ORDER BY COALESCE(pop.order_qty, 0) ${sortOrder}, p.id DESC
+      LIMIT ? OFFSET ?`;
+    orderClause = "popular";
+  } else {
+    listSql = `SELECT * FROM products ${whereClause} ORDER BY ${orderClause} LIMIT ? OFFSET ?`;
+  }
+
   const countSql = `SELECT COUNT(*) AS total FROM products ${whereClause}`;
 
   return {
@@ -67,6 +102,7 @@ export function buildProductListQuery(rawQuery = {}) {
     listParams: [...params, ...relevanceParams, limit, offset],
     countParams: params,
     search,
+    requestedIds,
     engine: "mysql",
   };
 }

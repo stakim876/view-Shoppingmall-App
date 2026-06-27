@@ -1,6 +1,6 @@
+@import "./tokens.css";
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -13,108 +13,102 @@
   }
 
   body {
-    @apply text-slate-900 bg-white
-           dark:bg-zinc-950 dark:text-zinc-100;
+    @apply antialiased text-primary bg-surface-base;
     overflow-x: clip;
   }
 
+  .dark body {
+    background-color: var(--color-surface-base);
+    background-image:
+      radial-gradient(ellipse 110% 70% at 50% -25%, var(--color-ambient-1), transparent 58%),
+      radial-gradient(ellipse 75% 50% at 100% 0%, var(--color-ambient-2), transparent 52%),
+      radial-gradient(ellipse 65% 45% at 0% 100%, var(--color-ambient-3), transparent 48%);
+    background-attachment: fixed;
+  }
+
   ::placeholder {
-    @apply text-slate-400 dark:text-zinc-500;
+    @apply text-slate-400 dark:text-muted;
   }
 }
 
 @layer components {
+  .shop-page-shell {
+    @apply min-h-screen bg-surface-base text-primary;
+  }
+
+  /* 라이트: 은은한 그라데이션 / 다크: body 앰비언트에 맞춰 단색(검정 그라데이션 제거) */
+  .shop-page-ambient {
+    @apply min-h-screen text-primary;
+    @apply bg-gradient-to-b from-slate-100 to-slate-200;
+  }
+
+  .dark .shop-page-ambient {
+    background: transparent;
+  }
+
   .shop-section-head {
     @apply flex items-end justify-between gap-4 mb-10;
   }
 
   .shop-section-title {
-    @apply text-3xl font-bold tracking-tight text-slate-900 dark:text-zinc-50;
+    @apply text-3xl font-bold tracking-tight text-slate-900 dark:text-primary;
   }
 
   .shop-link-muted {
-    @apply text-sm font-medium text-slate-600 dark:text-zinc-400 hover:underline shrink-0
-           hover:text-slate-900 dark:hover:text-zinc-200
+    @apply text-sm font-medium text-slate-600 dark:text-secondary hover:underline shrink-0
+           hover:text-slate-900 dark:hover:text-primary
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 rounded;
   }
 
   .shop-page-title {
-    @apply text-2xl font-semibold tracking-tight text-slate-800 dark:text-zinc-100;
+    @apply text-2xl font-semibold tracking-tight text-slate-800 dark:text-primary;
   }
 
   
   .shop-btn-primary {
-    @apply font-semibold text-white transition-all
+    @apply font-semibold text-white rounded-md
            bg-slate-900 hover:bg-slate-800
-           border border-slate-900/20
-           shadow-[0_10px_24px_-14px_rgba(15,23,42,0.35)]
-           active:translate-y-[1px]
-           dark:bg-slate-100 dark:text-slate-900 dark:border-slate-200/80
+           border border-slate-900
+           dark:bg-slate-100 dark:text-slate-900 dark:border-slate-200
            dark:hover:bg-white
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/60
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
+           focus-visible:ring-offset-2;
   }
 
   .shop-btn-cart {
-    @apply shop-btn-primary w-full py-2.5 rounded-xl;
+    @apply shop-btn-primary w-full py-2.5 rounded-md;
   }
 
   .shop-btn-secondary {
-    @apply font-medium transition-all
-           bg-white text-slate-700
-           border border-slate-300/80
-           hover:bg-slate-50 hover:text-slate-900
-           shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]
-           dark:bg-zinc-900 dark:text-slate-200 dark:border-slate-600/50
-           dark:hover:bg-zinc-800 dark:hover:text-white
-           active:translate-y-[1px]
+    @apply font-medium rounded-md
+           bg-surface-raised text-secondary
+           border border-default
+           hover:bg-surface-sunken hover:text-primary
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
+           focus-visible:ring-offset-2;
   }
 
   .shop-btn-ai {
-    @apply font-medium text-white transition-all relative overflow-hidden
-           bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-500
-           hover:from-indigo-500 hover:via-violet-500 hover:to-indigo-400
-           border border-indigo-900/30
-           shadow-[0_12px_28px_-14px_rgba(79,70,229,0.42)]
-           hover:shadow-[0_14px_32px_-14px_rgba(124,58,237,0.44)]
-           dark:bg-gradient-to-r dark:from-violet-400 dark:via-fuchsia-500 dark:to-indigo-400
-           dark:hover:from-violet-300 dark:hover:via-fuchsia-400 dark:hover:to-indigo-300
-           dark:border-fuchsia-200/40
-           dark:shadow-[0_14px_40px_-10px_rgba(192,132,252,0.52)]
-           dark:hover:shadow-[0_16px_44px_-10px_rgba(232,121,249,0.58)]
-           active:translate-y-[1px]
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/75
-           focus-visible:ring-offset-2 dark:focus-visible:ring-fuchsia-300/75
-           dark:focus-visible:ring-offset-zinc-950;
+    @apply shop-btn-primary;
   }
 
   .shop-btn-accent {
-    @apply inline-flex items-center justify-center font-medium text-white transition-all
-           bg-gradient-to-r from-indigo-600 to-violet-500
-           hover:opacity-95
-           dark:bg-gradient-to-r dark:from-violet-400 dark:to-indigo-400
-           dark:hover:from-violet-300 dark:hover:to-indigo-300
-           dark:shadow-[0_10px_28px_-10px_rgba(167,139,250,0.5)]
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
-           focus-visible:ring-offset-2 dark:focus-visible:ring-violet-300/80
-           dark:focus-visible:ring-offset-zinc-950;
+    @apply shop-btn-primary inline-flex items-center justify-center px-3 py-1.5;
   }
 
   .shop-btn-danger {
-    @apply font-medium transition-all
+    @apply font-medium transition-[transform,box-shadow,opacity]
            bg-rose-50 text-rose-700 border border-rose-300/80
            hover:bg-rose-100 hover:text-rose-800
            dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-500/30
            dark:hover:bg-rose-950/50
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-base;
   }
 
   .shop-btn-disabled {
     @apply bg-neutral-200 text-neutral-600 border border-neutral-300/80 cursor-not-allowed shadow-none
-           dark:bg-zinc-800/70 dark:text-zinc-400 dark:border-white/10;
+           dark:bg-surface-overlay dark:text-muted dark:border-default;
   }
 
   .shop-input-select {
@@ -122,116 +116,102 @@
            border border-slate-200/80
            text-neutral-800 text-sm
            shadow-[0_8px_20px_-16px_rgba(15,23,42,0.25)]
-           dark:bg-zinc-900/80 dark:border-white/10 dark:text-zinc-100
-           focus:outline-none focus:ring-2 focus:ring-indigo-600/50 dark:focus:ring-indigo-500/50;
+           dark:bg-surface-raised dark:border-default dark:text-primary
+           focus:outline-none focus:ring-2 focus:ring-indigo-600/50 dark:focus:ring-indigo-400/40;
   }
 
   .shop-card-product {
-    @apply relative overflow-hidden rounded-2xl cursor-pointer
-           bg-white/90
-           border border-neutral-900/10
-           shadow-[0_14px_34px_-26px_rgba(15,23,42,0.45)]
-           hover:shadow-[0_18px_44px_-28px_rgba(15,23,42,0.55)]
-           transition-[transform,box-shadow,border-color,background-color] duration-300
-           dark:bg-zinc-900/35 dark:border-white/[0.08]
-           dark:shadow-[0_14px_40px_-24px_rgba(0,0,0,0.55)]
-           dark:hover:border-white/[0.12] dark:hover:bg-zinc-900/50;
-  }
-
-  .shop-card-product::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(120% 80% at 30% 0%, rgba(255, 255, 255, 0.85), transparent 60%);
-    opacity: 0.35;
-  }
-
-  .dark .shop-card-product::before {
-    background: radial-gradient(120% 80% at 30% 0%, rgba(255, 255, 255, 0.10), transparent 62%);
-    opacity: 0.55;
+    @apply relative rounded-lg cursor-pointer
+           bg-surface-raised border border-default
+           hover:border-strong
+           transition-colors duration-150;
   }
 
   .shop-card-product-media {
-    @apply overflow-hidden flex items-center justify-center bg-neutral-50/90
-           dark:bg-zinc-950/80;
+    @apply overflow-hidden flex items-center justify-center bg-surface-sunken;
+  }
+
+  /* 가로 스크롤 레일·목록 — 대기업은 얇고 중립적인 스크롤바 */
+  .shop-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  .shop-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .shop-scroll::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  .shop-scroll::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 999px;
+  }
+
+  .shop-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
   }
 
   .header-utility-link {
-    @apply font-medium text-neutral-800 dark:text-zinc-200
-           hover:text-neutral-950 dark:hover:text-white
-           transition rounded px-0.5
+    @apply font-medium text-neutral-800 dark:text-secondary
+           hover:text-neutral-950 dark:hover:text-primary
+           rounded px-0.5
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/70
            focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-100/30
-           dark:focus-visible:ring-offset-zinc-950;
+           dark:focus-visible:ring-offset-surface-base;
   }
 
   .header-icon-btn {
-    @apply relative inline-flex items-center justify-center w-9 h-9 rounded-xl
-           border border-slate-200/85 bg-white text-neutral-700
-           shadow-[0_8px_20px_-16px_rgba(15,23,42,0.3)]
-           hover:scale-105 hover:text-neutral-900 hover:border-slate-300 transition
-           dark:bg-zinc-900/85 dark:border-white/10 dark:text-zinc-100
-           dark:hover:bg-zinc-800 dark:hover:border-white/[0.14]
-           dark:shadow-[0_8px_24px_-16px_rgba(0,0,0,0.45)]
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
+    @apply relative inline-flex items-center justify-center w-9 h-9 rounded-md
+           border border-default bg-surface-raised text-secondary
+           hover:bg-surface-sunken hover:text-primary
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40
+           focus-visible:ring-offset-2;
   }
 
   .header-theme-btn {
-    @apply relative inline-flex items-center justify-center w-9 h-9 rounded-xl
-           border border-slate-200/85 bg-white text-slate-700
-           shadow-[0_8px_20px_-16px_rgba(15,23,42,0.3)]
-           hover:scale-105 hover:text-slate-900 hover:border-slate-300 transition
-           dark:bg-indigo-950/50 dark:border-indigo-400/30 dark:text-indigo-100
-           dark:hover:bg-indigo-900/70 dark:hover:border-indigo-300/50 dark:hover:text-violet-100
-           dark:shadow-[0_10px_28px_-12px_rgba(99,102,241,0.35)]
-           cursor-pointer
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40
-           focus-visible:ring-offset-2 dark:focus-visible:ring-indigo-300/50
-           dark:focus-visible:ring-offset-zinc-950;
+    @apply header-icon-btn cursor-pointer;
   }
 
   .header-user-text {
-    @apply text-sm font-semibold text-slate-700 dark:text-zinc-200;
+    @apply text-sm font-semibold text-slate-700 dark:text-secondary;
   }
 
   .header-user-link {
     @apply text-sm px-3 py-1.5 rounded-lg
            bg-white/70 text-slate-700
-           hover:bg-white/90 transition
-           dark:bg-zinc-900/80 dark:border dark:border-white/10 dark:text-zinc-100
-           dark:hover:bg-zinc-800 dark:hover:border-white/[0.14]
+           hover:bg-white/90
+           dark:bg-surface-overlay dark:border dark:border-default dark:text-primary
+           dark:hover:bg-surface-raised dark:hover:border-strong
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-base;
   }
 
   .header-user-text-link {
     @apply text-sm rounded px-1 hover:underline
-           text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white
+           text-slate-700 dark:text-secondary hover:text-slate-900 dark:hover:text-primary
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400
-           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950;
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-base;
   }
 
   .shop-admin-shell {
-    @apply min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/90
-           dark:from-zinc-950 dark:via-zinc-950 dark:to-neutral-950;
+    @apply min-h-screen bg-surface-base;
   }
 
   .shop-admin-card {
-    @apply rounded-2xl border border-slate-200/85 bg-white/95
-           shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]
-           dark:border-white/[0.08] dark:bg-zinc-900/40
-           dark:shadow-[0_12px_40px_-24px_rgba(0,0,0,0.5)];
+    @apply rounded-lg border border-default bg-surface-raised;
   }
 
   .shop-admin-input {
     @apply w-full rounded-xl border border-slate-200/85 bg-white px-3 py-2.5 text-sm
            text-slate-800
            shadow-[0_4px_14px_-12px_rgba(15,23,42,0.25)]
-           dark:bg-zinc-900/75 dark:border-white/10 dark:text-zinc-100
+           dark:bg-surface-raised dark:border-default dark:text-primary
            focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-400/50
-           dark:focus:ring-violet-500/40;
+           dark:focus:ring-violet-400/35;
   }
 
   .shop-admin-kpi {
@@ -243,24 +223,24 @@
   }
 
   .shop-admin-table {
-    @apply w-full text-sm text-slate-800 dark:text-zinc-200;
+    @apply w-full text-sm text-slate-800 dark:text-primary;
   }
 
   .shop-admin-table thead {
-    @apply bg-slate-50/95 dark:bg-zinc-900/90 text-left;
+    @apply bg-slate-50/95 dark:bg-surface-sunken text-left;
   }
 
   .shop-admin-table th {
-    @apply px-3 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-zinc-500
-           border-b border-slate-200/80 dark:border-white/[0.08];
+    @apply px-3 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-muted
+           border-b border-slate-200/80 dark:border-default;
   }
 
   .shop-admin-table td {
-    @apply px-3 py-2.5 border-b border-slate-100 dark:border-white/[0.06] align-middle;
+    @apply px-3 py-2.5 border-b border-slate-100 dark:border-default align-middle;
   }
 
   .shop-admin-table tbody tr:hover {
-    @apply bg-slate-50/70 dark:bg-zinc-800/35;
+    @apply bg-slate-50/70 dark:bg-surface-overlay/50;
   }
 }
 
@@ -273,94 +253,37 @@
   background-clip: text;
 }
 
-* {
+/* 전역 스크롤바 — 얇고 중립적 (쿠팡·무신사 웹 패턴) */
+html {
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 102, 241, 0.55) rgba(226, 232, 240, 0.9);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-*::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-*::-webkit-scrollbar-track {
-  background: linear-gradient(
-    180deg,
-    rgba(248, 250, 252, 0.95),
-    rgba(226, 232, 240, 0.88)
-  );
-  border: 1px solid rgba(148, 163, 184, 0.28);
+html::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
   border-radius: 999px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    rgba(165, 180, 252, 0.95) 0%,
-    rgba(129, 140, 248, 0.92) 48%,
-    rgba(99, 102, 241, 0.9) 100%
-  );
-  border: 2px solid rgba(248, 250, 252, 0.96);
-  border-radius: 999px;
-  box-shadow:
-    0 3px 10px rgba(67, 56, 202, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+html::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
 }
 
-*::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(199, 210, 254, 0.98) 0%,
-    rgba(165, 180, 252, 0.96) 52%,
-    rgba(129, 140, 248, 0.94) 100%
-  );
-}
-
-*::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(
-    180deg,
-    rgba(129, 140, 248, 0.96),
-    rgba(99, 102, 241, 0.96)
-  );
-}
-
-.dark * {
-  scrollbar-color: rgba(129, 140, 248, 0.5) rgba(24, 24, 27, 0.9);
-}
-
-.dark *::-webkit-scrollbar-track {
-  background: linear-gradient(180deg, rgba(39, 39, 42, 0.95), rgba(24, 24, 27, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
-}
-
-.dark *::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    rgba(165, 180, 252, 0.82) 0%,
-    rgba(129, 140, 248, 0.78) 52%,
-    rgba(99, 102, 241, 0.74) 100%
-  );
-  border: 2px solid rgba(9, 9, 11, 0.9);
-  box-shadow:
-    0 4px 14px rgba(99, 102, 241, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.dark *::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(199, 210, 254, 0.9) 0%,
-    rgba(165, 180, 252, 0.85) 52%,
-    rgba(129, 140, 248, 0.82) 100%
-  );
-}
-
-.dark *::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(
-    180deg,
-    rgba(129, 140, 248, 0.92),
-    rgba(99, 102, 241, 0.92)
-  );
+/* 테마 전환 시 Tailwind transition-* 유틸보다 우선 */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
+  transition-property: none !important;
+  transition-duration: 0s !important;
+  animation: none !important;
 }

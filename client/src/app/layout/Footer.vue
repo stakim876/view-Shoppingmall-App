@@ -1,6 +1,6 @@
 ﻿<template>
   <footer
-    class="text-sm bg-slate-100 dark:bg-zinc-950 border-t border-slate-200/80 dark:border-slate-800/80"
+    class="text-sm bg-slate-100 dark:bg-surface-sunken border-t border-slate-200/80 dark:border-default"
   >
     <div class="max-w-6xl mx-auto px-6 py-10">
       <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">

@@ -32,6 +32,12 @@ import { ensureDatabaseSchema } from "./lib/schemaBootstrap.js";
 import { ensureDemoAdmin } from "./lib/demoAdmin.js";
 import { verifyPortOnePayment, isPortOneVerificationEnabled } from "./lib/portone.js";
 import { buildTrackingUrl, getCarrierLabel, isValidCarrierCode, listCarriers } from "./lib/tracking.js";
+import {
+  buildPricedLineItems,
+  findExistingOrderByPaymentRef,
+  sumLineSubtotal,
+  totalsMatch,
+} from "./lib/orderIntegrity.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -724,6 +730,7 @@ app.post("/api/ai/chat", async (req, res) => {
   }
 });
 
+// [면접] AI 큐레이터 — "5만 원대 백팩" 문장 → 조건 JSON → MySQL SELECT (상품은 DB에 있는 것만)
 app.post("/api/ai/recommend", async (req, res) => {
   const prompt = String(req.body?.prompt || "").trim();
   if (!prompt) {
@@ -733,6 +740,7 @@ app.post("/api/ai/recommend", async (req, res) => {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     const intent = await extractRecommendIntent(prompt, apiKey);
+    // intent = { budget, category, keywords } — OpenAI 또는 규칙 기반 파싱
     const budgetMax = Number.isFinite(intent.budget) ? Number(intent.budget) : null;
     const category = normalizeDbCategory(intent.category || null);
     const keywords = normalizeRecommendKeywords(intent.keywords, category);
@@ -1047,6 +1055,36 @@ app.get("/api/search/popular", async (req, res) => {
   }
 });
 
+async function attachReviewStatsToProducts(items = []) {
+  if (!items.length) return items;
+  const ids = [...new Set(items.map((product) => product.id).filter(Boolean))];
+  if (!ids.length) return items;
+  try {
+    const [rows] = await db.query(
+      `SELECT product_id,
+              COUNT(*) AS review_count,
+              ROUND(AVG(rating), 1) AS review_avg
+       FROM reviews
+       WHERE product_id IN (?)
+       GROUP BY product_id`,
+      [ids]
+    );
+    const map = new Map(rows.map((row) => [row.product_id, row]));
+    return items.map((product) => {
+      const stat = map.get(product.id);
+      if (!stat) return product;
+      return {
+        ...product,
+        review_count: Number(stat.review_count) || 0,
+        review_avg: Number(stat.review_avg) || 0,
+      };
+    });
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") return items;
+    throw err;
+  }
+}
+
 async function queryProductList(rawQuery = {}) {
   if (String(rawQuery.search || "").trim() && isElasticsearchEnabled()) {
     try {
@@ -1061,8 +1099,18 @@ async function queryProductList(rawQuery = {}) {
   const [results] = await db.query(query.listSql, query.listParams);
   const [countRows] = await db.query(query.countSql, query.countParams);
   const total = Number(countRows?.[0]?.total || 0);
+  let items = results;
+  if (query.requestedIds?.length) {
+    const order = new Map(query.requestedIds.map((id, index) => [id, index]));
+    items = [...items].sort(
+      (a, b) => (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+    );
+  }
+  if (String(rawQuery.withReviews || "") === "1") {
+    items = await attachReviewStatsToProducts(items);
+  }
   return {
-    items: results,
+    items,
     pagination: {
       page: query.page,
       limit: query.limit,
@@ -1643,6 +1691,7 @@ app.delete("/api/products/:id", authenticateToken, requireAdmin, async (req, res
   }
 });
 
+// [면접] 주문 API — DB 단가 재계산, 결제 멱등(imp_uid/merchant_uid), 재고 FOR UPDATE
 app.post("/api/orders", authenticateToken, async (req, res) => {
   console.log("📦 주문 요청 데이터:", JSON.stringify(req.body, null, 2));
 
@@ -1659,27 +1708,9 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
   if (!recipient_name || !address || !phone) {
     return fail(res, 400, "INVALID_SHIPPING_INFO", "배송 정보(이름/주소/연락처)는 필수입니다.");
   }
-  if (!items.every((it) => Number(it.id) > 0 && Number(it.price) >= 0 && Number(it.quantity || 1) > 0)) {
+  if (!items.every((it) => Number(it.id) > 0 && Number(it.quantity || 1) > 0)) {
     return fail(res, 400, "INVALID_ORDER_ITEMS", "주문 상품 데이터가 올바르지 않습니다.");
   }
-
-  const subtotal = items.reduce((sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
-  let discountedSubtotal = subtotal;
-  let couponId = null;
-  let discountAmount = 0;
-
-  if (coupon_code && String(coupon_code).trim()) {
-    const couponResult = await validateCoupon(db, coupon_code, subtotal);
-    if (!couponResult.valid) {
-      return res.status(400).json({ success: false, message: couponResult.message || "쿠폰 적용에 실패했습니다." });
-    }
-    discountedSubtotal = couponResult.finalTotal;
-    discountAmount = couponResult.discount;
-    couponId = couponResult.coupon?.id ?? null;
-  }
-
-  const shippingFee = calcShippingFee(discountedSubtotal);
-  const finalTotal = discountedSubtotal + shippingFee;
 
   if (total_price == null || isNaN(Number(total_price))) {
     return res.status(400).json({
@@ -1687,44 +1718,84 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
       message: "❌ Invalid or missing total_price value",
     });
   }
-
   const requestedTotal = Number(total_price);
-  if (Math.abs(requestedTotal - finalTotal) > 1) {
-    return res.status(400).json({
-      success: false,
-      message: "결제 금액이 일치하지 않습니다. 쿠폰/배송비 적용 상태를 확인한 뒤 다시 시도해주세요.",
-    });
+
+  try {
+    const existing = await findExistingOrderByPaymentRef(db, { impUid: imp_uid, merchantUid: merchant_uid });
+    if (existing) {
+      if (Number(existing.user_id) !== Number(userId)) {
+        return fail(res, 409, "PAYMENT_ALREADY_USED", "이미 처리된 결제 정보입니다.");
+      }
+      return res.json({ success: true, orderId: existing.id, idempotent: true });
+    }
+  } catch (lookupErr) {
+    console.error("❌ 결제 멱등 조회 오류:", lookupErr);
   }
 
   const conn = await db.getConnection();
+
+  const abortOrder = async (status, code, message, extra = {}) => {
+    await conn.rollback();
+    return fail(res, status, code, message, extra);
+  };
 
   try {
     await conn.beginTransaction();
 
     const itemProductIds = [...new Set(items.map((it) => Number(it.id)).filter((v) => Number.isFinite(v) && v > 0))];
     if (!itemProductIds.length) {
-      return fail(res, 400, "INVALID_ORDER_ITEMS", "주문 상품 데이터가 올바르지 않습니다.");
+      return abortOrder(400, "INVALID_ORDER_ITEMS", "주문 상품 데이터가 올바르지 않습니다.");
     }
 
     const lockSql = `
-      SELECT id, name, stock
+      SELECT id, name, price, stock
       FROM products
       WHERE id IN (${itemProductIds.map(() => "?").join(",")})
       FOR UPDATE
     `;
-    const [stockRows] = await conn.query(lockSql, itemProductIds);
-    const stockMap = new Map(stockRows.map((r) => [Number(r.id), Number(r.stock || 0)]));
+    const [catalogRows] = await conn.query(lockSql, itemProductIds);
+    const catalogById = new Map(catalogRows.map((row) => [Number(row.id), row]));
 
-    for (const it of items) {
-      const productId = Number(it.id);
-      const qty = Number(it.quantity || 1);
-      const currentStock = stockMap.get(productId);
-      if (currentStock == null) {
-        return fail(res, 400, "PRODUCT_NOT_FOUND", `상품(ID:${productId})을 찾을 수 없습니다.`);
+    const priced = buildPricedLineItems(items, catalogById);
+    if (!priced.ok) {
+      return abortOrder(400, priced.code, priced.message);
+    }
+
+    for (const line of priced.lines) {
+      if (line.quantity > line.stock) {
+        return abortOrder(
+          400,
+          "INSUFFICIENT_STOCK",
+          "재고가 부족한 상품이 있습니다. 장바구니를 확인해 주세요."
+        );
       }
-      if (qty > currentStock) {
-        return fail(res, 400, "INSUFFICIENT_STOCK", "재고가 부족한 상품이 있습니다. 장바구니를 확인해 주세요.");
+    }
+
+    const subtotal = sumLineSubtotal(priced.lines);
+    let discountedSubtotal = subtotal;
+    let couponId = null;
+    let discountAmount = 0;
+
+    if (coupon_code && String(coupon_code).trim()) {
+      const couponResult = await validateCoupon(db, coupon_code, subtotal);
+      if (!couponResult.valid) {
+        return abortOrder(400, "INVALID_COUPON", couponResult.message || "쿠폰 적용에 실패했습니다.");
       }
+      discountedSubtotal = couponResult.finalTotal;
+      discountAmount = couponResult.discount;
+      couponId = couponResult.coupon?.id ?? null;
+    }
+
+    const shippingFee = calcShippingFee(discountedSubtotal);
+    const finalTotal = discountedSubtotal + shippingFee;
+
+    if (!totalsMatch(requestedTotal, finalTotal)) {
+      return abortOrder(
+        400,
+        "PRICE_MISMATCH",
+        "결제 금액이 일치하지 않습니다. 상품 가격·쿠폰·배송비가 변경되었을 수 있습니다. 장바구니를 확인한 뒤 다시 시도해주세요.",
+        { expectedTotal: finalTotal }
+      );
     }
 
     if (imp_uid) {
@@ -1736,9 +1807,7 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
         if (verification.skipped) {
           console.log(`ℹ️ 결제 검증 생략(포트원 API 미설정): imp_uid=${imp_uid}`);
         } else if (!verification.verified) {
-          await conn.rollback();
-          return fail(
-            res,
+          return abortOrder(
             400,
             "PAYMENT_VERIFICATION_FAILED",
             "결제 검증에 실패했습니다. 결제 상태를 확인한 뒤 다시 시도해주세요."
@@ -1747,9 +1816,8 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
           console.log(`✅ 결제 검증 완료: imp_uid=${imp_uid}, amount=${verification.paidAmount}`);
         }
       } catch (verifyErr) {
-        await conn.rollback();
         console.error("❌ 결제 검증 오류:", verifyErr.message);
-        return fail(res, 502, "PAYMENT_VERIFICATION_ERROR", "결제 검증 중 오류가 발생했습니다.");
+        return abortOrder(502, "PAYMENT_VERIFICATION_ERROR", "결제 검증 중 오류가 발생했습니다.");
       }
     }
 
@@ -1779,24 +1847,37 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
       }
     }
 
-    const [orderResult] = await conn.query(
-      `INSERT INTO orders (${orderColumns}) VALUES (${orderValues})`,
-      orderParams
-    );
+    let orderId;
+    try {
+      const [orderResult] = await conn.query(
+        `INSERT INTO orders (${orderColumns}) VALUES (${orderValues})`,
+        orderParams
+      );
+      orderId = orderResult.insertId;
+    } catch (insertErr) {
+      if (insertErr.code === "ER_DUP_ENTRY" && (imp_uid || merchant_uid)) {
+        await conn.rollback();
+        const dup = await findExistingOrderByPaymentRef(db, { impUid: imp_uid, merchantUid: merchant_uid });
+        if (dup && Number(dup.user_id) === Number(userId)) {
+          return res.json({ success: true, orderId: dup.id, idempotent: true });
+        }
+        return fail(res, 409, "PAYMENT_ALREADY_USED", "이미 처리된 결제 정보입니다.");
+      }
+      throw insertErr;
+    }
 
-    const orderId = orderResult.insertId;
     if (couponId != null) {
       await conn.query("UPDATE coupons SET used_count = used_count + 1 WHERE id = ?", [couponId]);
     }
 
     console.log(`🆕 신규 주문 생성 완료 (order_id=${orderId})`);
 
-    const placeholders = items.map(() => "(?, ?, ?, ?)").join(", ");
-    const flatValues = items.flatMap((item) => [
+    const placeholders = priced.lines.map(() => "(?, ?, ?, ?)").join(", ");
+    const flatValues = priced.lines.flatMap((line) => [
       orderId,
-      item.id,
-      item.quantity || 1,
-      Number(item.price),
+      line.productId,
+      line.quantity,
+      line.unitPrice,
     ]);
 
     await conn.query(
@@ -1805,12 +1886,10 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
       flatValues
     );
 
-    for (const it of items) {
-      const productId = Number(it.id);
-      const qty = Number(it.quantity || 1);
+    for (const line of priced.lines) {
       await conn.query(
         "UPDATE products SET stock = GREATEST(stock - ?, 0) WHERE id = ?",
-        [qty, productId]
+        [line.quantity, line.productId]
       );
     }
 
@@ -2397,6 +2476,7 @@ app.post("/api/auth/signup-admin", async (req, res) => {
   }
 });
 
+// [면접] 로그인 — 이메일 정규화 → bcrypt 비교 → JWT 발급, 실패 횟수·캡차로 브루트포스 완화
 app.post("/api/auth/login", async (req, res) => {
   const { password, captchaToken } = req.body || {};
   const email = normalizeEmail(req.body?.email);

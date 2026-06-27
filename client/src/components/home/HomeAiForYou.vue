@@ -63,6 +63,10 @@
 </template>
 
 <script setup>
+/*
+ * [면접] AI 맞춤 추천 섹션
+ * GET /recommendations/personalized — 최근 본 상품 ID를 넘기면 서버가 행동 기반 추천 반환
+ */
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Sparkles } from "lucide-vue-next";
@@ -110,6 +114,7 @@ onMounted(async () => {
   loading.value = true;
   try {
     const recentIds = getRecentlyViewed().map((p) => p.id).filter(Boolean);
+    // [면접] recentProductIds — 클라이언트 localStorage의 최근 본 상품을 서버 추천 가중치에 활용
     const res = await api.get("/recommendations/personalized", {
       params: {
         recentProductIds: recentIds.join(","),

@@ -1,9 +1,9 @@
 ﻿<template>
   <div
-    class="fixed bottom-24 right-6 z-[45] w-[min(100vw-2rem,20rem)] max-h-[min(85dvh,calc(100dvh-7rem))] bg-white dark:bg-zinc-950 rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200 dark:border-white/[0.1]"
+    class="fixed bottom-24 right-6 z-[45] w-[min(100vw-2rem,20rem)] max-h-[min(85dvh,calc(100dvh-7rem))] bg-white dark:bg-surface-raised rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-200 dark:border-default"
   >
     <div
-      class="bg-gradient-to-br from-indigo-700 via-indigo-800 to-violet-950 dark:from-indigo-900 dark:via-violet-950 dark:to-zinc-950 text-white px-4 py-3 flex justify-between items-start gap-2 border-b border-white/15 dark:border-white/10"
+      class="bg-gradient-to-br from-indigo-700 via-indigo-800 to-violet-950 dark:from-indigo-800 dark:via-indigo-900 dark:to-surface-sunken text-white px-4 py-3 flex justify-between items-start gap-2 border-b border-white/15 dark:border-default"
     >
       <div class="min-w-0">
         <span class="font-semibold tracking-tight block">쇼핑 도움말</span>

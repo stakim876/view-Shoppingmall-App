@@ -1,3 +1,8 @@
+/*
+ * [면접] 검색 관련도 점수
+ * Q. 왜 프론트 filter() 대신 서버? → 상품 많아지면 전체 다운로드 부담, WHERE+점수 정렬이 유리
+ * Q. 점수? → 이름 완전일치(100) > 포함(80) > 앞글자(70) > 설명(40) > 카테고리(20)
+ */
 export function buildSearchRelevanceSql(search) {
   const term = String(search || "").trim();
   if (!term) {

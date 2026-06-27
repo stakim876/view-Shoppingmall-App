@@ -1,3 +1,8 @@
+/*
+ * [면접] 로그인·인증 핵심
+ * Q. 로그인하면 뭐가 저장되나? → DB 비밀번호(해시) 비교 후 JWT 발급 → 프론트 localStorage
+ * Q. authenticateToken? → 주문/마이페이지 같은 "로그인 필수" API 앞의 문지기
+ */
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
@@ -12,6 +17,7 @@ function getJwtSecret() {
 }
 
 export async function hashPassword(password) {
+  // [면접] 회원가입 시 평문 비밀번호 → bcrypt 해시 (DB에는 해시만 저장)
   const saltRounds = 10;
   return await bcrypt.hash(password, saltRounds);
 }

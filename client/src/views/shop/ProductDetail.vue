@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="min-h-screen bg-[#f9fafb] text-neutral-800 font-sans dark:bg-zinc-950 dark:text-neutral-200">
+  <div class="min-h-screen bg-surface-base text-primary font-sans">
     
     <div v-if="loading" class="min-h-screen flex items-center justify-center">
       <div class="text-center">
@@ -42,7 +42,7 @@
           ]"
         />
       </div>
-      <section class="relative py-10 sm:py-16 overflow-hidden border-b border-neutral-200 dark:border-zinc-800">
+      <section class="relative py-10 sm:py-16 overflow-hidden border-b border-neutral-200 dark:border-default">
         <div
           class="absolute inset-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-transparent blur-3xl opacity-70"
         ></div>
@@ -91,7 +91,7 @@
                 <li
                   v-for="(c, i) in productColorList"
                   :key="i"
-                  class="px-3 py-1 rounded-lg text-sm bg-neutral-100 text-neutral-800 dark:bg-zinc-800 dark:text-neutral-200 border border-neutral-200/80 dark:border-zinc-700"
+                  class="px-3 py-1 rounded-lg text-sm bg-neutral-100 text-neutral-800 dark:bg-surface-raised/80 dark:text-neutral-200 border border-neutral-200/80 dark:border-zinc-700"
                 >
                   {{ c }}
                 </li>
@@ -99,7 +99,7 @@
             </div>
 
             <div v-if="productLaptopSpecRows.length" class="mb-4 rounded-xl border border-neutral-200 dark:border-zinc-700 overflow-hidden">
-              <p class="text-xs font-semibold text-neutral-500 uppercase tracking-wide px-4 pt-3 pb-2 bg-neutral-50 dark:bg-zinc-900/80">
+              <p class="text-xs font-semibold text-neutral-500 uppercase tracking-wide px-4 pt-3 pb-2 bg-neutral-50 dark:bg-surface-sunken">
                 주요 사양
               </p>
               <dl class="divide-y divide-neutral-100 dark:divide-zinc-800 text-sm">
@@ -175,10 +175,10 @@
       </section>
 
       
-      <section class="max-w-4xl mx-auto px-6 py-12 border-b border-neutral-200 dark:border-zinc-800">
+      <section class="max-w-4xl mx-auto px-6 py-12 border-b border-neutral-200 dark:border-default">
         <h2 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100 mb-6">구매 후기</h2>
 
-        <form v-if="auth.isLoggedIn" @submit.prevent="submitReview" class="mb-8 p-4 bg-neutral-50 dark:bg-zinc-900/70 rounded-xl border border-neutral-200 dark:border-zinc-800">
+        <form v-if="auth.isLoggedIn" @submit.prevent="submitReview" class="mb-8 p-4 bg-neutral-50 dark:bg-surface-sunken rounded-xl border border-neutral-200 dark:border-default">
           <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">별점을 선택하고 한 줄 리뷰를 남겨 주세요.</p>
           <div class="flex items-center gap-1 mb-3">
             <button
@@ -195,7 +195,7 @@
           <textarea
             v-model="reviewContent"
             placeholder="리뷰 내용 (선택)"
-            class="w-full border border-neutral-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded-lg p-3 text-sm mb-2 resize-none"
+            class="w-full border border-neutral-200 dark:border-zinc-700 bg-white dark:bg-surface-raised rounded-lg p-3 text-sm mb-2 resize-none"
             rows="2"
           />
           <button
@@ -215,7 +215,7 @@
           <li
             v-for="r in reviews"
             :key="r.id"
-            class="flex gap-3 p-3 bg-white dark:bg-zinc-900/60 border border-neutral-100 dark:border-zinc-800 rounded-lg"
+            class="flex gap-3 p-3 bg-white dark:bg-surface-raised/60 border border-neutral-100 dark:border-default rounded-lg"
           >
             <div class="flex items-center gap-1 text-yellow-500 shrink-0">
               <span v-for="n in 5" :key="n">{{ r.rating >= n ? '★' : '☆' }}</span>
@@ -231,7 +231,7 @@
 
       <div class="max-w-7xl mx-auto px-6 py-16">
         <h2
-          class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100 mb-8 text-center border-b border-neutral-200 dark:border-zinc-800 pb-3"
+          class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100 mb-8 text-center border-b border-neutral-200 dark:border-default pb-3"
         >
           비슷한 상품 추천
         </h2>
@@ -244,7 +244,7 @@
         <div
           v-for="p in relatedProducts"
           :key="p.id"
-          class="group relative overflow-hidden rounded-3xl bg-white dark:bg-zinc-900/60 border border-neutral-200 dark:border-zinc-800 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-lg"
+          class="group relative overflow-hidden rounded-3xl bg-white dark:bg-surface-raised/60 border border-neutral-200 dark:border-default hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-lg"
         >
           <div class="absolute top-3 right-3 z-10" @click.stop>
             <WishlistButton :product-id="p.id" size="sm" />
