@@ -240,7 +240,7 @@
   }
 
   .shop-admin-table tbody tr:hover {
-    @apply bg-slate-50/70 dark:bg-surface-overlay/50;
+    @apply bg-slate-50/70 dark:bg-surface-overlay;
   }
 }
 

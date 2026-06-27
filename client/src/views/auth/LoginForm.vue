@@ -5,7 +5,7 @@
     <div
       class="bg-white/85 backdrop-blur-xl border border-white/70 
              shadow-[0_6px_24px_rgba(31,38,135,0.12)] rounded-3xl 
-             dark:bg-surface-raised/90 dark:border-default dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]
+             dark:bg-surface-raised dark:border-default dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]
              p-6 sm:p-10 w-full max-w-[380px] mx-4 text-center transition-all duration-500"
     >
       <div class="flex items-center justify-center mb-5">

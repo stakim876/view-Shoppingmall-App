@@ -91,7 +91,7 @@
                 <li
                   v-for="(c, i) in productColorList"
                   :key="i"
-                  class="px-3 py-1 rounded-lg text-sm bg-neutral-100 text-neutral-800 dark:bg-surface-raised/80 dark:text-neutral-200 border border-neutral-200/80 dark:border-zinc-700"
+                  class="px-3 py-1 rounded-lg text-sm bg-neutral-100 text-neutral-800 dark:bg-surface-raised dark:text-neutral-200 border border-neutral-200/80 dark:border-strong"
                 >
                   {{ c }}
                 </li>
@@ -215,7 +215,7 @@
           <li
             v-for="r in reviews"
             :key="r.id"
-            class="flex gap-3 p-3 bg-white dark:bg-surface-raised/60 border border-neutral-100 dark:border-default rounded-lg"
+            class="flex gap-3 p-3 bg-white dark:bg-surface-raised border border-neutral-100 dark:border-default rounded-lg"
           >
             <div class="flex items-center gap-1 text-yellow-500 shrink-0">
               <span v-for="n in 5" :key="n">{{ r.rating >= n ? '★' : '☆' }}</span>
@@ -244,7 +244,7 @@
         <div
           v-for="p in relatedProducts"
           :key="p.id"
-          class="group relative overflow-hidden rounded-3xl bg-white dark:bg-surface-raised/60 border border-neutral-200 dark:border-default hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-lg"
+          class="group relative overflow-hidden rounded-3xl bg-white dark:bg-surface-raised border border-neutral-200 dark:border-default hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-lg"
         >
           <div class="absolute top-3 right-3 z-10" @click.stop>
             <WishlistButton :product-id="p.id" size="sm" />

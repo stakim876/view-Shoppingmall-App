@@ -12,6 +12,7 @@ import {
   getOrderStepVariant,
   getOrderStepDotClass,
   getOrderStepTextClass,
+  canCancelOrder,
 } from "@/lib/orderStatus.js";
 
 const auth = useAuthStore();
@@ -19,6 +20,7 @@ const toast = useToastStore();
 const orders = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const cancellingOrderId = ref(null);
 const userName = ref(auth.user?.name || "");
 const personalizedProducts = ref([]);
 const personalizedSummary = ref("");
@@ -76,17 +78,6 @@ const loadPersonalizedRecommendations = async () => {
   }
 };
 
-const formatDate = (dateStr) => {
-  const d = new Date(dateStr);
-  return d.toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
 const updateUserInfo = async () => {
   if (!userName.value.trim()) {
     toast.warning("이름을 입력해주세요.");
@@ -106,6 +97,37 @@ const updateUserInfo = async () => {
   } catch (err) {
     toast.error(err.userMessage || "정보 수정에 실패했습니다.");
     console.error("정보 수정 오류:", err);
+  }
+};
+
+const formatDate = (dateStr) => {
+  const d = new Date(dateStr);
+  return d.toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const cancelOrder = async (orderId) => {
+  if (!window.confirm("주문을 취소하시겠습니까? (결제 환불은 별도 안내가 필요할 수 있습니다)")) {
+    return;
+  }
+  cancellingOrderId.value = orderId;
+  try {
+    const res = await api.post(`/orders/${orderId}/cancel`);
+    if (res.data?.success) {
+      toast.success(res.data.message || "주문이 취소되었습니다.");
+      await fetchOrders();
+    } else {
+      toast.error(res.data?.message || "주문 취소에 실패했습니다.");
+    }
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.userMessage || "주문 취소에 실패했습니다.");
+  } finally {
+    cancellingOrderId.value = null;
   }
 };
 </script>
@@ -283,12 +305,23 @@ const updateUserInfo = async () => {
             </p>
           </div>
 
-          <button
-            @click="$router.push(`/order/${order.id}`)"
-            class="shop-btn-primary mt-4 px-4 py-2 rounded-md"
-          >
-            상세보기
-          </button>
+          <div class="flex flex-wrap gap-2 mt-4">
+            <button
+              @click="$router.push(`/order/${order.id}`)"
+              class="shop-btn-primary px-4 py-2 rounded-md"
+            >
+              상세보기
+            </button>
+            <button
+              v-if="canCancelOrder(order.status)"
+              type="button"
+              class="shop-btn-danger px-4 py-2 rounded-md"
+              :disabled="cancellingOrderId === order.id"
+              @click="cancelOrder(order.id)"
+            >
+              {{ cancellingOrderId === order.id ? "취소 중…" : "주문 취소" }}
+            </button>
+          </div>
         </div>
       </div>
     </div>

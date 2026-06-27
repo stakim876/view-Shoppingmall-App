@@ -47,6 +47,11 @@ export function getOrderStepTextClass(variant) {
   return "text-gray-800 dark:text-gray-100 font-semibold";
 }
 
+export function canCancelOrder(status) {
+  const key = normalizeOrderStatus(status);
+  return key === "paid" || key === "preparing";
+}
+
 export function getOrderStatusBadgeClass(status) {
   const key = normalizeOrderStatus(status);
   const map = {

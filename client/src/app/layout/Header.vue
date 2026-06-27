@@ -358,7 +358,7 @@ const secondaryNavItems = computed(() => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 flex flex-col border-b border-default bg-surface-raised/90 backdrop-blur-md supports-[backdrop-filter]:bg-surface-raised/75">
+  <header class="sticky top-0 z-50 flex flex-col border-b border-default bg-surface-raised backdrop-blur-md supports-[backdrop-filter]:bg-surface-raised">
     <div
       v-if="bannerNotice && !bannerClosed"
       class="flex items-center gap-2 px-3 py-2 text-sm

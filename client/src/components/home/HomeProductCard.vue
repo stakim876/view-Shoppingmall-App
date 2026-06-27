@@ -17,6 +17,13 @@
         <h3 class="home-product-card__name">{{ product.name }}</h3>
         <p class="home-product-card__price">{{ formatPrice(product.price) }}원</p>
         <div class="home-product-card__meta">
+          <span
+            v-if="stockLabel"
+            class="home-product-card__badge"
+            :class="stockLabel.tone === 'soldout' ? 'home-product-card__badge--soldout' : 'home-product-card__badge--low'"
+          >
+            {{ stockLabel.text }}
+          </span>
           <span v-if="reviewStat" class="home-product-card__badge home-product-card__badge--review">
             ★ {{ reviewStat.avg }} ({{ reviewStat.count }})
           </span>
@@ -29,8 +36,13 @@
         </div>
       </div>
     </button>
-    <button type="button" class="shop-btn-cart home-product-card__cart" @click="$emit('add-to-cart', product)">
-      장바구니
+    <button
+      type="button"
+      class="shop-btn-cart home-product-card__cart"
+      :disabled="isSoldOut"
+      @click="$emit('add-to-cart', product)"
+    >
+      {{ isSoldOut ? "품절" : "장바구니" }}
     </button>
   </article>
 </template>
@@ -38,7 +50,7 @@
 <script setup>
 import { computed } from "vue";
 import { formatPrice } from "@/lib/format";
-import { productImageSrc, onProductImageError, getProductReviewStat } from "@/lib/productDisplay.js";
+import { productImageSrc, onProductImageError, getProductReviewStat, getProductStockLabel } from "@/lib/productDisplay.js";
 import { formatFreeShippingBadge } from "@/lib/shopPolicy.js";
 
 const props = defineProps({
@@ -51,6 +63,8 @@ const freeShippingLabel = formatFreeShippingBadge();
 const freeShippingShortLabel = "무료배송";
 
 const reviewStat = computed(() => getProductReviewStat(props.product));
+const stockLabel = computed(() => getProductStockLabel(props.product?.stock));
+const isSoldOut = computed(() => stockLabel.value?.tone === "soldout");
 </script>
 
 <style scoped>
@@ -142,6 +156,21 @@ const reviewStat = computed(() => getProductReviewStat(props.product));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.home-product-card__badge--soldout {
+  color: rgb(220 38 38);
+  background: rgb(254 226 226);
+}
+
+.home-product-card__badge--low {
+  color: rgb(180 83 9);
+  background: rgb(254 243 199);
+}
+
+.home-product-card__cart:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .home-product-card__cart {

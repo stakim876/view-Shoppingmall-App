@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="relative min-h-screen bg-surface-base text-primary font-sans">
     <div class="relative z-10 pb-8">
-      <HomeHero />
+      <HomeHero :popular-terms="popularSearches" />
       <HomeTrustBar />
       <HomeCategoryTiles :categories="categories" :loading="categoriesLoading" />
 
@@ -30,6 +30,19 @@
       />
 
       <HomeProductRail
+        v-if="auth.isLoggedIn && (forYouLoading || forYouProducts.length > 0)"
+        title="맞춤 추천"
+        :subtitle="forYouSummary"
+        :products="forYouProducts"
+        :loading="forYouLoading"
+        :error="forYouError"
+        :more-to="{ path: '/products' }"
+        @open="goDetail"
+        @add-to-cart="addToCart"
+        @retry="loadForYou"
+      />
+
+      <HomeProductRail
         v-if="recentLoading || recentProducts.length > 0"
         title="최근 본 상품"
         :products="recentProducts"
@@ -45,11 +58,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import api from "@/lib/api";
 import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toast";
+import { useAuthStore } from "@/store/auth";
 import { getRecentlyViewed } from "@/composables/useRecentlyViewed";
 import { parseProductListResponse } from "@/lib/productDisplay.js";
 import Footer from "@/app/layout/Footer.vue";
@@ -61,7 +75,9 @@ import HomeProductRail from "@/components/home/HomeProductRail.vue";
 const router = useRouter();
 const cart = useCartStore();
 const toast = useToastStore();
+const auth = useAuthStore();
 
+const popularSearches = ref([]);
 const categories = ref([]);
 const categoriesLoading = ref(true);
 
@@ -73,6 +89,11 @@ const newProducts = ref([]);
 const newLoading = ref(true);
 const newError = ref("");
 
+const forYouProducts = ref([]);
+const forYouLoading = ref(false);
+const forYouError = ref("");
+const forYouSummary = ref("");
+
 const recentProducts = ref([]);
 const recentLoading = ref(true);
 
@@ -81,6 +102,16 @@ const productListParams = (extra = {}) => ({
   withReviews: 1,
   ...extra,
 });
+
+const loadPopularSearches = async () => {
+  try {
+    const res = await api.get("/search/popular", { params: { limit: 6 } });
+    const terms = res.data?.terms;
+    popularSearches.value = Array.isArray(terms) ? terms.filter(Boolean) : [];
+  } catch (_) {
+    popularSearches.value = [];
+  }
+};
 
 const loadCategories = async () => {
   categoriesLoading.value = true;
@@ -126,6 +157,33 @@ const loadNew = async () => {
   }
 };
 
+const loadForYou = async () => {
+  if (!auth.isLoggedIn) {
+    forYouProducts.value = [];
+    return;
+  }
+  forYouLoading.value = true;
+  forYouError.value = "";
+  try {
+    const recentIds = getRecentlyViewed().map((p) => p.id).filter(Boolean);
+    const res = await api.get("/recommendations/personalized", {
+      params: {
+        limit: 8,
+        recentProductIds: recentIds.join(","),
+      },
+    });
+    forYouProducts.value = Array.isArray(res.data?.recommendations)
+      ? res.data.recommendations
+      : [];
+    forYouSummary.value = res.data?.summary || "";
+  } catch (err) {
+    forYouProducts.value = [];
+    forYouError.value = err.userMessage || "맞춤 추천을 불러오지 못했습니다.";
+  } finally {
+    forYouLoading.value = false;
+  }
+};
+
 const loadRecent = async () => {
   recentLoading.value = true;
   const viewed = getRecentlyViewed();
@@ -153,16 +211,46 @@ const goDetail = (id) => {
 };
 
 const addToCart = (product) => {
-  cart.addToCart({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    image_url: product.image_url,
-  });
+  const maxStock = product.stock != null ? Number(product.stock) : null;
+  if (maxStock != null && maxStock <= 0) {
+    toast.warning("품절된 상품입니다.");
+    return;
+  }
+  const ok = cart.addToCart(
+    {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image_url: product.image_url,
+    },
+    maxStock
+  );
+  if (!ok) {
+    toast.warning("재고가 부족합니다.");
+    return;
+  }
   toast.success(`${product.name}이(가) 장바구니에 추가되었습니다.`);
 };
 
+watch(
+  () => auth.isLoggedIn,
+  (loggedIn) => {
+    if (loggedIn) loadForYou();
+    else {
+      forYouProducts.value = [];
+      forYouSummary.value = "";
+    }
+  }
+);
+
 onMounted(async () => {
-  await Promise.all([loadCategories(), loadBest(), loadNew(), loadRecent()]);
+  await Promise.all([
+    loadPopularSearches(),
+    loadCategories(),
+    loadBest(),
+    loadNew(),
+    loadRecent(),
+    loadForYou(),
+  ]);
 });
 </script>

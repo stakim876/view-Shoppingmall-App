@@ -1906,6 +1906,70 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
   }
 });
 
+app.post("/api/orders/:id/cancel", authenticateToken, async (req, res) => {
+  const orderId = Number(req.params.id);
+  const userId = Number(req.user?.id);
+
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    return fail(res, 400, "INVALID_ORDER_ID", "유효하지 않은 주문 번호입니다.");
+  }
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [orderRows] = await conn.query(
+      "SELECT id, user_id, status FROM orders WHERE id = ? FOR UPDATE",
+      [orderId]
+    );
+    const order = orderRows?.[0];
+    if (!order) {
+      await conn.rollback();
+      return fail(res, 404, "ORDER_NOT_FOUND", "주문을 찾을 수 없습니다.");
+    }
+    if (Number(order.user_id) !== userId) {
+      await conn.rollback();
+      return fail(res, 403, "FORBIDDEN", "주문 취소 권한이 없습니다.");
+    }
+
+    const status = String(order.status || "").trim().toLowerCase();
+    const cancellable = new Set(["paid", "preparing", "pending"]);
+    if (!cancellable.has(status)) {
+      await conn.rollback();
+      return fail(
+        res,
+        400,
+        "ORDER_NOT_CANCELLABLE",
+        "배송이 시작된 주문은 취소할 수 없습니다. 고객센터로 문의해 주세요."
+      );
+    }
+
+    const [items] = await conn.query(
+      "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
+      [orderId]
+    );
+
+    for (const item of items) {
+      const qty = Number(item.quantity || 0);
+      const productId = Number(item.product_id);
+      if (qty > 0 && productId > 0) {
+        await conn.query("UPDATE products SET stock = stock + ? WHERE id = ?", [qty, productId]);
+      }
+    }
+
+    await conn.query("UPDATE orders SET status = 'cancelled' WHERE id = ?", [orderId]);
+    await conn.commit();
+
+    return ok(res, { orderId }, "주문이 취소되었습니다.");
+  } catch (err) {
+    await conn.rollback();
+    console.error("❌ 주문 취소 오류:", err);
+    return fail(res, 500, "ORDER_CANCEL_ERROR", "주문 취소에 실패했습니다.");
+  } finally {
+    conn.release();
+  }
+});
+
 app.get("/api/orders", authenticateToken, async (req, res) => {
   const { userId } = req.query;
   const requestUserId = userId || req.user?.id;

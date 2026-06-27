@@ -49,6 +49,14 @@ export function parseProductListResponse(res) {
   return Array.isArray(payload.items) ? payload.items : [];
 }
 
+export function getProductStockLabel(stock) {
+  const n = Number(stock);
+  if (!Number.isFinite(n)) return null;
+  if (n <= 0) return { text: "품절", tone: "soldout" };
+  if (n <= 5) return { text: `잔여 ${n}개`, tone: "low" };
+  return null;
+}
+
 export function buildReviewStatsMap(reviews = []) {
   const map = {};
   for (const review of reviews) {

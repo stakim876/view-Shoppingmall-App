@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import api from "../../lib/api";
+import { useToastStore } from "../../store/toast";
 import { ArrowLeft, Package } from "lucide-vue-next";
 import { formatPrice } from "../../lib/format";
 import {
@@ -11,13 +12,16 @@ import {
   getOrderStepVariant,
   getOrderStepDotClass,
   getOrderStepTextClass,
+  canCancelOrder,
 } from "@/lib/orderStatus.js";
 
 const route = useRoute();
 const router = useRouter();
+const toast = useToastStore();
 const order = ref(null);
 const loading = ref(true);
 const error = ref(null);
+const cancelling = ref(false);
 
 const fetchOrderDetail = async () => {
   const orderId = route.params.id;
@@ -37,6 +41,27 @@ const fetchOrderDetail = async () => {
 };
 
 onMounted(fetchOrderDetail);
+
+const cancelOrder = async () => {
+  if (!order.value?.order?.id) return;
+  if (!window.confirm("주문을 취소하시겠습니까? (결제 환불은 별도 안내가 필요할 수 있습니다)")) {
+    return;
+  }
+  cancelling.value = true;
+  try {
+    const res = await api.post(`/orders/${order.value.order.id}/cancel`);
+    if (res.data?.success) {
+      toast.success(res.data.message || "주문이 취소되었습니다.");
+      await fetchOrderDetail();
+    } else {
+      toast.error(res.data?.message || "주문 취소에 실패했습니다.");
+    }
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.userMessage || "주문 취소에 실패했습니다.");
+  } finally {
+    cancelling.value = false;
+  }
+};
 
 const formatDate = (dateStr) => {
   const d = new Date(dateStr);
@@ -183,6 +208,16 @@ const formatDate = (dateStr) => {
             {{ formatPrice(order.order.total_price) }}원
           </p>
         </div>
+
+        <button
+          v-if="canCancelOrder(order.order.status)"
+          type="button"
+          class="shop-btn-danger mt-6 w-full py-2.5 rounded-md font-medium"
+          :disabled="cancelling"
+          @click="cancelOrder"
+        >
+          {{ cancelling ? "취소 처리 중…" : "주문 취소" }}
+        </button>
       </div>
     </div>
   </div>
