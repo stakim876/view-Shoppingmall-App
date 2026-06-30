@@ -29,6 +29,7 @@ import { buildLoginAttemptKey, createLoginAttemptStore } from "./lib/loginSecuri
 import { verifyCaptchaToken } from "./lib/captcha.js";
 import { sendPasswordResetEmail, sendRestockAlertEmail, warmupDevMailer } from "./lib/mailer.js";
 import { ensureDatabaseSchema } from "./lib/schemaBootstrap.js";
+import { createIntegrationRouter } from "./lib/integrationRoutes.js";
 import { ensureDemoAdmin } from "./lib/demoAdmin.js";
 import { verifyPortOnePayment, isPortOneVerificationEnabled } from "./lib/portone.js";
 import { buildTrackingUrl, getCarrierLabel, isValidCarrierCode, listCarriers } from "./lib/tracking.js";
@@ -2753,6 +2754,8 @@ app.put("/api/auth/me", authenticateToken, async (req, res) => {
     });
   }
 });
+
+app.use("/api/integrations", createIntegrationRouter(db));
 
 app.use((err, req, res, next) => {
   console.error("❌ 처리되지 않은 서버 오류:", err);

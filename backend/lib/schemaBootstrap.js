@@ -52,11 +52,14 @@ async function seedProductsIfEmpty(db) {
   const [rows] = await db.query("SELECT COUNT(*) AS cnt FROM products");
   if (Number(rows[0]?.cnt) > 0) return 0;
 
+  let index = 1;
   for (const [name, description, price, stock, category, image_url] of DEMO_PRODUCTS) {
+    const sku = `SHOP-${String(index).padStart(3, "0")}`;
     await db.query(
-      `INSERT INTO products (name, description, price, stock, category, image_url) VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, description, price, stock, category, image_url]
+      `INSERT INTO products (name, description, price, stock, category, image_url, sku) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [name, description, price, stock, category, image_url, sku]
     );
+    index += 1;
   }
   return DEMO_PRODUCTS.length;
 }
@@ -106,15 +109,23 @@ export async function ensureDatabaseSchema(db) {
         description TEXT,
         price DECIMAL(10,2) NOT NULL,
         stock INT DEFAULT 0,
+        sku VARCHAR(50) NULL COMMENT 'WMS 연동 SKU',
         category VARCHAR(100),
         image_url VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_name (name)
+        INDEX idx_name (name),
+        UNIQUE INDEX uk_products_sku (sku)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     summary.tables.push("products");
   }
+
+  await ensureColumn(db, "products", "sku", "VARCHAR(50) NULL COMMENT 'WMS 연동 SKU'");
+  await db.query(
+    `UPDATE products SET sku = CONCAT('SHOP-', LPAD(id, 3, '0')) WHERE sku IS NULL OR sku = ''`
+  );
+  await ensureIndex(db, "products", "uk_products_sku", ["sku"], true);
 
   if (!(await tableExists(db, "orders"))) {
     await db.query(`
