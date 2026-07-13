@@ -101,17 +101,20 @@ const isSoldOut = computed(() => stockLabel.value?.tone === "soldout");
 }
 
 .home-product-card__media {
-  height: 7.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-surface-sunken);
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  overflow: hidden;
+  background: #fff;
 }
 
 .home-product-card__img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
 }
 
 .home-product-card__body {

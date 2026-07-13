@@ -65,7 +65,7 @@
           <div class="absolute top-3 right-3 z-10" @click.stop>
             <WishlistButton :product-id="p.id" size="sm" />
           </div>
-          <div class="shop-card-product-media h-36 sm:h-48">
+          <div class="shop-card-product-media aspect-square bg-white">
             <img
               :src="productImageSrc(p)"
               :alt="p.name"
