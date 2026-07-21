@@ -54,7 +54,7 @@
             <img
               :src="productImages[selectedImageIndex] || (product?.image_url ? normalizeImageUrl(product.image_url) : '')"
               alt="상품 이미지"
-              class="w-full max-w-md h-auto object-contain rounded-2xl shadow-md bg-white p-6"
+              class="w-full max-w-md aspect-square object-contain rounded-2xl shadow-md bg-white p-6"
             />
             <div v-if="productImages.length > 1" class="flex gap-2 flex-wrap justify-center">
               <button
@@ -249,11 +249,11 @@
           <div class="absolute top-3 right-3 z-10" @click.stop>
             <WishlistButton :product-id="p.id" size="sm" />
           </div>
-          <div class="overflow-hidden h-72 flex items-center justify-center bg-neutral-100">
+          <div class="overflow-hidden aspect-square flex items-center justify-center bg-white">
             <img
               :src="normalizeImageUrl(p.image_url || p.image)"
               :alt="p.name"
-              class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             />
           </div>
 
@@ -279,7 +279,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import api from "../../lib/api";
 import { useCartStore } from "../../store/cart";
@@ -338,7 +338,12 @@ const productImages = computed(() => {
     }
   }
 
-  return normalizedImages;
+  const seen = new Set();
+  return normalizedImages.filter((url) => {
+    if (seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  });
 });
 
 const stockNumber = computed(() => {
@@ -461,13 +466,11 @@ const subscribeRestock = async () => {
   }
 };
 
-onMounted(async () => {
+const loadProduct = async (id) => {
   loading.value = true;
   error.value = null;
   selectedImageIndex.value = 0;
   try {
-    const id = route.params.id;
-
     const res = await api.get(`/products/${id}`);
     product.value = res.data;
     restockEmail.value = auth.user?.email || "";
@@ -501,7 +504,21 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+};
+
+onMounted(() => {
+  loadProduct(route.params.id);
 });
+
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      loadProduct(newId);
+    }
+  }
+);
 </script>
 
 <style scoped>

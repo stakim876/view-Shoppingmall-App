@@ -71,7 +71,7 @@
               :alt="p.name"
               loading="lazy"
               decoding="async"
-              class="w-full h-full object-contain"
+              class="w-full h-full object-cover"
               @error="onProductImageError"
             />
           </div>

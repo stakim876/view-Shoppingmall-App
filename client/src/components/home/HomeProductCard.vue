@@ -20,7 +20,9 @@
           <span
             v-if="stockLabel"
             class="home-product-card__badge"
-            :class="stockLabel.tone === 'soldout' ? 'home-product-card__badge--soldout' : 'home-product-card__badge--low'"
+            :class="stockLabel.tone === 'soldout'
+              ? 'home-product-card__badge--soldout'
+              : 'home-product-card__badge--low'"
           >
             {{ stockLabel.text }}
           </span>
@@ -113,7 +115,7 @@ const isSoldOut = computed(() => stockLabel.value?.tone === "soldout");
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
 }
 

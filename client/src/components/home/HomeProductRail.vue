@@ -14,7 +14,7 @@
       <button type="button" class="home-rail__retry" @click="$emit('retry')">다시 시도</button>
     </p>
 
-    <div v-else class="home-rail__scroll shop-scroll">
+    <div v-else class="home-rail__grid">
       <HomeProductCard
         v-for="product in products"
         :key="`${title}-${product.id}`"
@@ -110,16 +110,19 @@ defineEmits(["open", "add-to-cart", "retry"]);
   cursor: pointer;
 }
 
-.home-rail__scroll {
-  display: flex;
-  gap: 0.65rem;
-  overflow-x: auto;
-  padding-bottom: 0.75rem;
-  scroll-snap-type: x proximity;
-  -webkit-overflow-scrolling: touch;
+.home-rail__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.85rem 0.65rem;
 }
 
-.home-rail__scroll > * {
-  scroll-snap-align: start;
+@media (min-width: 640px) {
+  .home-rail__grid {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  }
+}
+
+.home-rail__grid :deep(.home-product-card) {
+  width: 100%;
 }
 </style>

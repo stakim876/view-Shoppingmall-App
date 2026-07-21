@@ -52,7 +52,7 @@
             <img
               :src="normalizeImageUrl(item.image_url) || placeholderImg"
               :alt="item.name"
-              class="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               @error="($e) => ($e.target.src = placeholderImg)"
             />
           </div>
