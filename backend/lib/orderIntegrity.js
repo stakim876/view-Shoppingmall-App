@@ -1,4 +1,4 @@
-import { validateSelectedOptions } from "./productOptions.js";
+import { validateSelectedOptions, computeUnitPrice } from "./productOptions.js";
 
 export function buildPricedLineItems(requestItems, catalogById) {
   const lines = [];
@@ -20,8 +20,8 @@ export function buildPricedLineItems(requestItems, catalogById) {
       };
     }
 
-    const unitPrice = Number(product.price);
-    if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+    const basePrice = Number(product.price);
+    if (!Number.isFinite(basePrice) || basePrice < 0) {
       return {
         ok: false,
         code: "INVALID_PRODUCT_PRICE",
@@ -35,6 +35,15 @@ export function buildPricedLineItems(requestItems, catalogById) {
         ok: false,
         code: optionCheck.code,
         message: `${product.name}: ${optionCheck.message}`,
+      };
+    }
+
+    const unitPrice = computeUnitPrice(basePrice, product.product_options, optionCheck.options);
+    if (unitPrice == null) {
+      return {
+        ok: false,
+        code: "INVALID_PRODUCT_PRICE",
+        message: `상품(ID:${productId}) 가격 정보가 올바르지 않습니다.`,
       };
     }
 

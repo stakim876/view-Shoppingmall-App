@@ -72,12 +72,13 @@ async function seedProductsIfEmpty(db) {
 async function seedProductOptionsIfMissing(db) {
   let updated = 0;
   for (const [name, options] of Object.entries(DEMO_PRODUCT_OPTIONS_BY_NAME)) {
-    const [result] = await db.query(
-      `UPDATE products
-       SET product_options = ?
-       WHERE name = ? AND (product_options IS NULL OR product_options = '')`,
-      [JSON.stringify(options), name]
-    );
+    const forcePriceNames = new Set(["아이폰 15", "맥북 프로", "아이패드 프로"]);
+    const sql = forcePriceNames.has(name)
+      ? `UPDATE products SET product_options = ? WHERE name = ?`
+      : `UPDATE products
+         SET product_options = ?
+         WHERE name = ? AND (product_options IS NULL OR product_options = '')`;
+    const [result] = await db.query(sql, [JSON.stringify(options), name]);
     updated += Number(result?.affectedRows || 0);
   }
   return updated;

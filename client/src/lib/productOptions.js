@@ -1,3 +1,21 @@
+function parseOptionValue(entry) {
+  if (entry == null) return null;
+  if (typeof entry === "string" || typeof entry === "number") {
+    const value = String(entry).trim();
+    return value ? { value, priceDelta: 0 } : null;
+  }
+  if (typeof entry === "object") {
+    const value = String(entry.value ?? entry.label ?? "").trim();
+    if (!value) return null;
+    const delta = Number(entry.priceDelta ?? entry.price_delta ?? 0);
+    return {
+      value,
+      priceDelta: Number.isFinite(delta) ? delta : 0,
+    };
+  }
+  return null;
+}
+
 export function parseProductOptions(raw) {
   if (raw == null || raw === "") return [];
   let data = raw;
@@ -16,7 +34,7 @@ export function parseProductOptions(raw) {
       const key = String(group.key || "").trim();
       const label = String(group.label || key || "").trim();
       const values = Array.isArray(group.values)
-        ? group.values.map((v) => String(v).trim()).filter(Boolean)
+        ? group.values.map(parseOptionValue).filter(Boolean)
         : [];
       if (!key || !values.length) return null;
       return { key, label: label || key, values };
@@ -50,6 +68,32 @@ export function formatOptionsLabel(groups, selected) {
     .sort()
     .map((key) => `${labelByKey.get(key) || key}: ${normalized[key]}`)
     .join(" / ");
+}
+
+export function sumOptionPriceDelta(groups, selected) {
+  const normalized = normalizeSelectedOptions(selected);
+  let sum = 0;
+  for (const group of groups || []) {
+    const chosen = normalized[group.key];
+    if (!chosen) continue;
+    const match = (group.values || []).find((v) => v.value === chosen);
+    if (match) sum += Number(match.priceDelta || 0);
+  }
+  return sum;
+}
+
+export function computeUnitPrice(basePrice, groups, selected) {
+  const base = Number(basePrice);
+  if (!Number.isFinite(base) || base < 0) return null;
+  return base + sumOptionPriceDelta(groups, selected);
+}
+
+export function formatOptionChipLabel(entry) {
+  const value = typeof entry === "string" ? entry : entry?.value;
+  const delta = Number(typeof entry === "object" ? entry?.priceDelta : 0) || 0;
+  if (!delta) return value;
+  const sign = delta > 0 ? "+" : "";
+  return `${value} (${sign}${delta.toLocaleString("ko-KR")}원)`;
 }
 
 export function areAllOptionsSelected(groups, selected) {

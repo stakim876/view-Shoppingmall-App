@@ -92,18 +92,18 @@
                 </p>
                 <div class="flex flex-wrap gap-2">
                   <button
-                    v-for="value in group.values"
-                    :key="`${group.key}-${value}`"
+                    v-for="opt in group.values"
+                    :key="`${group.key}-${opt.value}`"
                     type="button"
                     class="px-3 py-1.5 rounded-lg text-sm border transition-colors"
                     :class="
-                      selectedOptions[group.key] === value
+                      selectedOptions[group.key] === opt.value
                         ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-200'
                         : 'bg-neutral-100 text-neutral-800 border-neutral-200/80 hover:border-neutral-400 dark:bg-surface-raised dark:text-neutral-200 dark:border-strong'
                     "
-                    @click="selectOption(group.key, value)"
+                    @click="selectOption(group.key, opt.value)"
                   >
-                    {{ value }}
+                    {{ formatOptionChipLabel(opt) }}
                   </button>
                 </div>
               </div>
@@ -125,7 +125,13 @@
             </div>
 
             <p class="text-3xl font-semibold text-indigo-700 dark:text-indigo-400 mb-2">
-              {{ formatPrice(product?.price) }}원
+              {{ formatPrice(displayPrice) }}원
+            </p>
+            <p
+              v-if="optionsReady && priceDelta > 0"
+              class="text-xs text-neutral-500 dark:text-neutral-400 -mt-1 mb-2"
+            >
+              기본가 {{ formatPrice(product?.price) }}원 + 옵션 {{ formatPrice(priceDelta) }}원
             </p>
 
             <p class="mb-6 text-sm">
@@ -313,6 +319,9 @@ import {
   formatOptionsLabel,
   optionsLineKey,
   normalizeSelectedOptions,
+  computeUnitPrice,
+  sumOptionPriceDelta,
+  formatOptionChipLabel,
 } from "@/lib/productOptions.js";
 
 const route = useRoute();
@@ -392,12 +401,23 @@ const productOptionGroups = computed(() => {
     }
   })();
   if (!colors.length) return [];
-  return [{ key: "color", label: "색상", values: colors }];
+  return [{ key: "color", label: "색상", values: colors.map((c) => ({ value: String(c), priceDelta: 0 })) }];
 });
 
 const optionsReady = computed(() =>
   areAllOptionsSelected(productOptionGroups.value, selectedOptions.value)
 );
+
+const priceDelta = computed(() =>
+  sumOptionPriceDelta(productOptionGroups.value, selectedOptions.value)
+);
+
+const displayPrice = computed(() => {
+  const base = Number(product.value?.price);
+  if (!Number.isFinite(base)) return 0;
+  if (!optionsReady.value) return base;
+  return computeUnitPrice(base, productOptionGroups.value, selectedOptions.value) ?? base;
+});
 
 const LAPTOP_SPEC_LABELS = {
   cpu: "CPU",
@@ -433,10 +453,12 @@ const selectOption = (key, value) => {
 const buildCartPayload = (p) => {
   const options = normalizeSelectedOptions(selectedOptions.value);
   const optionsLabel = formatOptionsLabel(productOptionGroups.value, options);
+  const unitPrice =
+    computeUnitPrice(p.price, productOptionGroups.value, options) ?? Number(p.price);
   return {
     id: p.id,
     name: p.name,
-    price: p.price,
+    price: unitPrice,
     image_url: p.image_url,
     options,
     optionsLabel,

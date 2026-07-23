@@ -62,6 +62,44 @@ test("buildPricedLineItems는 필수 옵션을 검증한다", () => {
   assert.equal(ok.lines[0].optionsJson, '{"color":"블랙","storage":"128GB"}');
 });
 
+test("buildPricedLineItems는 용량 옵션 가격 차이를 반영한다", () => {
+  const catalog = new Map([
+    [
+      1,
+      {
+        id: 1,
+        name: "아이폰 15",
+        price: 1500000,
+        stock: 10,
+        product_options: JSON.stringify([
+          { key: "color", label: "색상", values: ["블랙"] },
+          {
+            key: "storage",
+            label: "용량",
+            values: [
+              { value: "128GB", priceDelta: 0 },
+              { value: "256GB", priceDelta: 200000 },
+            ],
+          },
+        ]),
+      },
+    ],
+  ]);
+
+  const base = buildPricedLineItems(
+    [{ id: 1, quantity: 1, options: { color: "블랙", storage: "128GB" } }],
+    catalog
+  );
+  const upgraded = buildPricedLineItems(
+    [{ id: 1, quantity: 1, options: { color: "블랙", storage: "256GB" } }],
+    catalog
+  );
+  assert.equal(base.ok, true);
+  assert.equal(base.lines[0].unitPrice, 1500000);
+  assert.equal(upgraded.ok, true);
+  assert.equal(upgraded.lines[0].unitPrice, 1700000);
+});
+
 test("totalsMatch는 허용 오차 내에서 금액을 비교한다", () => {
   assert.equal(totalsMatch(10000, 10000), true);
   assert.equal(totalsMatch(10000.4, 10000), true);

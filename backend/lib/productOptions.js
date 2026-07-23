@@ -1,3 +1,21 @@
+function parseOptionValue(entry) {
+  if (entry == null) return null;
+  if (typeof entry === "string" || typeof entry === "number") {
+    const value = String(entry).trim();
+    return value ? { value, priceDelta: 0 } : null;
+  }
+  if (typeof entry === "object") {
+    const value = String(entry.value ?? entry.label ?? "").trim();
+    if (!value) return null;
+    const delta = Number(entry.priceDelta ?? entry.price_delta ?? 0);
+    return {
+      value,
+      priceDelta: Number.isFinite(delta) ? delta : 0,
+    };
+  }
+  return null;
+}
+
 export function parseProductOptions(raw) {
   if (raw == null || raw === "") return [];
   let data = raw;
@@ -16,7 +34,7 @@ export function parseProductOptions(raw) {
       const key = String(group.key || "").trim();
       const label = String(group.label || key || "").trim();
       const values = Array.isArray(group.values)
-        ? group.values.map((v) => String(v).trim()).filter(Boolean)
+        ? group.values.map(parseOptionValue).filter(Boolean)
         : [];
       if (!key || !values.length) return null;
       return { key, label: label || key, values };
@@ -52,6 +70,25 @@ export function formatOptionsLabel(groups, selected) {
     .join(" / ");
 }
 
+export function sumOptionPriceDelta(groups, selected) {
+  const normalized = normalizeSelectedOptions(selected);
+  let sum = 0;
+  for (const group of groups || []) {
+    const chosen = normalized[group.key];
+    if (!chosen) continue;
+    const match = (group.values || []).find((v) => v.value === chosen);
+    if (match) sum += Number(match.priceDelta || 0);
+  }
+  return sum;
+}
+
+export function computeUnitPrice(basePrice, productOptionsRaw, selectedRaw) {
+  const groups = parseProductOptions(productOptionsRaw);
+  const base = Number(basePrice);
+  if (!Number.isFinite(base) || base < 0) return null;
+  return base + sumOptionPriceDelta(groups, selectedRaw);
+}
+
 export function validateSelectedOptions(productOptionsRaw, selectedRaw) {
   const groups = parseProductOptions(productOptionsRaw);
   const selected = normalizeSelectedOptions(selectedRaw);
@@ -62,6 +99,7 @@ export function validateSelectedOptions(productOptionsRaw, selectedRaw) {
       options: {},
       optionsJson: null,
       optionsLabel: "",
+      priceDelta: 0,
     };
   }
 
@@ -74,7 +112,8 @@ export function validateSelectedOptions(productOptionsRaw, selectedRaw) {
         message: `${group.label}을(를) 선택해 주세요.`,
       };
     }
-    if (!group.values.includes(value)) {
+    const allowed = group.values.some((v) => v.value === value);
+    if (!allowed) {
       return {
         ok: false,
         code: "INVALID_OPTION",
@@ -104,17 +143,33 @@ export function validateSelectedOptions(productOptionsRaw, selectedRaw) {
     options: ordered,
     optionsJson: JSON.stringify(ordered),
     optionsLabel: formatOptionsLabel(groups, ordered),
+    priceDelta: sumOptionPriceDelta(groups, ordered),
   };
 }
 
 export const DEMO_PRODUCT_OPTIONS_BY_NAME = {
   "아이폰 15": [
     { key: "color", label: "색상", values: ["블랙", "블루", "핑크", "옐로", "그린"] },
-    { key: "storage", label: "용량", values: ["128GB", "256GB", "512GB"] },
+    {
+      key: "storage",
+      label: "용량",
+      values: [
+        { value: "128GB", priceDelta: 0 },
+        { value: "256GB", priceDelta: 200000 },
+        { value: "512GB", priceDelta: 400000 },
+      ],
+    },
   ],
   "맥북 프로": [
     { key: "color", label: "색상", values: ["스페이스 그레이", "실버"] },
-    { key: "storage", label: "저장공간", values: ["512GB", "1TB"] },
+    {
+      key: "storage",
+      label: "저장공간",
+      values: [
+        { value: "512GB", priceDelta: 0 },
+        { value: "1TB", priceDelta: 400000 },
+      ],
+    },
   ],
   "에어팟 프로": [
     { key: "color", label: "색상", values: ["화이트"] },
@@ -125,7 +180,15 @@ export const DEMO_PRODUCT_OPTIONS_BY_NAME = {
   ],
   "아이패드 프로": [
     { key: "size", label: "화면 크기", values: ["11인치", "12.9인치"] },
-    { key: "storage", label: "용량", values: ["256GB", "512GB", "1TB"] },
+    {
+      key: "storage",
+      label: "용량",
+      values: [
+        { value: "256GB", priceDelta: 0 },
+        { value: "512GB", priceDelta: 200000 },
+        { value: "1TB", priceDelta: 500000 },
+      ],
+    },
     { key: "color", label: "색상", values: ["스페이스 블랙", "실버"] },
   ],
   "뉴발란스 파스텔 스니커즈": [
