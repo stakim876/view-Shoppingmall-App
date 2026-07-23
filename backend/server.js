@@ -31,7 +31,8 @@ import { sendPasswordResetEmail, sendRestockAlertEmail, warmupDevMailer } from "
 import { ensureDatabaseSchema } from "./lib/schemaBootstrap.js";
 import { createIntegrationRouter } from "./lib/integrationRoutes.js";
 import { ensureDemoAdmin } from "./lib/demoAdmin.js";
-import { verifyPortOnePayment, isPortOneVerificationEnabled } from "./lib/portone.js";
+import { verifyPortOnePayment, isPortOneVerificationEnabled, cancelPortOnePayment } from "./lib/portone.js";
+import { createGuestLookupToken, phonesMatch } from "./lib/guestOrder.js";
 import { buildTrackingUrl, getCarrierLabel, isValidCarrierCode, listCarriers } from "./lib/tracking.js";
 import {
   buildPricedLineItems,
@@ -731,7 +732,6 @@ app.post("/api/ai/chat", async (req, res) => {
   }
 });
 
-// [면접] AI 큐레이터 — "5만 원대 백팩" 문장 → 조건 JSON → MySQL SELECT (상품은 DB에 있는 것만)
 app.post("/api/ai/recommend", async (req, res) => {
   const prompt = String(req.body?.prompt || "").trim();
   if (!prompt) {
@@ -741,7 +741,6 @@ app.post("/api/ai/recommend", async (req, res) => {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     const intent = await extractRecommendIntent(prompt, apiKey);
-    // intent = { budget, category, keywords } — OpenAI 또는 규칙 기반 파싱
     const budgetMax = Number.isFinite(intent.budget) ? Number(intent.budget) : null;
     const category = normalizeDbCategory(intent.category || null);
     const keywords = normalizeRecommendKeywords(intent.keywords, category);
@@ -1443,7 +1442,7 @@ app.post("/api/products/:id/restock-subscriptions", async (req, res) => {
 });
 
 app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) => {
-  const { name, description, price, image_url, category, stock, color_options, laptop_specs } = req.body;
+  const { name, description, price, image_url, category, stock, color_options, laptop_specs, product_options } = req.body;
 
   if (!name || price == null) {
     return res.status(400).json({ success: false, message: "상품명과 가격은 필수입니다." });
@@ -1461,10 +1460,16 @@ app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) 
       : typeof laptop_specs === "string"
         ? laptop_specs
         : JSON.stringify(laptop_specs);
+  const optionsStr =
+    product_options == null || product_options === ""
+      ? null
+      : typeof product_options === "string"
+        ? product_options
+        : JSON.stringify(product_options);
 
   try {
     const [result] = await db.query(
-      "INSERT INTO products (name, description, price, image_url, category, stock, color_options, laptop_specs) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO products (name, description, price, image_url, category, stock, color_options, laptop_specs, product_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         name,
         description || "",
@@ -1474,6 +1479,7 @@ app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) 
         stock != null && stock !== "" ? Number(stock) : 0,
         colorStr,
         specsStr,
+        optionsStr,
       ]
     );
     clearProductCache();
@@ -1492,7 +1498,7 @@ app.post("/api/products/add", authenticateToken, requireAdmin, async (req, res) 
 
 app.put("/api/products/:id", authenticateToken, requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
-  const { name, description, price, image_url, category, stock, color_options, laptop_specs } = req.body;
+  const { name, description, price, image_url, category, stock, color_options, laptop_specs, product_options } = req.body;
   if (!id) {
     return res.status(400).json({ success: false, message: "상품 ID가 필요합니다." });
   }
@@ -1520,6 +1526,14 @@ app.put("/api/products/:id", authenticateToken, requireAdmin, async (req, res) =
           : typeof laptop_specs === "string"
             ? laptop_specs
             : JSON.stringify(laptop_specs);
+    const optionsStr =
+      product_options === undefined
+        ? undefined
+        : product_options == null || product_options === ""
+          ? null
+          : typeof product_options === "string"
+            ? product_options
+            : JSON.stringify(product_options);
 
     const setParts = [
       "name = COALESCE(?, name)",
@@ -1544,6 +1558,10 @@ app.put("/api/products/:id", authenticateToken, requireAdmin, async (req, res) =
     if (Object.prototype.hasOwnProperty.call(req.body, "laptop_specs")) {
       setParts.push("laptop_specs = ?");
       params.push(specsStr);
+    }
+    if (Object.prototype.hasOwnProperty.call(req.body, "product_options")) {
+      setParts.push("product_options = ?");
+      params.push(optionsStr);
     }
     params.push(id);
     const [result] = await db.query(`UPDATE products SET ${setParts.join(", ")} WHERE id = ?`, params);
@@ -1692,18 +1710,18 @@ app.delete("/api/products/:id", authenticateToken, requireAdmin, async (req, res
   }
 });
 
-// [면접] 주문 API — DB 단가 재계산, 결제 멱등(imp_uid/merchant_uid), 재고 FOR UPDATE
-app.post("/api/orders", authenticateToken, async (req, res) => {
+app.post("/api/orders", optionalAuthenticate, async (req, res) => {
   console.log("📦 주문 요청 데이터:", JSON.stringify(req.body, null, 2));
 
   const { items, total_price, recipient_name, address, phone, imp_uid, merchant_uid, coupon_code } = req.body;
-  const userId = req.user?.id;
+  const userId = req.user?.id ? Number(req.user.id) : null;
+  const isGuest = !userId;
 
   const recipient = recipient_name || "이름없음";
   const addr = address || "주소없음";
   const tel = phone || "연락처없음";
 
-  if (!userId || !items || !Array.isArray(items) || items.length === 0) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ success: false, message: "잘못된 주문 데이터입니다." });
   }
   if (!recipient_name || !address || !phone) {
@@ -1720,14 +1738,20 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
     });
   }
   const requestedTotal = Number(total_price);
+  const guestToken = isGuest ? createGuestLookupToken() : null;
 
   try {
     const existing = await findExistingOrderByPaymentRef(db, { impUid: imp_uid, merchantUid: merchant_uid });
     if (existing) {
-      if (Number(existing.user_id) !== Number(userId)) {
+      if (userId && Number(existing.user_id) !== Number(userId)) {
         return fail(res, 409, "PAYMENT_ALREADY_USED", "이미 처리된 결제 정보입니다.");
       }
-      return res.json({ success: true, orderId: existing.id, idempotent: true });
+      return res.json({
+        success: true,
+        orderId: existing.id,
+        idempotent: true,
+        guestToken: existing.guest_token || null,
+      });
     }
   } catch (lookupErr) {
     console.error("❌ 결제 멱등 조회 오류:", lookupErr);
@@ -1749,7 +1773,7 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
     }
 
     const lockSql = `
-      SELECT id, name, price, stock
+      SELECT id, name, price, stock, product_options
       FROM products
       WHERE id IN (${itemProductIds.map(() => "?").join(",")})
       FOR UPDATE
@@ -1848,6 +1872,17 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
       }
     }
 
+    if (guestToken) {
+      try {
+        await conn.query("SELECT guest_token FROM orders LIMIT 1");
+        orderColumns += ", guest_token";
+        orderValues += ", ?";
+        orderParams.push(guestToken);
+      } catch (_) {
+        console.warn("⚠️ guest_token 컬럼이 없습니다. schemaBootstrap 후 비회원 주문을 사용하세요.");
+      }
+    }
+
     let orderId;
     try {
       const [orderResult] = await conn.query(
@@ -1859,8 +1894,13 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
       if (insertErr.code === "ER_DUP_ENTRY" && (imp_uid || merchant_uid)) {
         await conn.rollback();
         const dup = await findExistingOrderByPaymentRef(db, { impUid: imp_uid, merchantUid: merchant_uid });
-        if (dup && Number(dup.user_id) === Number(userId)) {
-          return res.json({ success: true, orderId: dup.id, idempotent: true });
+        if (dup && (!userId || Number(dup.user_id) === Number(userId))) {
+          return res.json({
+            success: true,
+            orderId: dup.id,
+            idempotent: true,
+            guestToken: dup.guest_token || null,
+          });
         }
         return fail(res, 409, "PAYMENT_ALREADY_USED", "이미 처리된 결제 정보입니다.");
       }
@@ -1873,19 +1913,41 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
 
     console.log(`🆕 신규 주문 생성 완료 (order_id=${orderId})`);
 
-    const placeholders = priced.lines.map(() => "(?, ?, ?, ?)").join(", ");
-    const flatValues = priced.lines.flatMap((line) => [
-      orderId,
-      line.productId,
-      line.quantity,
-      line.unitPrice,
-    ]);
+    let hasOptionsColumn = true;
+    try {
+      await conn.query("SELECT options_json FROM order_items LIMIT 1");
+    } catch (_) {
+      hasOptionsColumn = false;
+    }
 
-    await conn.query(
-      `INSERT INTO order_items (order_id, product_id, quantity, price)
-       VALUES ${placeholders}`,
-      flatValues
-    );
+    if (hasOptionsColumn) {
+      const placeholders = priced.lines.map(() => "(?, ?, ?, ?, ?)").join(", ");
+      const flatValues = priced.lines.flatMap((line) => [
+        orderId,
+        line.productId,
+        line.quantity,
+        line.unitPrice,
+        line.optionsJson,
+      ]);
+      await conn.query(
+        `INSERT INTO order_items (order_id, product_id, quantity, price, options_json)
+         VALUES ${placeholders}`,
+        flatValues
+      );
+    } else {
+      const placeholders = priced.lines.map(() => "(?, ?, ?, ?)").join(", ");
+      const flatValues = priced.lines.flatMap((line) => [
+        orderId,
+        line.productId,
+        line.quantity,
+        line.unitPrice,
+      ]);
+      await conn.query(
+        `INSERT INTO order_items (order_id, product_id, quantity, price)
+         VALUES ${placeholders}`,
+        flatValues
+      );
+    }
 
     for (const line of priced.lines) {
       await conn.query(
@@ -1897,7 +1959,7 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
     await conn.commit();
     console.log("✅ 주문 전체 처리 완료:", orderId);
 
-    res.json({ success: true, orderId });
+    res.json({ success: true, orderId, guestToken: guestToken || null });
   } catch (err) {
     await conn.rollback();
     console.error("❌ 주문 처리 중 오류 발생:", err);
@@ -1906,6 +1968,43 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
     conn.release();
   }
 });
+
+async function refundAndCancelOrder(conn, order, reason) {
+  const impUid = order.imp_uid || null;
+  const amount = Number(order.total_price);
+  if (impUid) {
+    try {
+      const refund = await cancelPortOnePayment({
+        impUid,
+        amount,
+        reason: reason || "주문 취소",
+      });
+      if (!refund.cancelled && !refund.skipped) {
+        throw new Error(refund.reason || "결제 환불에 실패했습니다.");
+      }
+      if (refund.skipped) {
+        console.log(`ℹ️ 포트원 환불 생략: ${refund.reason} (order=${order.id})`);
+      } else {
+        console.log(`✅ 포트원 환불 완료: imp_uid=${impUid}`);
+      }
+    } catch (err) {
+      throw new Error(err.message || "결제 환불에 실패했습니다.");
+    }
+  }
+
+  const [items] = await conn.query(
+    "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
+    [order.id]
+  );
+  for (const item of items) {
+    const qty = Number(item.quantity || 0);
+    const productId = Number(item.product_id);
+    if (qty > 0 && productId > 0) {
+      await conn.query("UPDATE products SET stock = stock + ? WHERE id = ?", [qty, productId]);
+    }
+  }
+  await conn.query("UPDATE orders SET status = 'cancelled' WHERE id = ?", [order.id]);
+}
 
 app.post("/api/orders/:id/cancel", authenticateToken, async (req, res) => {
   const orderId = Number(req.params.id);
@@ -1920,7 +2019,7 @@ app.post("/api/orders/:id/cancel", authenticateToken, async (req, res) => {
     await conn.beginTransaction();
 
     const [orderRows] = await conn.query(
-      "SELECT id, user_id, status FROM orders WHERE id = ? FOR UPDATE",
+      "SELECT id, user_id, status, imp_uid, total_price FROM orders WHERE id = ? FOR UPDATE",
       [orderId]
     );
     const order = orderRows?.[0];
@@ -1945,29 +2044,331 @@ app.post("/api/orders/:id/cancel", authenticateToken, async (req, res) => {
       );
     }
 
-    const [items] = await conn.query(
-      "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
-      [orderId]
-    );
-
-    for (const item of items) {
-      const qty = Number(item.quantity || 0);
-      const productId = Number(item.product_id);
-      if (qty > 0 && productId > 0) {
-        await conn.query("UPDATE products SET stock = stock + ? WHERE id = ?", [qty, productId]);
-      }
+    try {
+      await refundAndCancelOrder(conn, order, "고객 요청 취소");
+    } catch (refundErr) {
+      await conn.rollback();
+      return fail(res, 502, "REFUND_FAILED", refundErr.message || "결제 환불에 실패했습니다.");
     }
 
-    await conn.query("UPDATE orders SET status = 'cancelled' WHERE id = ?", [orderId]);
     await conn.commit();
-
-    return ok(res, { orderId }, "주문이 취소되었습니다.");
+    return ok(res, { orderId }, "주문이 취소되었고 결제가 환불 처리되었습니다.");
   } catch (err) {
     await conn.rollback();
     console.error("❌ 주문 취소 오류:", err);
     return fail(res, 500, "ORDER_CANCEL_ERROR", "주문 취소에 실패했습니다.");
   } finally {
     conn.release();
+  }
+});
+
+app.post("/api/orders/guest-lookup", async (req, res) => {
+  const orderId = Number(req.body?.orderId || req.body?.order_id);
+  const phone = req.body?.phone;
+  const guestToken = String(req.body?.guestToken || req.body?.guest_token || "").trim();
+
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    return fail(res, 400, "INVALID_ORDER_ID", "주문 번호를 입력해 주세요.");
+  }
+  if (!phone && !guestToken) {
+    return fail(res, 400, "INVALID_LOOKUP", "연락처 또는 주문 조회 코드를 입력해 주세요.");
+  }
+
+  try {
+    const [orderRows] = await db.query("SELECT * FROM orders WHERE id = ? LIMIT 1", [orderId]);
+    const order = orderRows?.[0];
+    if (!order) {
+      return fail(res, 404, "ORDER_NOT_FOUND", "주문을 찾을 수 없습니다.");
+    }
+
+    const tokenOk = guestToken && order.guest_token && guestToken === order.guest_token;
+    const phoneOk = phone && phonesMatch(phone, order.phone);
+    if (!tokenOk && !phoneOk) {
+      return fail(res, 403, "FORBIDDEN", "주문 정보가 일치하지 않습니다.");
+    }
+
+    const [items] = await db.query(
+      `SELECT oi.*, p.name AS product_name, p.image_url
+       FROM order_items oi
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE oi.order_id = ?`,
+      [orderId]
+    );
+
+    const carrierCode = order.carrier_code || null;
+    const trackingNo = order.tracking_number || null;
+
+    return res.json({
+      success: true,
+      order: {
+        id: order.id,
+        recipient_name: order.recipient_name,
+        address: order.address,
+        phone: order.phone,
+        total_price: order.total_price,
+        created_at: order.created_at,
+        status: order.status,
+        carrier_code: carrierCode,
+        carrier_label: carrierCode ? getCarrierLabel(carrierCode) : null,
+        tracking_number: trackingNo,
+        tracking_url: buildTrackingUrl(carrierCode, trackingNo),
+        is_guest: Boolean(order.guest_token) || order.user_id == null,
+      },
+      items: items.map((i) => ({
+        id: i.id,
+        name: i.product_name,
+        image_url: i.image_url,
+        quantity: i.quantity,
+        price: i.price,
+        options: i.options_json
+          ? (() => {
+              try {
+                return typeof i.options_json === "string" ? JSON.parse(i.options_json) : i.options_json;
+              } catch {
+                return null;
+              }
+            })()
+          : null,
+      })),
+    });
+  } catch (err) {
+    console.error("❌ 비회원 주문 조회 실패:", err);
+    return fail(res, 500, "GUEST_LOOKUP_ERROR", "주문 조회에 실패했습니다.");
+  }
+});
+
+app.post("/api/orders/:id/returns", authenticateToken, async (req, res) => {
+  const orderId = Number(req.params.id);
+  const userId = Number(req.user?.id);
+  const type = String(req.body?.type || "return").toLowerCase() === "exchange" ? "exchange" : "return";
+  const reason = String(req.body?.reason || "").trim();
+
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    return fail(res, 400, "INVALID_ORDER_ID", "유효하지 않은 주문 번호입니다.");
+  }
+  if (reason.length < 2) {
+    return fail(res, 400, "INVALID_REASON", "반품/교환 사유를 입력해 주세요.");
+  }
+
+  try {
+    const [orderRows] = await db.query(
+      "SELECT id, user_id, status FROM orders WHERE id = ? LIMIT 1",
+      [orderId]
+    );
+    const order = orderRows?.[0];
+    if (!order) return fail(res, 404, "ORDER_NOT_FOUND", "주문을 찾을 수 없습니다.");
+    if (Number(order.user_id) !== userId) {
+      return fail(res, 403, "FORBIDDEN", "권한이 없습니다.");
+    }
+
+    const status = String(order.status || "").toLowerCase();
+    if (!["done", "completed", "delivered", "shipping", "shipped"].includes(status)) {
+      return fail(res, 400, "NOT_ELIGIBLE", "배송중/배송완료 주문만 반품·교환을 신청할 수 있습니다.");
+    }
+
+    const [existing] = await db.query(
+      "SELECT id FROM return_requests WHERE order_id = ? AND status = 'requested' LIMIT 1",
+      [orderId]
+    );
+    if (existing?.[0]) {
+      return fail(res, 409, "ALREADY_REQUESTED", "이미 처리 대기 중인 반품/교환 요청이 있습니다.");
+    }
+
+    const [result] = await db.query(
+      `INSERT INTO return_requests (order_id, user_id, type, reason, status)
+       VALUES (?, ?, ?, ?, 'requested')`,
+      [orderId, userId, type, reason.slice(0, 500)]
+    );
+
+    await db.query("UPDATE orders SET status = 'return_requested' WHERE id = ?", [orderId]).catch(() => {});
+
+    return ok(
+      res,
+      { id: result.insertId, orderId, type, status: "requested" },
+      type === "exchange" ? "교환 신청이 접수되었습니다." : "반품 신청이 접수되었습니다."
+    );
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") {
+      return fail(res, 503, "SCHEMA_MISSING", "반품 테이블이 없습니다. 서버를 재시작해 주세요.");
+    }
+    if (err.code === "ER_TRUNCATED_WRONG_VALUE_FOR_FIELD" || err.code === "WARN_DATA_TRUNCATED") {
+      return ok(res, { orderId, type, status: "requested" }, "반품/교환 신청이 접수되었습니다.");
+    }
+    console.error("❌ 반품/교환 신청 오류:", err);
+    return fail(res, 500, "RETURN_REQUEST_ERROR", "반품/교환 신청에 실패했습니다.");
+  }
+});
+
+app.get("/api/admin/returns", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT r.*, o.recipient_name, o.total_price, o.status AS order_status, o.imp_uid
+       FROM return_requests r
+       JOIN orders o ON o.id = r.order_id
+       ORDER BY r.created_at DESC
+       LIMIT 100`
+    );
+    return ok(res, { returns: rows });
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE") return ok(res, { returns: [] });
+    console.error("❌ 반품 목록 오류:", err);
+    return fail(res, 500, "RETURN_LIST_ERROR", "반품 목록을 불러오지 못했습니다.");
+  }
+});
+
+app.post("/api/admin/returns/:id/approve", authenticateToken, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return fail(res, 400, "INVALID_ID", "잘못된 요청입니다.");
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [rows] = await conn.query(
+      `SELECT r.*, o.imp_uid, o.total_price, o.status AS order_status
+       FROM return_requests r
+       JOIN orders o ON o.id = r.order_id
+       WHERE r.id = ? FOR UPDATE`,
+      [id]
+    );
+    const reqRow = rows?.[0];
+    if (!reqRow) {
+      await conn.rollback();
+      return fail(res, 404, "NOT_FOUND", "요청을 찾을 수 없습니다.");
+    }
+    if (reqRow.status !== "requested") {
+      await conn.rollback();
+      return fail(res, 400, "ALREADY_HANDLED", "이미 처리된 요청입니다.");
+    }
+
+    if (reqRow.type === "return") {
+      try {
+        await refundAndCancelOrder(
+          conn,
+          { id: reqRow.order_id, imp_uid: reqRow.imp_uid, total_price: reqRow.total_price },
+          "반품 승인 환불"
+        );
+      } catch (refundErr) {
+        await conn.rollback();
+        return fail(res, 502, "REFUND_FAILED", refundErr.message || "환불 실패");
+      }
+    } else {
+      await conn.query("UPDATE orders SET status = 'preparing' WHERE id = ?", [reqRow.order_id]);
+    }
+
+    await conn.query(
+      "UPDATE return_requests SET status = 'approved', admin_note = ? WHERE id = ?",
+      [String(req.body?.note || "").slice(0, 500) || null, id]
+    );
+    await conn.commit();
+    return ok(res, { id }, reqRow.type === "exchange" ? "교환이 승인되었습니다." : "반품·환불이 승인되었습니다.");
+  } catch (err) {
+    await conn.rollback();
+    console.error("❌ 반품 승인 오류:", err);
+    return fail(res, 500, "RETURN_APPROVE_ERROR", "처리에 실패했습니다.");
+  } finally {
+    conn.release();
+  }
+});
+
+app.post("/api/admin/returns/:id/reject", authenticateToken, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return fail(res, 400, "INVALID_ID", "잘못된 요청입니다.");
+  try {
+    const [rows] = await db.query("SELECT * FROM return_requests WHERE id = ?", [id]);
+    const reqRow = rows?.[0];
+    if (!reqRow) return fail(res, 404, "NOT_FOUND", "요청을 찾을 수 없습니다.");
+    if (reqRow.status !== "requested") {
+      return fail(res, 400, "ALREADY_HANDLED", "이미 처리된 요청입니다.");
+    }
+    await db.query(
+      "UPDATE return_requests SET status = 'rejected', admin_note = ? WHERE id = ?",
+      [String(req.body?.note || "반려").slice(0, 500), id]
+    );
+    await db.query(
+      "UPDATE orders SET status = 'done' WHERE id = ? AND status = 'return_requested'",
+      [reqRow.order_id]
+    ).catch(() => {});
+    return ok(res, { id }, "요청이 반려되었습니다.");
+  } catch (err) {
+    console.error("❌ 반품 반려 오류:", err);
+    return fail(res, 500, "RETURN_REJECT_ERROR", "처리에 실패했습니다.");
+  }
+});
+
+app.post("/api/auth/kakao", async (req, res) => {
+  try {
+    const demoMode = Boolean(req.body?.demo) || !String(process.env.KAKAO_REST_API_KEY || "").trim();
+    let kakaoId;
+    let email;
+    let name;
+
+    if (demoMode) {
+      kakaoId = String(req.body?.oauthId || `demo_${Date.now()}`);
+      email = `kakao_${kakaoId.replace(/\W/g, "")}@demo.myshop.local`;
+      name = String(req.body?.name || "카카오 데모 회원");
+    } else {
+      const accessToken = String(req.body?.accessToken || "").trim();
+      if (!accessToken) {
+        return fail(res, 400, "MISSING_TOKEN", "카카오 accessToken이 필요합니다.");
+      }
+      const { data } = await axios.get("https://kapi.kakao.com/v2/user/me", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        timeout: 15000,
+      });
+      kakaoId = String(data?.id || "");
+      email =
+        data?.kakao_account?.email ||
+        `kakao_${kakaoId}@kakao.myshop.local`;
+      name =
+        data?.kakao_account?.profile?.nickname ||
+        data?.properties?.nickname ||
+        "카카오 회원";
+      if (!kakaoId) {
+        return fail(res, 400, "KAKAO_PROFILE_ERROR", "카카오 프로필을 가져오지 못했습니다.");
+      }
+    }
+
+    const [existing] = await db.query(
+      "SELECT id, email, name, role FROM users WHERE oauth_provider = 'kakao' AND oauth_id = ? LIMIT 1",
+      [kakaoId]
+    );
+    let user = existing?.[0];
+    if (!user) {
+      const [byEmail] = await db.query("SELECT id, email, name, role FROM users WHERE email = ? LIMIT 1", [email]);
+      if (byEmail?.[0]) {
+        await db.query(
+          "UPDATE users SET oauth_provider = 'kakao', oauth_id = ? WHERE id = ?",
+          [kakaoId, byEmail[0].id]
+        );
+        user = byEmail[0];
+      } else {
+        const [ins] = await db.query(
+          "INSERT INTO users (email, password, name, role, oauth_provider, oauth_id) VALUES (?, NULL, ?, 'user', 'kakao', ?)",
+          [email, name, kakaoId]
+        );
+        user = { id: ins.insertId, email, name, role: "user" };
+      }
+    }
+
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+      role: user.role || "user",
+    });
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || name,
+        role: user.role || "user",
+      },
+      demo: demoMode,
+    });
+  } catch (err) {
+    console.error("❌ 카카오 로그인 오류:", err.message);
+    return fail(res, 500, "KAKAO_LOGIN_ERROR", "카카오 로그인에 실패했습니다.");
   }
 });
 
@@ -2075,6 +2476,18 @@ app.get("/api/orders/detail/:id", authenticateToken, async (req, res) => {
         image_url: i.image_url,
         quantity: i.quantity,
         price: i.price,
+        options: i.options_json
+          ? (() => {
+              try {
+                return typeof i.options_json === "string"
+                  ? JSON.parse(i.options_json)
+                  : i.options_json;
+              } catch {
+                return null;
+              }
+            })()
+          : null,
+        options_json: i.options_json || null,
       })),
     });
   } catch (err) {
@@ -2272,18 +2685,44 @@ app.get("/api/admin/restock-subscriptions/counts", authenticateToken, requireAdm
 app.put("/api/admin/orders/:id/status", authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  const allowedStatus = new Set(["paid", "preparing", "shipping", "done", "cancelled"]);
+  const allowedStatus = new Set(["paid", "preparing", "shipping", "done", "cancelled", "return_requested"]);
 
   if (!status || !allowedStatus.has(String(status))) {
     return fail(res, 400, "INVALID_STATUS", "유효하지 않은 주문 상태입니다.");
   }
 
+  const conn = await db.getConnection();
   try {
-    await db.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
+    await conn.beginTransaction();
+    const [rows] = await conn.query(
+      "SELECT id, status, imp_uid, total_price FROM orders WHERE id = ? FOR UPDATE",
+      [id]
+    );
+    const order = rows?.[0];
+    if (!order) {
+      await conn.rollback();
+      return fail(res, 404, "ORDER_NOT_FOUND", "주문을 찾을 수 없습니다.");
+    }
+
+    if (String(status) === "cancelled" && String(order.status) !== "cancelled") {
+      try {
+        await refundAndCancelOrder(conn, order, "관리자 주문 취소");
+      } catch (refundErr) {
+        await conn.rollback();
+        return fail(res, 502, "REFUND_FAILED", refundErr.message || "결제 환불에 실패했습니다.");
+      }
+    } else {
+      await conn.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
+    }
+
+    await conn.commit();
     res.json({ success: true, message: "주문 상태가 변경되었습니다." });
   } catch (err) {
+    await conn.rollback();
     console.error("❌ 주문 상태 변경 오류:", err);
     res.status(500).json({ success: false, message: "상태 변경 실패" });
+  } finally {
+    conn.release();
   }
 });
 
@@ -2541,7 +2980,6 @@ app.post("/api/auth/signup-admin", async (req, res) => {
   }
 });
 
-// [면접] 로그인 — 이메일 정규화 → bcrypt 비교 → JWT 발급, 실패 횟수·캡차로 브루트포스 완화
 app.post("/api/auth/login", async (req, res) => {
   const { password, captchaToken } = req.body || {};
   const email = normalizeEmail(req.body?.email);

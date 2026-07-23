@@ -33,11 +33,7 @@ const routes = [
   { path: "/product/:id", component: ProductDetail, props: true },
   { path: "/cart", component: CartPage },
   { path: "/wishlist", component: WishlistPage },
-  { 
-    path: "/checkout", 
-    component: CheckoutPage,
-    meta: { requiresAuth: true }
-  },
+  { path: "/checkout", component: CheckoutPage },
   { path: "/order-complete", component: OrderComplete },
   { path: "/order-lookup", component: OrderLookup },
   { path: "/notice", component: NoticePage },
@@ -65,7 +61,6 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  // [면접] 라우트 가드 — meta.requiresAuth면 로그인 없을 때 /login?redirect=... 로 보냄
   const { token, user } = getAuthState();
   const isLoggedIn = !!(token && user);
   
@@ -75,7 +70,6 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.requiresAdmin && user?.role !== "admin") {
-    // [면접] RBAC — requiresAdmin 라우트는 role이 admin일 때만 통과
     next({ path: "/home" });
     return;
   }

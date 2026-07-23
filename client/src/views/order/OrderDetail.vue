@@ -5,6 +5,7 @@ import api from "../../lib/api";
 import { useToastStore } from "../../store/toast";
 import { ArrowLeft, Package } from "lucide-vue-next";
 import { formatPrice } from "../../lib/format";
+import { formatOptionsLabel, parseOptionsFromOrderItem } from "@/lib/productOptions.js";
 import {
   ORDER_TIMELINE_STEPS,
   getOrderStatusLabel,
@@ -13,6 +14,7 @@ import {
   getOrderStepDotClass,
   getOrderStepTextClass,
   canCancelOrder,
+  canRequestReturn,
 } from "@/lib/orderStatus.js";
 
 const route = useRoute();
@@ -22,6 +24,15 @@ const order = ref(null);
 const loading = ref(true);
 const error = ref(null);
 const cancelling = ref(false);
+const returnType = ref("return");
+const returnReason = ref("");
+const returnSubmitting = ref(false);
+
+const formatItemOptions = (item) => {
+  const options = item?.options || parseOptionsFromOrderItem(item?.options_json);
+  if (!options || !Object.keys(options).length) return "";
+  return formatOptionsLabel([], options);
+};
 
 const fetchOrderDetail = async () => {
   const orderId = route.params.id;
@@ -44,7 +55,7 @@ onMounted(fetchOrderDetail);
 
 const cancelOrder = async () => {
   if (!order.value?.order?.id) return;
-  if (!window.confirm("주문을 취소하시겠습니까? (결제 환불은 별도 안내가 필요할 수 있습니다)")) {
+  if (!window.confirm("주문을 취소하고 결제를 환불할까요?")) {
     return;
   }
   cancelling.value = true;
@@ -60,6 +71,33 @@ const cancelOrder = async () => {
     toast.error(err.response?.data?.message || err.userMessage || "주문 취소에 실패했습니다.");
   } finally {
     cancelling.value = false;
+  }
+};
+
+const submitReturnRequest = async () => {
+  if (!order.value?.order?.id || returnSubmitting.value) return;
+  const reason = returnReason.value.trim();
+  if (reason.length < 2) {
+    toast.warning("사유를 입력해 주세요.");
+    return;
+  }
+  returnSubmitting.value = true;
+  try {
+    const res = await api.post(`/orders/${order.value.order.id}/returns`, {
+      type: returnType.value,
+      reason,
+    });
+    if (res.data?.success) {
+      toast.success(res.data.message || "신청이 접수되었습니다.");
+      returnReason.value = "";
+      await fetchOrderDetail();
+    } else {
+      toast.error(res.data?.message || "신청에 실패했습니다.");
+    }
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.userMessage || "신청에 실패했습니다.");
+  } finally {
+    returnSubmitting.value = false;
   }
 };
 
@@ -186,6 +224,12 @@ const formatDate = (dateStr) => {
                   <p class="font-medium text-gray-800 dark:text-gray-100">
                     {{ item.name }}
                   </p>
+                  <p
+                    v-if="formatItemOptions(item)"
+                    class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
+                  >
+                    {{ formatItemOptions(item) }}
+                  </p>
                   <p class="text-sm text-gray-500 dark:text-gray-400">
                     수량: {{ item.quantity }}개
                   </p>
@@ -216,8 +260,39 @@ const formatDate = (dateStr) => {
           :disabled="cancelling"
           @click="cancelOrder"
         >
-          {{ cancelling ? "취소 처리 중…" : "주문 취소" }}
+          {{ cancelling ? "취소 처리 중…" : "주문 취소 · 환불" }}
         </button>
+
+        <div
+          v-if="canRequestReturn(order.order.status)"
+          class="mt-6 p-4 rounded-xl border border-neutral-200 dark:border-default space-y-3"
+        >
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">반품 · 교환 신청</h3>
+          <div class="flex gap-3 text-sm">
+            <label class="inline-flex items-center gap-1.5">
+              <input v-model="returnType" type="radio" value="return" />
+              반품
+            </label>
+            <label class="inline-flex items-center gap-1.5">
+              <input v-model="returnType" type="radio" value="exchange" />
+              교환
+            </label>
+          </div>
+          <textarea
+            v-model="returnReason"
+            rows="3"
+            placeholder="사유를 입력해 주세요"
+            class="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            class="shop-btn-secondary w-full py-2 rounded-md text-sm font-medium"
+            :disabled="returnSubmitting"
+            @click="submitReturnRequest"
+          >
+            {{ returnSubmitting ? "신청 중…" : "신청하기" }}
+          </button>
+        </div>
       </div>
     </div>
   </div>

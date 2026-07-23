@@ -144,10 +144,6 @@
 </template>
 
 <script setup>
-/*
- * [면접] 쉬운 장보기 — 포용 UX
- * 단골 상품(localStorage) + 지난 주문 재담기, 기본 접힘으로 홈 밸런스 유지
- */
 import { ref, computed, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
@@ -155,6 +151,7 @@ import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toast";
 import { useAuthStore } from "@/store/auth";
 import { formatPrice, normalizeImageUrl } from "@/lib/format";
+import { parseProductOptions } from "@/lib/productOptions.js";
 import {
   getSeniorFavoriteIds,
   setSeniorFavoriteIds,
@@ -235,6 +232,11 @@ const toggleFavorite = (id) => {
 };
 
 const addProduct = (p) => {
+  if (parseProductOptions(p.product_options).length) {
+    toast.warning("옵션을 선택해 주세요.");
+    router.push(`/product/${p.id}`);
+    return;
+  }
   cart.addToCart({
     id: p.id,
     name: p.name,
@@ -251,7 +253,6 @@ const addProduct = (p) => {
 
 const reorderLast = () => {
   const lastOrder = getSeniorLastOrder();
-  // [면접] CheckoutPage에서 saveSeniorLastOrder로 저장한 스냅샷을 장바구니에 다시 담음
   if (!lastOrder.length) {
     toast.info("지난 주문이 없습니다. 먼저 한 번 주문해 주세요.");
     return;
@@ -263,6 +264,8 @@ const reorderLast = () => {
         name: item.name,
         price: item.price,
         image_url: item.image_url,
+        options: item.options || {},
+        optionsLabel: item.optionsLabel || "",
       });
     }
   });

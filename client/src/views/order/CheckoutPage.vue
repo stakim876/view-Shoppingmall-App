@@ -1,8 +1,4 @@
 ﻿<script setup>
-/*
- * [면접] 주문·결제 화면
- * 흐름: PortOne(또는 mock) 결제 → POST /orders → 서버 금액·재고 재검증
- */
 import { ref, computed } from "vue";
 import { ShoppingCart } from "lucide-vue-next";
 import { useCartStore } from "../../store/cart";
@@ -127,10 +123,13 @@ const requestPayment = () => {
     return;
   }
 
-  if (!userId.value) {
-    toast.warning("로그인이 필요합니다.");
-    router.push("/login");
+  if (!name.value?.trim() || !address.value?.trim() || !phone.value?.trim()) {
+    toast.warning("배송 정보(이름/주소/연락처)를 입력해 주세요.");
     return;
+  }
+
+  if (!userId.value) {
+    toast.success("비회원으로 결제합니다. 주문 조회는 주문번호와 연락처로 가능합니다.");
   }
 
   if (paymentWidgetRef.value) {
@@ -150,7 +149,6 @@ const buildOrderPayload = (paymentResult) => {
     : address.value;
 
   const payload = {
-    userId: userId.value,
     recipient_name: name.value,
     address: fullAddress,
     phone: phone.value,
@@ -162,21 +160,33 @@ const buildOrderPayload = (paymentResult) => {
       name: item.name,
       quantity: item.quantity ?? 1,
       price: Number(item.price),
+      options: item.options || {},
     })),
   };
+  if (userId.value) payload.userId = userId.value;
   if (appliedCoupon.value?.code) {
     payload.coupon_code = appliedCoupon.value.code;
   }
   return payload;
 };
 
-const completeOrderSuccess = (orderId) => {
+const completeOrderSuccess = (orderId, guestToken) => {
   toast.success("결제가 완료되었습니다!");
   saveSeniorLastOrder(cart.items);
   cart.clearCart();
+  const query = { orderId: String(orderId) };
+  if (guestToken) {
+    query.guestToken = guestToken;
+    try {
+      localStorage.setItem(
+        "myshop_last_guest_order",
+        JSON.stringify({ orderId, guestToken, phone: phone.value })
+      );
+    } catch (_) {}
+  }
   router.push({
     path: "/order-complete",
-    query: { orderId },
+    query,
   });
 };
 
@@ -208,7 +218,7 @@ const handlePaymentSuccess = async (paymentResult) => {
       }
     }
 
-    completeOrderSuccess(data.orderId);
+    completeOrderSuccess(data.orderId, data.guestToken);
   } catch (error) {
     console.error("❌ 주문 처리 오류:", error);
     const serverMessage = error.response?.data?.message || error.userMessage || "";

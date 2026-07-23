@@ -74,3 +74,43 @@ export async function verifyPortOnePayment({ impUid, expectedAmount }) {
     payMethod: payment.pay_method || null,
   };
 }
+
+export async function cancelPortOnePayment({ impUid, amount, reason }) {
+  const uid = String(impUid || "");
+  if (!uid) {
+    return { cancelled: false, skipped: true, reason: "missing_imp_uid" };
+  }
+  if (uid.startsWith("dev_imp_")) {
+    return { cancelled: true, skipped: true, reason: "dev_mock_payment" };
+  }
+
+  const { impKey, impSecret } = getCredentials();
+  if (!impKey || !impSecret) {
+    return { cancelled: false, skipped: true, reason: "portone_not_configured" };
+  }
+
+  const accessToken = await fetchAccessToken(impKey, impSecret);
+  const body = {
+    imp_uid: uid,
+    reason: String(reason || "고객 요청 취소").slice(0, 200),
+  };
+  const amt = Number(amount);
+  if (Number.isFinite(amt) && amt > 0) {
+    body.amount = amt;
+  }
+
+  const { data } = await axios.post("https://api.iamport.kr/payments/cancel", body, {
+    headers: { Authorization: accessToken },
+    timeout: 20000,
+  });
+
+  if (data?.code !== 0) {
+    throw new Error(data?.message || "포트원 결제 취소 실패");
+  }
+
+  return {
+    cancelled: true,
+    skipped: false,
+    raw: data?.response || null,
+  };
+}

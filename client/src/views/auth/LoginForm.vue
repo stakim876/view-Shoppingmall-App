@@ -95,6 +95,21 @@
         </button>
       </form>
 
+      <div class="mt-4">
+        <button
+          type="button"
+          :disabled="isSubmitting"
+          class="w-full py-2.5 rounded-xl font-semibold text-[#3C1E1E]
+                 bg-[#FEE500] hover:bg-[#f5dc00] transition disabled:opacity-60"
+          @click="loginWithKakao"
+        >
+          카카오로 계속하기
+        </button>
+        <p class="mt-1.5 text-[11px] text-gray-500">
+          카카오 키가 없으면 데모 계정으로 로그인됩니다.
+        </p>
+      </div>
+
       <p v-if="error" class="text-red-500 text-sm mt-3">{{ error }}</p>
 
       <p
@@ -146,10 +161,6 @@
 </template>
 
 <script setup>
-/*
- * [면접] 로그인 화면
- * 흐름: login() → POST /auth/login → token/user 저장 → redirect 또는 /home
- */
 import api from "../../lib/api";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
@@ -266,7 +277,6 @@ const loginWithRetry = async (payload) => {
 };
 
 const login = async () => {
-  // [면접] ① 이메일·비번·캡차 → ② 서버 검증 → ③ token 저장 → ④ 페이지 이동
   if (isSubmitting.value) return;
   if (!canSubmit.value) {
     error.value = "본인 확인 체크 후 다시 시도해주세요.";
@@ -322,6 +332,29 @@ const login = async () => {
       reason: error.value,
       status: err.response?.status || 0,
     });
+    toast.error(error.value);
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const loginWithKakao = async () => {
+  if (isSubmitting.value) return;
+  error.value = "";
+  isSubmitting.value = true;
+  try {
+    const res = await api.post("/auth/kakao", { demo: true });
+    if (!res.data?.success || !res.data?.token) {
+      throw new Error(res.data?.message || "카카오 로그인 실패");
+    }
+    authStore.login(res.data.user, res.data.token, { autoLogin: autoLogin.value });
+    await wishlist.fetchIds();
+    trackAuthEvent("login_success", { email: res.data.user?.email || "kakao", provider: "kakao" });
+    toast.success(res.data.demo ? "카카오 데모 로그인 성공!" : "카카오 로그인 성공!");
+    const redirect = route.query.redirect;
+    router.push(typeof redirect === "string" ? redirect : "/home");
+  } catch (err) {
+    error.value = err.response?.data?.message || err.userMessage || "카카오 로그인에 실패했습니다.";
     toast.error(error.value);
   } finally {
     isSubmitting.value = false;

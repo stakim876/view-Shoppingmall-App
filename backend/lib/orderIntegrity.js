@@ -1,6 +1,4 @@
-/**
- * 주문 금액·멱등 처리 — 클라이언트 단가가 아닌 카탈로그(DB) 가격 기준
- */
+import { validateSelectedOptions } from "./productOptions.js";
 
 export function buildPricedLineItems(requestItems, catalogById) {
   const lines = [];
@@ -31,6 +29,15 @@ export function buildPricedLineItems(requestItems, catalogById) {
       };
     }
 
+    const optionCheck = validateSelectedOptions(product.product_options, it.options);
+    if (!optionCheck.ok) {
+      return {
+        ok: false,
+        code: optionCheck.code,
+        message: `${product.name}: ${optionCheck.message}`,
+      };
+    }
+
     lines.push({
       productId,
       name: product.name,
@@ -38,6 +45,9 @@ export function buildPricedLineItems(requestItems, catalogById) {
       unitPrice,
       lineTotal: unitPrice * quantity,
       stock: Number(product.stock ?? 0),
+      options: optionCheck.options,
+      optionsJson: optionCheck.optionsJson,
+      optionsLabel: optionCheck.optionsLabel,
     });
   }
 
@@ -56,7 +66,7 @@ export async function findExistingOrderByPaymentRef(db, { impUid, merchantUid })
   const imp = String(impUid || "").trim();
   if (imp) {
     const [rows] = await db.query(
-      `SELECT id, user_id FROM orders WHERE imp_uid = ? LIMIT 1`,
+      `SELECT id, user_id, guest_token FROM orders WHERE imp_uid = ? LIMIT 1`,
       [imp]
     );
     if (rows[0]) return rows[0];
@@ -65,7 +75,7 @@ export async function findExistingOrderByPaymentRef(db, { impUid, merchantUid })
   const merchant = String(merchantUid || "").trim();
   if (merchant) {
     const [rows] = await db.query(
-      `SELECT id, user_id FROM orders WHERE merchant_uid = ? LIMIT 1`,
+      `SELECT id, user_id, guest_token FROM orders WHERE merchant_uid = ? LIMIT 1`,
       [merchant]
     );
     if (rows[0]) return rows[0];

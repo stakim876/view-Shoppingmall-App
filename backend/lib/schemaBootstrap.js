@@ -1,3 +1,5 @@
+import { DEMO_PRODUCT_OPTIONS_BY_NAME } from "./productOptions.js";
+
 const DEMO_PRODUCTS = [
   ["아이폰 15", "최신 아이폰 모델", 1500000, 10, "디지털/가전", "/images/iphone15.jpg"],
   ["맥북 프로", "Apple M2 Pro 칩셋 탑재", 2800000, 5, "디지털/가전", "/images/macbookpro.jpg"],
@@ -55,13 +57,30 @@ async function seedProductsIfEmpty(db) {
   let index = 1;
   for (const [name, description, price, stock, category, image_url] of DEMO_PRODUCTS) {
     const sku = `SHOP-${String(index).padStart(3, "0")}`;
+    const productOptions = DEMO_PRODUCT_OPTIONS_BY_NAME[name]
+      ? JSON.stringify(DEMO_PRODUCT_OPTIONS_BY_NAME[name])
+      : null;
     await db.query(
-      `INSERT INTO products (name, description, price, stock, category, image_url, sku) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [name, description, price, stock, category, image_url, sku]
+      `INSERT INTO products (name, description, price, stock, category, image_url, sku, product_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, description, price, stock, category, image_url, sku, productOptions]
     );
     index += 1;
   }
   return DEMO_PRODUCTS.length;
+}
+
+async function seedProductOptionsIfMissing(db) {
+  let updated = 0;
+  for (const [name, options] of Object.entries(DEMO_PRODUCT_OPTIONS_BY_NAME)) {
+    const [result] = await db.query(
+      `UPDATE products
+       SET product_options = ?
+       WHERE name = ? AND (product_options IS NULL OR product_options = '')`,
+      [JSON.stringify(options), name]
+    );
+    updated += Number(result?.affectedRows || 0);
+  }
+  return updated;
 }
 
 async function seedCouponsIfEmpty(db) {
@@ -100,6 +119,11 @@ export async function ensureDatabaseSchema(db) {
     await ensureColumn(db, "users", "role", "VARCHAR(20) DEFAULT 'user'");
     await ensureColumn(db, "users", "updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
   }
+  await ensureColumn(db, "users", "oauth_provider", "VARCHAR(40) NULL");
+  await ensureColumn(db, "users", "oauth_id", "VARCHAR(120) NULL");
+  try {
+    await db.query("ALTER TABLE users MODIFY password VARCHAR(255) NULL");
+  } catch (_) {}
 
   if (!(await tableExists(db, "products"))) {
     await db.query(`
@@ -122,6 +146,14 @@ export async function ensureDatabaseSchema(db) {
   }
 
   await ensureColumn(db, "products", "sku", "VARCHAR(50) NULL COMMENT 'WMS 연동 SKU'");
+  await ensureColumn(db, "products", "color_options", "TEXT NULL COMMENT 'JSON array of color names'");
+  await ensureColumn(db, "products", "laptop_specs", "TEXT NULL COMMENT 'JSON object: cpu, ram, storage, display, gpu'");
+  await ensureColumn(
+    db,
+    "products",
+    "product_options",
+    "TEXT NULL COMMENT 'JSON array of selectable option groups'"
+  );
   await db.query(
     `UPDATE products SET sku = CONCAT('SHOP-', LPAD(id, 3, '0')) WHERE sku IS NULL OR sku = ''`
   );
@@ -162,6 +194,10 @@ export async function ensureDatabaseSchema(db) {
     await ensureIndex(db, "orders", "uk_imp_uid", ["imp_uid"], true);
     await ensureIndex(db, "orders", "uk_merchant_uid", ["merchant_uid"], true);
   }
+  await ensureColumn(db, "orders", "guest_token", "VARCHAR(64) NULL COMMENT '비회원 조회 토큰'");
+  try {
+    await db.query("ALTER TABLE orders MODIFY user_id INT NULL");
+  } catch (_) {}
 
   if (!(await tableExists(db, "order_items"))) {
     await db.query(`
@@ -171,6 +207,7 @@ export async function ensureDatabaseSchema(db) {
         product_id INT NOT NULL,
         quantity INT NOT NULL,
         price DECIMAL(10,2) NOT NULL,
+        options_json TEXT NULL COMMENT '선택한 옵션 스냅샷 JSON',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_order_id (order_id),
         INDEX idx_product_id (product_id),
@@ -179,6 +216,33 @@ export async function ensureDatabaseSchema(db) {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     summary.tables.push("order_items");
+  }
+  await ensureColumn(
+    db,
+    "order_items",
+    "options_json",
+    "TEXT NULL COMMENT '선택한 옵션 스냅샷 JSON'"
+  );
+
+  if (!(await tableExists(db, "return_requests"))) {
+    await db.query(`
+      CREATE TABLE return_requests (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        user_id INT NULL,
+        type ENUM('return', 'exchange') NOT NULL DEFAULT 'return',
+        reason VARCHAR(500) NOT NULL,
+        status ENUM('requested', 'approved', 'rejected') NOT NULL DEFAULT 'requested',
+        admin_note VARCHAR(500) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_return_order (order_id),
+        INDEX idx_return_status (status),
+        CONSTRAINT fk_return_order
+          FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    summary.tables.push("return_requests");
   }
 
   if (!(await tableExists(db, "wishlists"))) {
@@ -363,6 +427,7 @@ export async function ensureDatabaseSchema(db) {
   await db.query(`INSERT IGNORE INTO visitor_total (id, view_count) VALUES (1, 0)`);
 
   summary.seededProducts = await seedProductsIfEmpty(db);
+  summary.seededProductOptions = await seedProductOptionsIfMissing(db);
   summary.seededCoupons = await seedCouponsIfEmpty(db);
 
   return summary;

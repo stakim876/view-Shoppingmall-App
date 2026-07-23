@@ -20,6 +20,7 @@ export function getOrderStatusLabel(status) {
     shipping: "배송중",
     done: "배송완료",
     cancelled: "취소",
+    return_requested: "반품/교환 요청",
   };
   return map[key] || status || "-";
 }
@@ -27,6 +28,10 @@ export function getOrderStatusLabel(status) {
 export function getOrderStepVariant(orderStatus, stepKey) {
   const status = normalizeOrderStatus(orderStatus);
   if (status === "cancelled") return stepKey === "paid" ? "done" : "pending";
+  if (status === "return_requested") {
+    if (stepKey === "done") return "active";
+    return "done";
+  }
 
   const rank = { paid: 1, preparing: 2, shipping: 3, done: 4 };
   const oRank = rank[status] || 0;
@@ -52,6 +57,11 @@ export function canCancelOrder(status) {
   return key === "paid" || key === "preparing";
 }
 
+export function canRequestReturn(status) {
+  const key = normalizeOrderStatus(status);
+  return key === "shipping" || key === "done";
+}
+
 export function getOrderStatusBadgeClass(status) {
   const key = normalizeOrderStatus(status);
   const map = {
@@ -60,6 +70,7 @@ export function getOrderStatusBadgeClass(status) {
     shipping: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
     done: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
     cancelled: "bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300",
+    return_requested: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
   };
   return map[key] || "bg-neutral-100 text-neutral-600";
 }

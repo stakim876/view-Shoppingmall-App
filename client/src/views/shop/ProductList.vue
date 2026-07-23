@@ -168,6 +168,7 @@ import { useToastStore } from "@/store/toast";
 import { useAuthStore } from "@/store/auth";
 import { formatPrice } from "@/lib/format";
 import { productImageSrc, onProductImageError, getProductReviewStat } from "@/lib/productDisplay.js";
+import { parseProductOptions } from "@/lib/productOptions.js";
 import { formatFreeShippingBadge } from "@/lib/shopPolicy.js";
 import WishlistButton from "@/components/product/WishlistButton.vue";
 import SkeletonLoader from "@/components/ui/SkeletonLoader.vue";
@@ -328,6 +329,11 @@ const goDetail = (id) => {
 };
 
 const addToCart = (p) => {
+  if (parseProductOptions(p.product_options).length) {
+    toast.warning("옵션을 선택해 주세요.");
+    router.push(`/product/${p.id}`);
+    return;
+  }
   cart.addToCart({
     id: p.id,
     name: p.name,

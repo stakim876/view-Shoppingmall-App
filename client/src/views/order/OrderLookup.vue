@@ -1,13 +1,11 @@
 <template>
-  <div
-    class="shop-page-ambient py-16 px-6 text-primary font-['Inter']"
-  >
+  <div class="shop-page-ambient py-16 px-6 text-primary font-['Inter']">
     <div class="max-w-xl mx-auto">
       <h1 class="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mb-2">
         주문·배송 조회
       </h1>
       <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-8">
-        주문 시 발급된 주문 번호를 입력하세요.
+        비회원 주문은 주문 번호와 결제 시 입력한 연락처로 조회합니다.
       </p>
 
       <form @submit.prevent="lookup" class="space-y-4">
@@ -17,9 +15,23 @@
           </label>
           <input
             id="orderId"
-            v-model.number="orderId"
+            v-model="orderId"
             type="text"
-            placeholder="예: 1"
+            placeholder="예: 12"
+            class="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600
+                   bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100
+                   focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div>
+          <label for="phone" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+            연락처
+          </label>
+          <input
+            id="phone"
+            v-model="phone"
+            type="tel"
+            placeholder="주문 시 입력한 휴대폰 번호"
             class="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600
                    bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100
                    focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -69,10 +81,6 @@
             </dd>
           </div>
           <div class="flex justify-between">
-            <dt class="text-neutral-500 dark:text-neutral-400">주문일시</dt>
-            <dd>{{ formatDate(order.created_at) }}</dd>
-          </div>
-          <div class="flex justify-between">
             <dt class="text-neutral-500 dark:text-neutral-400">상태</dt>
             <dd>
               <span
@@ -82,42 +90,6 @@
                 {{ getOrderStatusLabel(order.status) }}
               </span>
             </dd>
-          </div>
-          <div class="pt-2 border-t border-neutral-200 dark:border-neutral-600 mt-2">
-            <dt class="text-neutral-500 dark:text-neutral-400 text-xs mb-2">배송 진행</dt>
-            <ol class="relative border-l border-slate-200 dark:border-white/10 ml-3 pl-4 space-y-3">
-              <li v-for="s in ORDER_TIMELINE_STEPS" :key="s.key" class="relative">
-                <span
-                  class="absolute -left-[11px] top-[6px] h-3.5 w-3.5 rounded-full"
-                  :class="getOrderStepDotClass(getOrderStepVariant(order.status, s.key))"
-                />
-                <p class="text-sm" :class="getOrderStepTextClass(getOrderStepVariant(order.status, s.key))">
-                  {{ s.label }}
-                </p>
-              </li>
-            </ol>
-          </div>
-          <div
-            v-if="order.tracking_number && order.tracking_url"
-            class="flex flex-col gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-600 mt-2"
-          >
-            <div class="flex justify-between items-start gap-2">
-              <dt class="text-neutral-500 dark:text-neutral-400 shrink-0">배송 추적</dt>
-              <dd class="text-right text-sm">
-                <span class="block text-neutral-800 dark:text-neutral-100">
-                  {{ order.carrier_label || order.carrier_code }}
-                </span>
-                <span class="font-mono text-xs">{{ order.tracking_number }}</span>
-              </dd>
-            </div>
-            <a
-              :href="order.tracking_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-            >
-              택배 조회 페이지 열기 →
-            </a>
           </div>
         </dl>
         <div class="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-600">
@@ -136,37 +108,42 @@
           </ul>
         </div>
       </div>
-
-      <p class="mt-8 text-xs text-neutral-500 dark:text-neutral-400">
-        로그인하시면 마이페이지에서 전체 주문 내역을 확인할 수 있습니다.
-      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import { formatPrice } from "../../lib/format";
 import api from "../../lib/api";
-import {
-  ORDER_TIMELINE_STEPS,
-  getOrderStatusLabel,
-  getOrderStatusBadgeClass,
-  getOrderStepVariant,
-  getOrderStepDotClass,
-  getOrderStepTextClass,
-} from "@/lib/orderStatus.js";
+import { getOrderStatusLabel, getOrderStatusBadgeClass } from "@/lib/orderStatus.js";
 
-const orderId = ref("");
+const route = useRoute();
+const orderId = ref(String(route.query.orderId || ""));
+const phone = ref("");
 const loading = ref(false);
 const lookupError = ref("");
 const order = ref(null);
 const orderItems = ref([]);
 
+onMounted(() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem("myshop_last_guest_order") || "null");
+    if (saved?.phone && !phone.value) phone.value = saved.phone;
+    if (saved?.orderId && !orderId.value) orderId.value = String(saved.orderId);
+  } catch (_) {}
+});
+
 const lookup = async () => {
   const id = String(orderId.value).trim();
+  const tel = String(phone.value).trim();
   if (!id) {
     lookupError.value = "주문 번호를 입력해 주세요.";
+    return;
+  }
+  if (!tel) {
+    lookupError.value = "연락처를 입력해 주세요.";
     return;
   }
   loading.value = true;
@@ -174,7 +151,7 @@ const lookup = async () => {
   order.value = null;
   orderItems.value = [];
   try {
-    const res = await api.get(`/orders/detail/${id}`);
+    const res = await api.post("/orders/guest-lookup", { orderId: id, phone: tel });
     if (res.data.success && res.data.order) {
       order.value = res.data.order;
       orderItems.value = res.data.items || [];
@@ -182,21 +159,9 @@ const lookup = async () => {
       lookupError.value = "주문 정보를 찾을 수 없습니다.";
     }
   } catch (err) {
-    const msg = err.response?.data?.message || err.userMessage || "조회에 실패했습니다.";
-    lookupError.value = msg;
+    lookupError.value = err.response?.data?.message || err.userMessage || "조회에 실패했습니다.";
   } finally {
     loading.value = false;
   }
-};
-
-const formatDate = (dateStr) => {
-  const d = new Date(dateStr);
-  return d.toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 };
 </script>

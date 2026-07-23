@@ -33,6 +33,35 @@ test("buildPricedLineItems는 없는 상품을 거절한다", () => {
   assert.equal(result.code, "PRODUCT_NOT_FOUND");
 });
 
+test("buildPricedLineItems는 필수 옵션을 검증한다", () => {
+  const catalog = new Map([
+    [
+      1,
+      {
+        id: 1,
+        name: "아이폰 15",
+        price: 1500000,
+        stock: 10,
+        product_options: JSON.stringify([
+          { key: "color", label: "색상", values: ["블랙", "블루"] },
+          { key: "storage", label: "용량", values: ["128GB", "256GB"] },
+        ]),
+      },
+    ],
+  ]);
+
+  const missing = buildPricedLineItems([{ id: 1, quantity: 1 }], catalog);
+  assert.equal(missing.ok, false);
+  assert.equal(missing.code, "OPTIONS_REQUIRED");
+
+  const ok = buildPricedLineItems(
+    [{ id: 1, quantity: 1, options: { color: "블랙", storage: "128GB" } }],
+    catalog
+  );
+  assert.equal(ok.ok, true);
+  assert.equal(ok.lines[0].optionsJson, '{"color":"블랙","storage":"128GB"}');
+});
+
 test("totalsMatch는 허용 오차 내에서 금액을 비교한다", () => {
   assert.equal(totalsMatch(10000, 10000), true);
   assert.equal(totalsMatch(10000.4, 10000), true);

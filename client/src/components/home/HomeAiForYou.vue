@@ -63,10 +63,6 @@
 </template>
 
 <script setup>
-/*
- * [면접] AI 맞춤 추천 섹션
- * GET /recommendations/personalized — 최근 본 상품 ID를 넘기면 서버가 행동 기반 추천 반환
- */
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Sparkles } from "lucide-vue-next";
@@ -75,6 +71,7 @@ import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toast";
 import { getRecentlyViewed } from "@/composables/useRecentlyViewed";
 import { formatPrice, normalizeImageUrl } from "@/lib/format";
+import { parseProductOptions } from "@/lib/productOptions.js";
 
 const router = useRouter();
 const cart = useCartStore();
@@ -101,6 +98,11 @@ const onImgError = (e) => {
 const openProduct = (id) => router.push(`/product/${id}`);
 
 const addToCart = (p) => {
+  if (parseProductOptions(p.product_options).length) {
+    toast.warning("옵션을 선택해 주세요.");
+    router.push(`/product/${p.id}`);
+    return;
+  }
   cart.addToCart({
     id: p.id,
     name: p.name,
@@ -114,7 +116,6 @@ onMounted(async () => {
   loading.value = true;
   try {
     const recentIds = getRecentlyViewed().map((p) => p.id).filter(Boolean);
-    // [면접] recentProductIds — 클라이언트 localStorage의 최근 본 상품을 서버 추천 가중치에 활용
     const res = await api.get("/recommendations/personalized", {
       params: {
         recentProductIds: recentIds.join(","),

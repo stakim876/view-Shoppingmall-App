@@ -102,7 +102,7 @@ const checkout = () => {
     <div v-else class="space-y-5">
       <div
         v-for="item in cart.items"
-        :key="item.id"
+        :key="item.lineKey || item.id"
         class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between 
                bg-white/50 dark:bg-white/10 backdrop-blur-md 
                border border-white/40 rounded-2xl 
@@ -120,6 +120,12 @@ const checkout = () => {
             <h2 class="font-semibold text-gray-800 dark:text-gray-100 truncate">
               {{ item.name }}
             </h2>
+            <p
+              v-if="item.optionsLabel"
+              class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"
+            >
+              {{ item.optionsLabel }}
+            </p>
             <p class="text-gray-500 dark:text-gray-400 text-sm">
               {{ formatPrice(item.price) }}원
             </p>
@@ -140,7 +146,7 @@ const checkout = () => {
 
         <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <button
-            @click="cart.decreaseQuantity(item.id)"
+            @click="cart.decreaseQuantity(item.lineKey || String(item.id))"
             class="px-3 py-1 rounded-lg bg-white/70 dark:bg-white/20 
                    hover:bg-white/90 dark:hover:bg-white/30 
                    transition"
@@ -151,7 +157,7 @@ const checkout = () => {
             {{ item.quantity }}
           </span>
           <button
-            @click="cart.increaseQuantity(item.id, itemStock(item.id))"
+            @click="cart.increaseQuantity(item.lineKey || String(item.id), itemStock(item.id))"
             :disabled="!canIncrease(item)"
             class="px-3 py-1 rounded-lg bg-white/70 dark:bg-white/20 
                    hover:bg-white/90 dark:hover:bg-white/30 disabled:opacity-40 disabled:cursor-not-allowed
@@ -160,7 +166,7 @@ const checkout = () => {
             ＋
           </button>
           <button
-            @click="cart.removeFromCart(item.id)"
+            @click="cart.removeFromCart(item.lineKey || String(item.id))"
             class="shop-btn-danger ml-2 px-3 py-1 rounded-lg text-sm"
           >
             삭제

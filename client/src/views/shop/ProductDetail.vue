@@ -85,17 +85,31 @@
               {{ product?.description || "상품 설명이 준비 중입니다." }}
             </p>
 
-            <div v-if="productColorList.length" class="mb-4">
-              <p class="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">색상 옵션</p>
-              <ul class="flex flex-wrap gap-2">
-                <li
-                  v-for="(c, i) in productColorList"
-                  :key="i"
-                  class="px-3 py-1 rounded-lg text-sm bg-neutral-100 text-neutral-800 dark:bg-surface-raised dark:text-neutral-200 border border-neutral-200/80 dark:border-strong"
-                >
-                  {{ c }}
-                </li>
-              </ul>
+            <div v-if="productOptionGroups.length" class="mb-4 space-y-4">
+              <div v-for="group in productOptionGroups" :key="group.key">
+                <p class="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
+                  {{ group.label }}
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="value in group.values"
+                    :key="`${group.key}-${value}`"
+                    type="button"
+                    class="px-3 py-1.5 rounded-lg text-sm border transition-colors"
+                    :class="
+                      selectedOptions[group.key] === value
+                        ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-200'
+                        : 'bg-neutral-100 text-neutral-800 border-neutral-200/80 hover:border-neutral-400 dark:bg-surface-raised dark:text-neutral-200 dark:border-strong'
+                    "
+                    @click="selectOption(group.key, value)"
+                  >
+                    {{ value }}
+                  </button>
+                </div>
+              </div>
+              <p v-if="!optionsReady" class="text-xs text-amber-700 dark:text-amber-300">
+                구매 전에 옵션을 모두 선택해 주세요.
+              </p>
             </div>
 
             <div v-if="productLaptopSpecRows.length" class="mb-4 rounded-xl border border-neutral-200 dark:border-zinc-700 overflow-hidden">
@@ -149,7 +163,8 @@
               <button
                 v-if="stockNumber > 0"
                 type="button"
-                class="shop-btn-cart !w-auto px-6 py-3"
+                class="shop-btn-cart !w-auto px-6 py-3 disabled:opacity-50"
+                :disabled="!optionsReady"
                 @click="addToCart(product)"
               >
                 장바구니 담기
@@ -162,13 +177,15 @@
               >
                 장바구니 담기
               </button>
-              <router-link
+              <button
                 v-if="stockNumber > 0"
-                to="/checkout"
-                class="shop-btn-secondary px-6 py-3 rounded-xl"
+                type="button"
+                class="shop-btn-secondary px-6 py-3 rounded-xl disabled:opacity-50"
+                :disabled="!optionsReady"
+                @click="buyNow(product)"
               >
                 바로 구매
-              </router-link>
+              </button>
             </div>
           </div>
         </div>
@@ -280,7 +297,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import api from "../../lib/api";
 import { useCartStore } from "../../store/cart";
 import { useAuthStore } from "../../store/auth";
@@ -290,8 +307,16 @@ import Breadcrumb from "@/components/ui/Breadcrumb.vue";
 import WishlistButton from "@/components/product/WishlistButton.vue";
 import Footer from "@/app/layout/Footer.vue";
 import { formatPrice, normalizeImageUrl } from "../../lib/format";
+import {
+  parseProductOptions,
+  areAllOptionsSelected,
+  formatOptionsLabel,
+  optionsLineKey,
+  normalizeSelectedOptions,
+} from "@/lib/productOptions.js";
 
 const route = useRoute();
+const router = useRouter();
 const product = ref(null);
 const relatedProducts = ref([]);
 const reviews = ref([]);
@@ -302,6 +327,7 @@ const auth = useAuthStore();
 const toast = useToastStore();
 
 const selectedImageIndex = ref(0);
+const selectedOptions = ref({});
 const reviewRating = ref(5);
 const reviewContent = ref("");
 const reviewSubmitting = ref(false);
@@ -352,16 +378,26 @@ const stockNumber = computed(() => {
   return Number(p.stock);
 });
 
-const productColorList = computed(() => {
-  const raw = product.value?.color_options;
-  if (raw == null || raw === "") return [];
-  try {
-    const p = typeof raw === "string" ? JSON.parse(raw) : raw;
-    return Array.isArray(p) ? p.filter(Boolean) : [];
-  } catch {
-    return [];
-  }
+const productOptionGroups = computed(() => {
+  const fromProduct = parseProductOptions(product.value?.product_options);
+  if (fromProduct.length) return fromProduct;
+  const colors = (() => {
+    const raw = product.value?.color_options;
+    if (raw == null || raw === "") return [];
+    try {
+      const p = typeof raw === "string" ? JSON.parse(raw) : raw;
+      return Array.isArray(p) ? p.filter(Boolean).map(String) : [];
+    } catch {
+      return [];
+    }
+  })();
+  if (!colors.length) return [];
+  return [{ key: "color", label: "색상", values: colors }];
 });
+
+const optionsReady = computed(() =>
+  areAllOptionsSelected(productOptionGroups.value, selectedOptions.value)
+);
 
 const LAPTOP_SPEC_LABELS = {
   cpu: "CPU",
@@ -390,26 +426,57 @@ const productLaptopSpecRows = computed(() => {
     .filter(Boolean);
 });
 
+const selectOption = (key, value) => {
+  selectedOptions.value = { ...selectedOptions.value, [key]: value };
+};
+
+const buildCartPayload = (p) => {
+  const options = normalizeSelectedOptions(selectedOptions.value);
+  const optionsLabel = formatOptionsLabel(productOptionGroups.value, options);
+  return {
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    image_url: p.image_url,
+    options,
+    optionsLabel,
+  };
+};
+
 const addToCart = (p) => {
+  if (!optionsReady.value) {
+    toast.warning("옵션을 모두 선택해 주세요.");
+    return;
+  }
   const stock = Number(p?.stock || 0);
-  const existing = cart.items.find((i) => i.id === p.id);
+  const lineKey = optionsLineKey(p.id, selectedOptions.value);
+  const existing = cart.items.find((i) => i.lineKey === lineKey);
   const currentQty = Number(existing?.quantity || 0);
   if (stock <= 0 || currentQty >= stock) {
     toast.warning("현재 재고보다 많이 담을 수 없습니다.");
     return;
   }
 
-  const ok = cart.addToCart({
-    id: p.id,
-    name: p.name,
-    price: p.price,
-    image_url: p.image_url,
-  }, stock);
+  const ok = cart.addToCart(buildCartPayload(p), stock);
   if (!ok) {
     toast.warning("현재 재고보다 많이 담을 수 없습니다.");
     return;
   }
   toast.success(`${p.name}을(를) 장바구니에 담았습니다.`);
+};
+
+const buyNow = (p) => {
+  if (!optionsReady.value) {
+    toast.warning("옵션을 모두 선택해 주세요.");
+    return;
+  }
+  const stock = Number(p?.stock || 0);
+  const ok = cart.addToCart(buildCartPayload(p), stock);
+  if (!ok) {
+    toast.warning("현재 재고보다 많이 담을 수 없습니다.");
+    return;
+  }
+  router.push("/checkout");
 };
 
 const formatDate = (str) => {
@@ -470,6 +537,7 @@ const loadProduct = async (id) => {
   loading.value = true;
   error.value = null;
   selectedImageIndex.value = 0;
+  selectedOptions.value = {};
   try {
     const res = await api.get(`/products/${id}`);
     product.value = res.data;

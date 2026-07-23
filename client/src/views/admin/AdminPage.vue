@@ -280,6 +280,48 @@
         </div>
       </div>
 
+      <div v-show="activeTab === 'returns'" class="space-y-4">
+        <div class="flex items-end justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100">반품 · 교환</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">승인 시 반품은 환불, 교환은 상품준비중으로 되돌립니다.</p>
+          </div>
+          <button type="button" class="shop-btn-secondary text-xs px-3 py-1.5 rounded-md" @click="fetchReturns">새로고침</button>
+        </div>
+        <div v-if="returnsLoading" class="shop-admin-card p-6 text-sm text-slate-500">불러오는 중…</div>
+        <div v-else-if="!returnsList.length" class="shop-admin-card p-8 text-center text-sm text-slate-500">요청이 없습니다.</div>
+        <div v-else class="shop-admin-table-wrap overflow-x-auto">
+          <table class="shop-admin-table min-w-[640px]">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>주문</th>
+                <th>유형</th>
+                <th>사유</th>
+                <th>상태</th>
+                <th>처리</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in returnsList" :key="r.id">
+                <td>{{ r.id }}</td>
+                <td>#{{ r.order_id }}<br /><span class="text-xs text-slate-500">{{ formatPrice(r.total_price) }}원</span></td>
+                <td>{{ r.type === "exchange" ? "교환" : "반품" }}</td>
+                <td class="max-w-[12rem] truncate" :title="r.reason">{{ r.reason }}</td>
+                <td>{{ r.status }}</td>
+                <td class="space-x-2 whitespace-nowrap">
+                  <template v-if="r.status === 'requested'">
+                    <button type="button" class="text-xs text-indigo-600 hover:underline" @click="approveReturn(r.id)">승인</button>
+                    <button type="button" class="text-xs text-rose-600 hover:underline" @click="rejectReturn(r.id)">반려</button>
+                  </template>
+                  <span v-else class="text-xs text-slate-400">처리됨</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div v-show="activeTab === 'notices'" class="max-w-4xl space-y-6">
         <div>
           <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100">공지사항</h2>
@@ -445,8 +487,12 @@ const productSections = [
 const tabItems = [
   { id: "products", label: "상품 관리" },
   { id: "orders", label: "주문 관리" },
+  { id: "returns", label: "반품·교환" },
   { id: "notices", label: "공지사항" },
 ];
+
+const returnsList = ref([]);
+const returnsLoading = ref(false);
 
 const emptyLaptopSpecs = () => ({
   cpu: "",
@@ -864,8 +910,40 @@ const updateOrderStatus = async (id, status) => {
 
 const formatDate = (d) => new Date(d).toLocaleString();
 
+const fetchReturns = async () => {
+  returnsLoading.value = true;
+  try {
+    const res = await api.get("/admin/returns");
+    returnsList.value = res.data?.returns || res.data?.data?.returns || [];
+  } catch (_) {
+    returnsList.value = [];
+  } finally {
+    returnsLoading.value = false;
+  }
+};
+
+const approveReturn = async (id) => {
+  try {
+    await api.post(`/admin/returns/${id}/approve`);
+    toast.success("승인 처리되었습니다.");
+    await Promise.all([fetchReturns(), fetchOrders()]);
+  } catch (err) {
+    toast.error(err.response?.data?.message || "승인 실패");
+  }
+};
+
+const rejectReturn = async (id) => {
+  try {
+    await api.post(`/admin/returns/${id}/reject`, { note: "반려" });
+    toast.success("반려 처리되었습니다.");
+    await fetchReturns();
+  } catch (err) {
+    toast.error(err.response?.data?.message || "반려 실패");
+  }
+};
+
 onMounted(async () => {
   await fetchCarriers();
-  await Promise.all([fetchProducts(), fetchOrders(), fetchNotices()]);
+  await Promise.all([fetchProducts(), fetchOrders(), fetchNotices(), fetchReturns()]);
 });
 </script>
