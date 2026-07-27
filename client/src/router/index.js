@@ -17,6 +17,7 @@ import OrderLookup from "@/views/order/OrderLookup.vue";
 import WishlistPage from "@/views/shop/WishlistPage.vue";
 import ForgotPassword from "@/views/auth/ForgotPassword.vue";
 import ResetPassword from "@/views/auth/ResetPassword.vue";
+import QuoteInquiryPage from "@/views/support/QuoteInquiryPage.vue";
 import NotFound from "@/components/ui/NotFound.vue";
 import { getAuthState } from "@/lib/authStorage.js";
 import { trackPageView } from "@/lib/analytics.js";
@@ -37,6 +38,7 @@ const routes = [
   { path: "/order-complete", component: OrderComplete },
   { path: "/order-lookup", component: OrderLookup },
   { path: "/notice", component: NoticePage },
+  { path: "/quote", component: QuoteInquiryPage },
   { 
     path: "/order/:id", 
     component: OrderDetail,

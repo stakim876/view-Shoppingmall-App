@@ -37,6 +37,14 @@
                   주문/배송 조회
                 </router-link>
               </li>
+              <li>
+                <router-link
+                  to="/quote"
+                  class="text-slate-700 dark:text-neutral-300 hover:text-indigo-800 dark:hover:text-indigo-400 hover:underline transition-colors"
+                >
+                  고객문의
+                </router-link>
+              </li>
               <li>{{ contact.hours }}</li>
               <li>{{ contact.lunch }}</li>
               <li>{{ contact.holidays }}</li>

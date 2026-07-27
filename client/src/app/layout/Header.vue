@@ -333,9 +333,13 @@ const logout = () => {
 };
 
 const topLinks = [
+  { label: "전체상품", path: "/products" },
+  { label: "장바구니", path: "/cart" },
   { label: "찜", path: "/wishlist" },
-  { label: "공지사항", path: "/notice" },
+  { label: "마이페이지", path: "/mypage" },
   { label: "주문/배송 조회", path: "/order-lookup" },
+  { label: "공지사항", path: "/notice" },
+  { label: "고객문의", path: "/quote" },
 ];
 
 const defaultCategories = [
@@ -383,18 +387,27 @@ const secondaryNavItems = computed(() => {
     </div>
 
     <div
-      class="hidden sm:flex items-center justify-center gap-4 sm:gap-6 px-4 py-2 text-xs sm:text-sm leading-none
-             overflow-x-auto no-scrollbar whitespace-nowrap
+      class="hidden sm:block px-4 py-2 text-xs sm:text-sm leading-none
              bg-surface-base border-b border-default"
     >
-      <template v-for="link in topLinks" :key="link.label">
-        <router-link
-          :to="link.path"
-          class="header-utility-link inline-flex"
-        >
-          {{ link.label }}
-        </router-link>
-      </template>
+      <nav
+        class="max-w-7xl mx-auto flex items-center justify-end gap-1 sm:gap-0 overflow-x-auto no-scrollbar whitespace-nowrap"
+        aria-label="바로가기"
+      >
+        <template v-for="(link, idx) in topLinks" :key="link.label">
+          <span
+            v-if="idx > 0"
+            class="hidden sm:inline px-2 text-neutral-300 dark:text-neutral-600 select-none"
+            aria-hidden="true"
+          >|</span>
+          <router-link
+            :to="link.path"
+            class="header-utility-link inline-flex px-1.5 sm:px-2"
+          >
+            {{ link.label }}
+          </router-link>
+        </template>
+      </nav>
     </div>
 
     <div
