@@ -84,28 +84,36 @@ const submitSearch = () => {
 }
 
 .home-hero__inner {
-  padding: 1.25rem 1rem;
-  border-radius: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  padding: 1.35rem 1.1rem;
+  border-radius: 1rem;
   border: 1px solid var(--color-border-default);
-  background: var(--color-surface-raised);
+  background:
+    radial-gradient(ellipse 80% 70% at 100% 0%, var(--color-ambient-1), transparent 55%),
+    radial-gradient(ellipse 50% 60% at 0% 100%, var(--color-ambient-3), transparent 50%),
+    var(--color-surface-raised);
+  box-shadow: var(--shadow-md);
 }
 
 @media (min-width: 640px) {
   .home-hero__inner {
-    padding: 1.5rem 1.25rem;
+    padding: 1.75rem 1.5rem;
   }
 }
 
 .home-hero__eyebrow {
   margin: 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-accent);
 }
 
 .home-hero__title {
-  margin: 0.4rem 0 0;
-  font-size: 1.375rem;
+  margin: 0.45rem 0 0;
+  font-size: 1.4rem;
   font-weight: 700;
   line-height: 1.35;
   color: var(--color-text-primary);
@@ -113,34 +121,40 @@ const submitSearch = () => {
 
 @media (min-width: 640px) {
   .home-hero__title {
-    font-size: 1.5rem;
+    font-size: 1.65rem;
   }
 }
 
 .home-hero__desc {
-  margin: 0.5rem 0 0;
+  margin: 0.55rem 0 0;
   font-size: 0.875rem;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--color-text-secondary);
-  max-width: 32rem;
+  max-width: 34rem;
 }
 
 .home-hero__search {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 1rem;
-  padding: 0.35rem 0.35rem 0.35rem 0.75rem;
-  border-radius: 0.5rem;
+  margin-top: 1.15rem;
+  padding: 0.4rem 0.4rem 0.4rem 0.85rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--color-border-default);
-  background: var(--color-surface-base);
+  background: color-mix(in srgb, var(--color-surface-sunken) 70%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.home-hero__search:focus-within {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
 .home-hero__search-icon {
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  color: var(--color-text-muted);
+  color: var(--color-accent);
 }
 
 .home-hero__search-input {
@@ -159,9 +173,9 @@ const submitSearch = () => {
 
 .home-hero__search-btn {
   flex-shrink: 0;
-  padding: 0.5rem 0.85rem;
+  padding: 0.55rem 0.95rem;
   font-size: 0.8rem;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
 }
 
 .home-hero__popular {
@@ -169,44 +183,46 @@ const submitSearch = () => {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 0.75rem;
+  margin-top: 0.85rem;
 }
 
 .home-hero__popular-label {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text-muted);
 }
 
 .home-hero__chip {
-  padding: 0.25rem 0.55rem;
+  padding: 0.28rem 0.65rem;
   border-radius: 999px;
   border: 1px solid var(--color-border-default);
-  background: var(--color-surface-sunken);
+  background: var(--color-accent-muted);
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text-secondary);
   cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
 .home-hero__chip:hover {
   border-color: var(--color-border-strong);
-  color: var(--color-text-primary);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent-muted) 160%, transparent);
 }
 
 .home-hero__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
 }
 
 .home-hero__cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.55rem 1rem;
-  border-radius: 0.375rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;

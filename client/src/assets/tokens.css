@@ -1,55 +1,65 @@
-/*
- * 시맨틱 디자인 토큰 — 라이트/다크 각각 표면·텍스트·보더 계층
- * 다크: 순수 검정 대신 청회색 + 은은한 앰비언트(2024–26 소프트 다크 트렌드)
- */
 :root {
   color-scheme: light;
 
-  --color-surface-base: #f4f6f9;
+  --color-surface-base: #eef1f7;
   --color-surface-raised: #ffffff;
-  --color-surface-sunken: #eef1f6;
+  --color-surface-sunken: #e4e9f2;
   --color-surface-overlay: #ffffff;
 
   --color-text-primary: #0f172a;
   --color-text-secondary: #475569;
   --color-text-muted: #64748b;
 
-  --color-border-default: rgba(15, 23, 42, 0.1);
-  --color-border-strong: rgba(15, 23, 42, 0.16);
+  --color-border-default: rgba(15, 23, 42, 0.09);
+  --color-border-strong: rgba(79, 70, 229, 0.28);
 
   --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-fg: #ffffff;
   --color-accent-muted: rgba(79, 70, 229, 0.12);
 
-  --scrollbar-thumb: rgba(15, 23, 42, 0.22);
-  --scrollbar-thumb-hover: rgba(15, 23, 42, 0.35);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(79, 70, 229, 0.05);
+  --shadow-md: 0 6px 20px rgba(15, 23, 42, 0.07), 0 2px 6px rgba(79, 70, 229, 0.06);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.1);
+
+  --scrollbar-thumb: rgba(79, 70, 229, 0.28);
+  --scrollbar-thumb-hover: rgba(79, 70, 229, 0.42);
   --scrollbar-track: transparent;
+
+  --color-ambient-1: rgba(99, 102, 241, 0.14);
+  --color-ambient-2: rgba(56, 189, 248, 0.08);
+  --color-ambient-3: rgba(167, 139, 250, 0.07);
 }
 
 .dark {
   color-scheme: dark;
 
-  /* 소프트 다크 — Apple / Linear / Vercel 스타일 청회색 베이스 */
-  --color-surface-base: #141820;
-  --color-surface-raised: #1c2330;
-  --color-surface-sunken: #0f1218;
-  --color-surface-overlay: #242c3b;
+  --color-surface-base: #0f131a;
+  --color-surface-raised: #1b2433;
+  --color-surface-sunken: #0a0d13;
+  --color-surface-overlay: #273247;
 
-  --color-text-primary: #eceef3;
-  --color-text-secondary: #b8c0cc;
-  --color-text-muted: #7b8698;
+  --color-text-primary: #f3f5f9;
+  --color-text-secondary: #b7c0cf;
+  --color-text-muted: #8893a6;
 
-  --color-border-default: rgba(255, 255, 255, 0.07);
-  --color-border-strong: rgba(255, 255, 255, 0.12);
+  --color-border-default: rgba(165, 180, 252, 0.12);
+  --color-border-strong: rgba(165, 180, 252, 0.28);
 
-  --color-accent: #93a3f8;
-  --color-accent-muted: rgba(147, 163, 248, 0.14);
+  --color-accent: #818cf8;
+  --color-accent-hover: #a5b4fc;
+  --color-accent-fg: #0f131a;
+  --color-accent-muted: rgba(129, 140, 248, 0.18);
 
-  --scrollbar-thumb: rgba(255, 255, 255, 0.16);
-  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.26);
+  --shadow-sm: 0 0 0 1px rgba(129, 140, 248, 0.08), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 0 0 1px rgba(129, 140, 248, 0.12), 0 14px 36px rgba(0, 0, 0, 0.42);
+  --shadow-lg: 0 0 0 1px rgba(129, 140, 248, 0.16), 0 22px 48px rgba(0, 0, 0, 0.5);
+
+  --scrollbar-thumb: rgba(129, 140, 248, 0.32);
+  --scrollbar-thumb-hover: rgba(165, 180, 252, 0.48);
   --scrollbar-track: transparent;
 
-  /* 페이지 배경 — 아주 옅은 인디고/시안 글로우 */
-  --color-ambient-1: rgba(99, 102, 241, 0.09);
-  --color-ambient-2: rgba(56, 189, 248, 0.05);
-  --color-ambient-3: rgba(167, 139, 250, 0.04);
+  --color-ambient-1: rgba(99, 102, 241, 0.28);
+  --color-ambient-2: rgba(34, 211, 238, 0.12);
+  --color-ambient-3: rgba(192, 132, 252, 0.14);
 }

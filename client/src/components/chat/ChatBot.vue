@@ -48,7 +48,7 @@
         @keyup.enter="send"
         type="text"
         placeholder="궁금한 점을 입력해 주세요"
-        class="flex-1 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-900/80 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/45"
+        class="flex-1 border border-slate-200 dark:border-default rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface-raised text-slate-800 dark:text-primary focus:outline-none focus:ring-2 focus:ring-indigo-500/45"
         :disabled="sending"
       />
       <button

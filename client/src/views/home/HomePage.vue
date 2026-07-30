@@ -108,7 +108,11 @@ const loadPopularSearches = async () => {
   try {
     const res = await api.get("/search/popular", { params: { limit: 6 } });
     const terms = res.data?.terms;
-    popularSearches.value = Array.isArray(terms) ? terms.filter(Boolean) : [];
+    popularSearches.value = Array.isArray(terms)
+      ? terms
+          .map((item) => (typeof item === "string" ? item : item?.term))
+          .filter(Boolean)
+      : [];
   } catch (_) {
     popularSearches.value = [];
   }

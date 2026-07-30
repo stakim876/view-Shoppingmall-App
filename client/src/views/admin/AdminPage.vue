@@ -427,7 +427,7 @@
     >
       <div class="flex min-h-[100dvh] min-h-screen items-center justify-center py-8">
       <div
-        class="shop-admin-card w-full max-w-xl p-6 bg-white dark:bg-slate-900 my-auto"
+        class="shop-admin-card w-full max-w-xl p-6 bg-white dark:bg-surface-raised my-auto"
       >
         <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">
           상품 수정 (ID: {{ editingProduct.id }})

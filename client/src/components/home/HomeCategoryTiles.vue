@@ -78,13 +78,13 @@ const displayCategories = computed(() => {
 
 .home-section-link {
   font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+  font-weight: 600;
+  color: var(--color-accent);
   text-decoration: none;
 }
 
 .home-section-link:hover {
-  color: var(--color-text-primary);
+  color: var(--color-accent-hover);
   text-decoration: underline;
 }
 
@@ -113,16 +113,21 @@ const displayCategories = computed(() => {
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  min-height: 4.5rem;
-  padding: 0.5rem 0.25rem;
-  border-radius: 0.375rem;
+  min-height: 4.75rem;
+  padding: 0.55rem 0.25rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--color-border-default);
   background: var(--color-surface-raised);
+  box-shadow: var(--shadow-sm);
   text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .home-categories__tile:hover {
-  background: var(--color-surface-sunken);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--color-accent-muted) 55%, var(--color-surface-raised));
 }
 
 .home-categories__emoji {

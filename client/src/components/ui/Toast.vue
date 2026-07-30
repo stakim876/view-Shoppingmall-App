@@ -124,7 +124,7 @@ const { toasts } = storeToRefs(toastStore);
 const { remove } = toastStore;
 
 const getToastClasses = (type) => {
-  const base = "bg-white/95 dark:bg-[#1a1d2f]/95";
+  const base = "bg-white/95 dark:bg-surface-overlay/95";
   const types = {
     success:
       base +

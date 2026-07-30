@@ -71,14 +71,14 @@ defineEmits(["open", "add-to-cart", "retry"]);
 
 .home-section-link {
   font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+  font-weight: 600;
+  color: var(--color-accent);
   text-decoration: none;
   flex-shrink: 0;
 }
 
 .home-section-link:hover {
-  color: var(--color-text-primary);
+  color: var(--color-accent-hover);
   text-decoration: underline;
 }
 

@@ -98,7 +98,7 @@
                     class="px-3 py-1.5 rounded-lg text-sm border transition-colors"
                     :class="
                       selectedOptions[group.key] === opt.value
-                        ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-200'
+                        ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-500 dark:text-slate-50 dark:border-indigo-400/40 shadow-sm'
                         : 'bg-neutral-100 text-neutral-800 border-neutral-200/80 hover:border-neutral-400 dark:bg-surface-raised dark:text-neutral-200 dark:border-strong'
                     "
                     @click="selectOption(group.key, opt.value)"

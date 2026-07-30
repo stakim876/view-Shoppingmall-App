@@ -10,20 +10,33 @@
   html {
     @apply antialiased;
     overflow-x: clip;
+    background-color: var(--color-surface-base);
+    background-image:
+      radial-gradient(ellipse 95% 60% at 50% -18%, var(--color-ambient-1), transparent 55%),
+      radial-gradient(ellipse 55% 40% at 100% 0%, var(--color-ambient-2), transparent 50%),
+      radial-gradient(ellipse 50% 35% at 0% 100%, var(--color-ambient-3), transparent 48%);
+    background-attachment: fixed;
+  }
+
+  html.dark {
+    background-image:
+      radial-gradient(ellipse 100% 70% at 50% -22%, var(--color-ambient-1), transparent 52%),
+      radial-gradient(ellipse 65% 50% at 100% 8%, var(--color-ambient-2), transparent 48%),
+      radial-gradient(ellipse 55% 45% at -5% 95%, var(--color-ambient-3), transparent 46%),
+      linear-gradient(180deg, #151b28 0%, var(--color-surface-base) 38%, #0c1018 100%);
   }
 
   body {
-    @apply antialiased text-primary bg-surface-base;
+    @apply antialiased text-primary;
     overflow-x: clip;
+    background: transparent !important;
   }
 
-  .dark body {
-    background-color: var(--color-surface-base);
-    background-image:
-      radial-gradient(ellipse 110% 70% at 50% -25%, var(--color-ambient-1), transparent 58%),
-      radial-gradient(ellipse 75% 50% at 100% 0%, var(--color-ambient-2), transparent 52%),
-      radial-gradient(ellipse 65% 45% at 0% 100%, var(--color-ambient-3), transparent 48%);
-    background-attachment: fixed;
+  .min-h-screen.bg-surface-base,
+  .min-h-dvh.bg-surface-base,
+  .shop-page-shell,
+  .shop-admin-shell {
+    background-color: transparent !important;
   }
 
   ::placeholder {
@@ -36,13 +49,8 @@
     @apply min-h-screen bg-surface-base text-primary;
   }
 
-  /* 라이트: 은은한 그라데이션 / 다크: body 앰비언트에 맞춰 단색(검정 그라데이션 제거) */
   .shop-page-ambient {
     @apply min-h-screen text-primary;
-    @apply bg-gradient-to-b from-slate-100 to-slate-200;
-  }
-
-  .dark .shop-page-ambient {
     background: transparent;
   }
 
@@ -64,15 +72,40 @@
     @apply text-2xl font-semibold tracking-tight text-slate-800 dark:text-primary;
   }
 
-  
   .shop-btn-primary {
-    @apply font-semibold text-white rounded-md
-           bg-slate-900 hover:bg-slate-800
-           border border-slate-900
-           dark:bg-slate-100 dark:text-slate-900 dark:border-slate-200
-           dark:hover:bg-white
+    @apply font-semibold rounded-md text-white
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/60
-           focus-visible:ring-offset-2;
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-base;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(15, 23, 42, 0.9);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 8px 20px rgba(15, 23, 42, 0.18);
+  }
+
+  .shop-btn-primary:hover {
+    background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+    border-color: rgba(30, 41, 59, 0.95);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 10px 24px rgba(15, 23, 42, 0.22);
+  }
+
+  .dark .shop-btn-primary {
+    color: #f8fafc;
+    background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+    border-color: rgba(165, 180, 252, 0.28);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 8px 22px rgba(79, 70, 229, 0.28);
+  }
+
+  .dark .shop-btn-primary:hover {
+    background: linear-gradient(180deg, #818cf8 0%, #6366f1 100%);
+    border-color: rgba(199, 210, 254, 0.4);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 10px 26px rgba(99, 102, 241, 0.34);
   }
 
   .shop-btn-cart {
@@ -83,9 +116,9 @@
     @apply font-medium rounded-md
            bg-surface-raised text-secondary
            border border-default
-           hover:bg-surface-sunken hover:text-primary
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50
-           focus-visible:ring-offset-2;
+           hover:bg-surface-sunken hover:text-primary hover:border-strong
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-base;
   }
 
   .shop-btn-ai {
@@ -124,14 +157,23 @@
     @apply relative rounded-lg cursor-pointer
            bg-surface-raised border border-default
            hover:border-strong
-           transition-colors duration-150;
+           transition-[border-color,box-shadow] duration-150;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shop-card-product:hover {
+    box-shadow: var(--shadow-md);
   }
 
   .shop-card-product-media {
     @apply overflow-hidden flex items-center justify-center bg-surface-sunken;
   }
 
-  /* 가로 스크롤 레일·목록 — 대기업은 얇고 중립적인 스크롤바 */
+  .shop-panel {
+    @apply rounded-lg border border-default bg-surface-raised;
+    box-shadow: var(--shadow-sm);
+  }
+
   .shop-scroll {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -169,7 +211,7 @@
            border border-default bg-surface-raised text-secondary
            hover:bg-surface-sunken hover:text-primary
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40
-           focus-visible:ring-offset-2;
+           focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-base;
   }
 
   .header-theme-btn {
@@ -203,6 +245,7 @@
 
   .shop-admin-card {
     @apply rounded-lg border border-default bg-surface-raised;
+    box-shadow: var(--shadow-sm);
   }
 
   .shop-admin-input {
@@ -244,6 +287,17 @@
   }
 }
 
+header.sticky {
+  background: color-mix(in srgb, var(--color-surface-raised) 88%, transparent) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-sm);
+}
+
+html.dark header.sticky {
+  background: color-mix(in srgb, var(--color-surface-raised) 86%, transparent) !important;
+}
+
 .hero-title,
 .header-brand {
   padding-bottom: 0.45em !important;
@@ -253,7 +307,6 @@
   background-clip: text;
 }
 
-/* 전역 스크롤바 — 얇고 중립적 (쿠팡·무신사 웹 패턴) */
 html {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -277,7 +330,6 @@ html::-webkit-scrollbar-thumb:hover {
   background-color: var(--scrollbar-thumb-hover);
 }
 
-/* 테마 전환 시 Tailwind transition-* 유틸보다 우선 */
 html.theme-switching,
 html.theme-switching *,
 html.theme-switching *::before,

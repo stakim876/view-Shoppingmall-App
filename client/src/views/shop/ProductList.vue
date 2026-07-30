@@ -129,7 +129,7 @@
             :class="[
               'px-4 py-2 rounded-lg text-sm font-medium min-w-[40px]',
               currentPage === page
-                ? 'shop-btn-primary text-white shadow-md'
+                ? 'shop-btn-primary shadow-md'
                 : 'shop-pagination-btn'
             ]"
             @click="currentPage = page"
@@ -373,10 +373,10 @@ onMounted(async () => {
 <style scoped>
 .shop-pagination-btn {
   @apply px-3 py-2 rounded-lg text-sm font-medium transition
-         bg-white dark:bg-[#1a2235] text-neutral-800 dark:text-neutral-200
-         border border-slate-200/80 dark:border-slate-600/45
-         hover:bg-slate-100 dark:hover:bg-slate-700
-         disabled:bg-neutral-200 dark:disabled:bg-neutral-700
-         disabled:text-neutral-400 disabled:cursor-not-allowed;
+         bg-white dark:bg-surface-raised text-neutral-800 dark:text-primary
+         border border-slate-200/80 dark:border-default
+         hover:bg-slate-100 dark:hover:bg-surface-overlay
+         disabled:bg-neutral-200 dark:disabled:bg-surface-sunken
+         disabled:text-neutral-400 dark:disabled:text-muted disabled:cursor-not-allowed;
 }
 </style>

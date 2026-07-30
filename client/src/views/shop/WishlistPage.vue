@@ -48,7 +48,7 @@
           :to="`/product/${item.product_id}`"
           class="block overflow-hidden"
         >
-          <div class="h-56 flex items-center justify-center bg-neutral-100/80 dark:bg-[#25283c]/70">
+          <div class="h-56 flex items-center justify-center bg-surface-sunken">
             <img
               :src="normalizeImageUrl(item.image_url) || placeholderImg"
               :alt="item.name"

@@ -5,8 +5,8 @@
     :class="[
       'relative inline-flex items-center justify-center rounded-full border transition-all duration-200',
       isWished
-        ? 'bg-neutral-100 border-neutral-300 text-neutral-800 shadow-[inset_0_1px_2px_rgba(255,255,255,0.85),0_8px_18px_rgba(148,163,184,0.18)] dark:bg-neutral-800/60 dark:border-neutral-600/50 dark:text-neutral-200'
-        : 'bg-white border-slate-200/80 text-slate-400 shadow-[0_8px_20px_-16px_rgba(15,23,42,0.22)] hover:text-neutral-900 hover:border-neutral-300 hover:bg-neutral-100 dark:bg-slate-800 dark:border-slate-500/60 dark:text-slate-400 dark:hover:text-neutral-200 dark:hover:border-neutral-400/45',
+        ? 'bg-neutral-100 border-neutral-300 text-neutral-800 shadow-[inset_0_1px_2px_rgba(255,255,255,0.85),0_8px_18px_rgba(148,163,184,0.18)] dark:bg-surface-overlay dark:border-default dark:text-primary'
+        : 'bg-white border-slate-200/80 text-slate-400 shadow-[0_8px_20px_-16px_rgba(15,23,42,0.22)] hover:text-neutral-900 hover:border-neutral-300 hover:bg-neutral-100 dark:bg-surface-raised dark:border-default dark:text-muted dark:hover:text-primary dark:hover:border-strong',
       busy ? 'opacity-60 cursor-not-allowed' : 'hover:scale-105 active:scale-95',
       sizeClass,
     ]"

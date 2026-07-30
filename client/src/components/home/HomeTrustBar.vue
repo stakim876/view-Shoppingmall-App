@@ -41,11 +41,12 @@ const freeShippingLabel = formatFreeShippingBadge();
   display: grid;
   gap: 0.5rem;
   margin: 0;
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1.1rem;
   list-style: none;
-  border-radius: 0.375rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--color-border-default);
   background: var(--color-surface-raised);
+  box-shadow: var(--shadow-sm);
 }
 
 @media (min-width: 768px) {
@@ -68,6 +69,6 @@ const freeShippingLabel = formatFreeShippingBadge();
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  color: var(--color-text-muted);
+  color: var(--color-accent);
 }
 </style>

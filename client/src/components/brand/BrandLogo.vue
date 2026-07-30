@@ -70,7 +70,9 @@ const markSize = computed(() => {
 }
 
 .brand-logo__shop {
-  @apply font-bold tracking-[-0.03em] text-slate-900 dark:text-white;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-accent);
 }
 
 .brand-logo--sm .brand-logo__my {

@@ -643,7 +643,7 @@ const secondaryNavItems = computed(() => {
         :class="[
           'relative z-10 shrink-0 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 focus-visible:ring-offset-2',
           isNavActive(item)
-            ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900/20'
+            ? 'bg-slate-900 text-white border border-slate-900 shadow-sm dark:bg-indigo-500 dark:text-slate-50 dark:border-indigo-400/40 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_6px_16px_rgba(79,70,229,0.28)]'
             : 'shop-btn-secondary'
         ]"
       >
